@@ -207,8 +207,9 @@
                                 <span class="text-gray-900">€{{ formatPrice(cartStore.subtotal) }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Shipping</span>
-                                <span class="text-green-600 font-medium">Free</span>
+                                <span class="text-gray-600">Verzendkosten ({{ cartStore.totalWeight.toFixed(2) }}
+                                    kg)</span>
+                                <span class="text-gray-900">€{{ formatPrice(cartStore.shippingCost) }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">VAT (21%)</span>
@@ -400,6 +401,7 @@ const handleSubmit = async () => {
         form.value.shippingAddress,
         cartStore.subtotal,
         cartStore.tax,
+        cartStore.shippingCost,
         form.value.notes
     )
 

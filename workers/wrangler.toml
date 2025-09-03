@@ -1,7 +1,10 @@
-# in workers/wrangler.toml
 name = "b2b-image-handler"
 main = "src/image-handler.js" # Aangepast pad
 compatibility_date = "2023-10-30"
+
+
+[vars]
+R2_BUCKET_NAME = "motordash"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"

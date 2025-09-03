@@ -30,6 +30,7 @@ export const useOrderStore = defineStore('orders', () => {
     shippingAddress: ShippingAddress,
     subtotal: number,
     tax: number,
+    shippingCost: number, // Voeg shippingCost toe
     notes?: string
   ): Promise<{ success: boolean; invoiceUrl?: string; orderId?: string; error?: string }> => {
     isLoading.value = true
@@ -74,6 +75,8 @@ export const useOrderStore = defineStore('orders', () => {
       // Create invoice via Firebase function
       const result = await createInvoiceFunction({
         items: stripeItems,
+        shippingCost: Math.round(shippingCost * 100), // Stuur als centen
+        taxAmount: Math.round(tax * 100),
         metadata: orderMetadata
       })
 

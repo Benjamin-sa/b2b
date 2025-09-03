@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { CartItem, Product } from '../types'
+import type { CartItem } from '../types'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
@@ -13,11 +13,27 @@ export const useCartStore = defineStore('cart', () => {
     return items.value.reduce((total, item) => total + (item.price * item.quantity), 0)
   })
 
+   const totalWeight = computed(() => {
+    return items.value.reduce((total, item) => {
+      const weight = item.product.weight || 0;
+      return total + (weight * item.quantity);
+    }, 0)
+  })
+
+  const shippingCost = computed(() => {
+    if (itemCount.value === 0) return 0;
+    if (totalWeight.value === 0) return 7.00;
+
+    const shippingRate = 7.00; // 7 euro
+    const weightPerRate = 20; // per 20kg
+    return Math.ceil(totalWeight.value / weightPerRate) * shippingRate;
+  })
+
   const subtotal = computed(() => totalPrice.value)
   
-  const tax = computed(() => totalPrice.value * 0.21) // 21% VAT for EU B2B
+  const tax = computed(() => totalPrice.value * 0.21) // 21% VAT for BE B2B
   
-  const grandTotal = computed(() => subtotal.value + tax.value)
+  const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 
   const addItem = async (item: CartItem) => {
     const existingItem = items.value.find(i => i.productId === item.productId)
@@ -67,6 +83,8 @@ export const useCartStore = defineStore('cart', () => {
     items,
     itemCount,
     totalPrice,
+    totalWeight,
+    shippingCost,
     subtotal,
     tax,
     grandTotal,

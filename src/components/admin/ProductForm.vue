@@ -171,7 +171,7 @@
                         <label for="length" class="block text-sm font-medium text-gray-700 mb-2">
                             Length (cm)
                         </label>
-                        <input id="length" v-model.number="form.dimensions.length" type="number" step="0.01" min="0"
+                        <input id="length" v-model.number="form.dimensions!.length" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="0.0" />
                     </div>
@@ -180,7 +180,7 @@
                         <label for="width" class="block text-sm font-medium text-gray-700 mb-2">
                             Width (cm)
                         </label>
-                        <input id="width" v-model.number="form.dimensions.width" type="number" step="0.01" min="0"
+                        <input id="width" v-model.number="form.dimensions!.width" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="0.0" />
                     </div>
@@ -189,7 +189,7 @@
                         <label for="height" class="block text-sm font-medium text-gray-700 mb-2">
                             Height (cm)
                         </label>
-                        <input id="height" v-model.number="form.dimensions.height" type="number" step="0.01" min="0"
+                        <input id="height" v-model.number="form.dimensions!.height" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="0.0" />
                     </div>
@@ -205,7 +205,7 @@
                     </label>
                     <div class="space-y-2">
                         <div v-for="(tag, index) in form.tags" :key="index" class="flex gap-2">
-                            <input v-model="form.tags[index]" type="text" placeholder="Enter tag"
+                            <input v-model="form.tags![index]" type="text" placeholder="Enter tag"
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             <button type="button" @click="removeTag(index)"
                                 class="px-3 py-2 text-red-600 hover:text-red-800">
@@ -224,9 +224,9 @@
                 <h3 class="text-lg font-semibold mb-4">Specifications</h3>
                 <div class="space-y-2">
                     <div v-for="(spec, index) in form.specifications" :key="index" class="flex gap-2">
-                        <input v-model="spec.key" type="text" placeholder="Property name"
+                        <input v-model="form.specifications![index].key" type="text" placeholder="Property name"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input v-model="spec.value" type="text" placeholder="Value"
+                        <input v-model="form.specifications![index].value" type="text" placeholder="Value"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <button type="button" @click="removeSpecification(index)"
                             class="px-3 py-2 text-red-600 hover:text-red-800">
@@ -255,37 +255,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductStore } from '../../stores/products'
 import type { Product } from '../../types'
 import ImageUpload from './ImageUpload.vue'
 
 interface Props {
     product?: Product | null
-}
-
-interface ProductFormData {
-    name: string
-    description: string
-    price: number
-    originalPrice?: number
-    category: string
-    stock: number
-    brand?: string
-    sku?: string
-    partNumber?: string
-    images: string[]
-    specifications: { key: string; value: string }[]
-    unit?: string
-    minOrderQuantity?: number
-    maxOrderQuantity?: number
-    tags: string[]
-    weight?: number
-    dimensions: {
-        length: number
-        width: number
-        height: number
-    }
 }
 
 const props = defineProps<Props>()
@@ -297,28 +273,37 @@ const emit = defineEmits<{
 const productStore = useProductStore()
 const loading = ref(false)
 
-const form = reactive<ProductFormData>({
+const form = reactive<Product>({
+    id: '', // Will be set for editing, ignored for new products
     name: '',
     description: '',
     price: 0,
-    originalPrice: undefined,
+    originalPrice: 0,
+    imageUrl: '',
+    images: [],
     category: '',
+    sku: '',
+    inStock: false,
     stock: 0,
     brand: '',
-    sku: '',
     partNumber: '',
-    images: [],
     specifications: [],
     unit: '',
     minOrderQuantity: 1,
-    maxOrderQuantity: undefined,
+    maxOrderQuantity: 1,
     tags: [],
-    weight: undefined,
+    weight: 0,
     dimensions: {
         length: 0,
         width: 0,
         height: 0
-    }
+    },
+    // Stripe fields - not used in form but part of Product interface
+    stripeProductId: '',
+    stripePriceId: '',
+    // Timestamps - will be set by backend
+    createdAt: null,
+    updatedAt: null
 })
 
 const isEditing = computed(() => !!props.product)
@@ -330,38 +315,43 @@ onMounted(() => {
             name: props.product.name,
             description: props.product.description,
             price: props.product.price,
-            originalPrice: props.product.originalPrice,
+            originalPrice: props.product.originalPrice || 0,
+            imageUrl: props.product.imageUrl || '',
             category: props.product.category || '',
+            sku: props.product.sku || '',
+            inStock: props.product.inStock,
             stock: props.product.stock || 0,
             brand: props.product.brand || '',
-            sku: props.product.sku || '',
             partNumber: props.product.partNumber || '',
             images: props.product.images || [],
             specifications: props.product.specifications || [],
             unit: props.product.unit || '',
             minOrderQuantity: props.product.minOrderQuantity || 1,
-            maxOrderQuantity: props.product.maxOrderQuantity,
+            maxOrderQuantity: props.product.maxOrderQuantity || 1,
             tags: props.product.tags || [],
-            weight: props.product.weight,
-            dimensions: props.product.dimensions || { length: 0, width: 0, height: 0 }
+            weight: props.product.weight || 0,
+            dimensions: props.product.dimensions || { length: 0, width: 0, height: 0 },
+            // Stripe fields
+            stripeProductId: props.product.stripeProductId || '',
+            stripePriceId: props.product.stripePriceId || ''
         })
     }
 })
 
 const addTag = () => {
-    form.tags.push('')
+    form.tags!.push('')
 }
 
 const removeTag = (index: number) => {
-    form.tags.splice(index, 1)
+    form.tags!.splice(index, 1)
 }
 
 const addSpecification = () => {
-    form.specifications.push({ key: '', value: '' })
+    form.specifications!.push({ key: '', value: '' })
 }
 
 const removeSpecification = (index: number) => {
-    form.specifications.splice(index, 1)
+    form.specifications!.splice(index, 1)
 }
 
 const submitForm = async () => {
@@ -369,20 +359,39 @@ const submitForm = async () => {
 
     try {
         // Filter out empty specifications and tags
-        const cleanedSpecs = form.specifications.filter(spec => spec.key.trim() && spec.value.trim())
-        const cleanedTags = form.tags.filter(tag => tag.trim())
+        const cleanedSpecs = form.specifications!.filter(spec => spec.key.trim() && spec.value.trim())
+        const cleanedTags = form.tags!.filter(tag => tag.trim())
 
-        const productData = {
-            ...form,
+        // Build product data object, excluding default/empty values for optional fields
+        const productData: any = {
+            name: form.name,
+            description: form.description,
+            price: form.price,
+            category: form.category,
+            stock: form.stock!,
             specifications: cleanedSpecs,
             tags: cleanedTags,
             // Convert to proper format for the store
-            imageUrl: form.images[0] || '',
-            inStock: form.stock > 0,
-            // Clean up dimensions if all are 0
-            dimensions: (form.dimensions.length || form.dimensions.width || form.dimensions.height)
-                ? form.dimensions
-                : undefined
+            imageUrl: form.images![0] || '',
+            inStock: form.stock! > 0,
+            images: form.images
+        }
+
+        // Only add optional fields if they have meaningful values (not defaults)
+        if (form.originalPrice! > 0) {
+            productData.originalPrice = form.originalPrice
+        }
+        if (form.brand!.trim()) productData.brand = form.brand
+        if (form.sku!.trim()) productData.sku = form.sku
+        if (form.partNumber!.trim()) productData.partNumber = form.partNumber
+        if (form.unit!.trim()) productData.unit = form.unit
+        if (form.minOrderQuantity! > 1) productData.minOrderQuantity = form.minOrderQuantity
+        if (form.maxOrderQuantity! > 1) productData.maxOrderQuantity = form.maxOrderQuantity
+        if (form.weight! > 0) productData.weight = form.weight
+
+        // Clean up dimensions if any dimension is greater than 0
+        if (form.dimensions!.length > 0 || form.dimensions!.width > 0 || form.dimensions!.height > 0) {
+            productData.dimensions = form.dimensions
         }
 
         if (props.product) {

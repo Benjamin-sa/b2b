@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const stripe = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
+const { metadata } = require("@vueuse/core/metadata.mjs");
 
 /**
  * Create invoice for B2B payments
@@ -61,6 +62,7 @@ const createInvoice = onCall(
         customer: userData.stripeCustomerId,
         collection_method: "send_invoice",
         days_until_due: 30,
+        description: data.metadata?.notes || "Bestelling via Motordash B2B",
         metadata: {
           userId: request.auth.uid,
           orderMetadata: JSON.stringify(data.metadata || {}),
@@ -74,6 +76,30 @@ const createInvoice = onCall(
           invoice: invoice.id,
           price: item.stripePriceId,
           quantity: item.quantity,
+        });
+      }
+
+      // Add Shipping as a line item
+      if (data.shippingCost && data.shippingCost > 0) {
+        const shippingRate = await stripe.shippingRates.create({
+          display_name: "Standaard verzending",
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: data.shippingCost,
+            currency: "eur",
+          },
+        });
+
+        await stripe.invoiceItems.create({
+          customer: userData.stripeCustomerId,
+          invoice: invoice.id,
+          amount: data.shippingCost, // in cents
+          currency: "eur",
+          description: "Verzendkosten",
+          metadata: {
+            type: "shipping",
+            shipping_rate_id: shippingRate.id,
+          },
         });
       }
 

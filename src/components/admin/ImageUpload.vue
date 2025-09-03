@@ -86,13 +86,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { storage } from '../../init/firebase'
+import { ref, watch } from 'vue'
 
 interface ImageData {
-    url: string
-    path: string
+    url: string // Dit is de publieke R2 URL
+    path: string // Het pad in de R2 bucket
     name: string
 }
 
@@ -119,83 +117,63 @@ const uploadProgress = ref(0)
 const isDragOver = ref(false)
 const errors = ref<string[]>([])
 
-// Initialize images from modelValue
-watch(() => props.modelValue, (newUrls) => {
-    if (newUrls && newUrls.length > 0) {
-        const newImages = newUrls.map((url, index) => ({
-            url,
-            path: '', // We don't have the path for existing images
-            name: `image-${index + 1}`
-        }))
-        // Only update if the URLs are actually different to prevent recursive updates
-        const currentUrls = images.value.map(img => img.url)
-        if (JSON.stringify(currentUrls) !== JSON.stringify(newUrls)) {
-            images.value = newImages
-        }
-    } else if (newUrls && newUrls.length === 0 && images.value.length > 0) {
-        images.value = []
-    }
-}, { immediate: true })
+// Haal de Worker URL op uit de environment variables
+const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL;
+if (!workerUrl) {
+    console.error("VITE_CLOUDFLARE_WORKER_URL is not defined in .env file!");
+}
 
-// Emit changes when images change
+
+// Initialiseer de component met bestaande afbeeldingen
+watch(() => props.modelValue, (newUrls) => {
+    if (newUrls && JSON.stringify(newUrls) !== JSON.stringify(images.value.map(img => img.url))) {
+        images.value = newUrls.map(url => ({
+            url,
+            path: new URL(url).pathname.substring(1),
+            name: url.substring(url.lastIndexOf('/') + 1)
+        }));
+    }
+}, { immediate: true });
+
+
+// Update de parent component wanneer de afbeeldingenlijst wijzigt
 watch(images, (newImages) => {
     const urls = newImages.map(img => img.url)
-    // Only emit if the URLs have actually changed to prevent recursive updates
-    const currentUrls = props.modelValue || []
-    if (JSON.stringify(currentUrls) !== JSON.stringify(urls)) {
+    if (JSON.stringify(props.modelValue) !== JSON.stringify(urls)) {
         emit('update:modelValue', urls)
     }
 }, { deep: true })
 
-const handleFileSelect = (event: Event) => {
-    const target = event.target as HTMLInputElement
-    if (target.files) {
-        uploadFiles(Array.from(target.files))
-    }
-}
-
-const handleDrop = (event: DragEvent) => {
-    isDragOver.value = false
-    if (event.dataTransfer?.files) {
-        uploadFiles(Array.from(event.dataTransfer.files))
-    }
-}
 
 const validateFiles = (files: File[]): { valid: File[], errors: string[] } => {
     const validFiles: File[] = []
     const fileErrors: string[] = []
 
     files.forEach(file => {
-        // Check file type
         if (!file.type.startsWith('image/')) {
-            fileErrors.push(`${file.name} is not an image file`)
+            fileErrors.push(`${file.name} is not an image file.`)
             return
         }
-
-        // Check file size
         if (file.size > props.maxFileSize * 1024 * 1024) {
-            fileErrors.push(`${file.name} is too large (max ${props.maxFileSize}MB)`)
+            fileErrors.push(`${file.name} is too large (max ${props.maxFileSize}MB).`)
             return
         }
-
-        // Check total image count
         if (images.value.length + validFiles.length >= props.maxImages) {
-            fileErrors.push(`Maximum ${props.maxImages} images allowed`)
+            fileErrors.push(`Maximum ${props.maxImages} images allowed.`)
+            // Stop met valideren als de limiet is bereikt
             return
         }
-
         validFiles.push(file)
     })
-
     return { valid: validFiles, errors: fileErrors }
 }
 
 const uploadFiles = async (files: File[]) => {
     errors.value = []
-
     const { valid: validFiles, errors: validationErrors } = validateFiles(files)
-    errors.value = validationErrors
-
+    if (validationErrors.length > 0) {
+        errors.value = validationErrors
+    }
     if (validFiles.length === 0) return
 
     uploading.value = true
@@ -203,73 +181,74 @@ const uploadFiles = async (files: File[]) => {
 
     try {
         const uploadPromises = validFiles.map(async (file, index) => {
-            const timestamp = Date.now()
-            const fileName = `products/${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-            const fileRef = storageRef(storage, fileName)
+            // Stap 1: Vraag een presigned URL aan bij de Cloudflare Worker
+            const response = await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: file.name,
+                    contentType: file.type,
+                }),
+            });
 
-            // Upload file
-            const snapshot = await uploadBytes(fileRef, file)
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to get an upload URL (status: ${response.status}): ${errorText}`);
+            }
 
-            // Get download URL
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const { uploadUrl, publicUrl } = await response.json();
 
-            // Update progress
+            // Stap 2: Upload het bestand naar de ontvangen presigned URL
+            await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type },
+            });
+
             uploadProgress.value = Math.round(((index + 1) / validFiles.length) * 100)
 
+            // Stap 3: Geef de permanente, publieke URL terug
             return {
-                url: downloadURL,
-                path: fileName,
+                url: publicUrl,
+                path: new URL(publicUrl).pathname.substring(1),
                 name: file.name
-            }
-        })
+            };
+        });
 
-        const uploadedImages = await Promise.all(uploadPromises)
-        images.value.push(...uploadedImages)
+        const uploadedImages = await Promise.all(uploadPromises);
+        images.value.push(...uploadedImages);
 
     } catch (error) {
         console.error('Upload error:', error)
         errors.value.push('Failed to upload images. Please try again.')
     } finally {
-        uploading.value = false
-        uploadProgress.value = 0
-        // Reset file input
-        if (fileInput.value) {
-            fileInput.value.value = ''
-        }
+        uploading.value = false;
+        if (fileInput.value) fileInput.value.value = '';
     }
 }
 
 const removeImage = async (index: number) => {
-    const image = images.value[index]
-
-    try {
-        // Delete from Firebase Storage if we have the path
-        if (image.path) {
-            const imageRef = storageRef(storage, image.path)
-            await deleteObject(imageRef)
-        }
-
-        // Remove from local array
-        images.value.splice(index, 1)
-
-    } catch (error) {
-        console.error('Error deleting image:', error)
-        errors.value.push('Failed to delete image')
-    }
+    images.value.splice(index, 1);
 }
 
 const setPrimaryImage = (index: number) => {
-    if (index > 0 && index < images.value.length) {
+    if (index > 0) {
         const [primaryImage] = images.value.splice(index, 1)
         images.value.unshift(primaryImage)
     }
 }
 
-const triggerFileSelect = () => {
-    fileInput.value?.click()
-}
+const handleFileSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files) {
+        uploadFiles(Array.from(target.files));
+    }
+};
 
-defineExpose({
-    triggerFileSelect
-})
+const handleDrop = (event: DragEvent) => {
+    isDragOver.value = false;
+    if (event.dataTransfer?.files) {
+        uploadFiles(Array.from(event.dataTransfer.files));
+    }
+};
 </script>

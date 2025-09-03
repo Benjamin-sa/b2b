@@ -38,7 +38,8 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     const customerData = {
       email: userData.email,
       name:
-        `${userData.firstName} ${userData.lastName}`.trim() || userData.email,
+        `${userData.firstName || ""} ${userData.lastName || ""}`.trim() ||
+        userData.email,
       metadata: {
         firebaseId: userId,
         companyName: userData.companyName || "",
@@ -52,35 +53,32 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
       customerData.phone = userData.phone;
     }
 
-    // Map address to Stripe's expected format
+    // Map address when present (expects address map with street, houseNumber, postalCode, city, country)
     if (userData.address) {
       customerData.address = {
-        line1:
-          `${userData.address.street} ${userData.address.houseNumber}`.trim(),
-        postal_code: userData.address.postalCode,
-        city: userData.address.city,
-        country: getCountryCode(userData.address.country),
+        line1: `${userData.address.street || ""} ${
+          userData.address.houseNumber || ""
+        }`.trim(),
+        postal_code: userData.address.postalCode || "",
+        city: userData.address.city || "",
+        country: getCountryCode(userData.address.country || ""),
       };
 
-      // Add line2 if we have additional address info
-      if (userData.address.line2) {
-        customerData.address.line2 = userData.address.line2;
-      }
+      // add shipping (B2B: same as billing)
+      customerData.shipping = {
+        name: customerData.name,
+        address: { ...customerData.address },
+      };
     }
 
-    // Add shipping address (same as billing for B2B)
-    if (userData.address) {
-      customerData.shipping = {
-        name:
-          `${userData.firstName} ${userData.lastName}`.trim() || userData.email,
-        address: {
-          line1:
-            `${userData.address.street} ${userData.address.houseNumber}`.trim(),
-          postal_code: userData.address.postalCode,
-          city: userData.address.city,
-          country: getCountryCode(userData.address.country),
+    // Add VAT / tax id when provided (Stripe expects tax_id_data array for EU VAT)
+    if (userData.btwNumber) {
+      customerData.tax_id_data = [
+        {
+          type: "eu_vat",
+          value: userData.btwNumber,
         },
-      };
+      ];
     }
 
     const stripeCustomer = await stripe.customers.create(customerData);

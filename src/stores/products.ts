@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from '../init/firebase';
-import type { Product, ProductFilter, ProductFormData } from '../types/product';
+import type { Product, ProductFilter } from '../types/product';
 import { appCache } from '../services/cache'; // Import our new cache service
 
 export const useProductStore = defineStore('products', () => {
@@ -105,7 +105,7 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
-  const addProduct = async (productData: ProductFormData) => {
+  const addProduct = async (productData: Omit<Product, 'id'>) => {
     try {
       const docRef = await addDoc(collection(db, 'products'), { ...productData, createdAt: new Date() });
       appCache.invalidate(); // Invalidate all caches when data changes
@@ -116,7 +116,7 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
-  const updateProduct = async (id: string, updates: Partial<ProductFormData>) => {
+  const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id'>>) => {
     try {
       await updateDoc(doc(db, 'products', id), { ...updates, updatedAt: new Date() });
       appCache.invalidate(); // Invalidate all caches
