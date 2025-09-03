@@ -1,0 +1,37 @@
+{
+  "name": "mijn-b2b-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "populate-emulator": "node scripts/populateEmulatorProducts.js",
+    "mock-product:10": "node scripts/populateEmulatorProducts.js 10",
+    "mock-product:50": "node scripts/populateEmulatorProducts.js 50",
+    "mock-product:100": "node scripts/populateEmulatorProducts.js 100"
+  },
+  "dependencies": {
+    "@stripe/stripe-js": "^7.9.0",
+    "@tailwindcss/vite": "^4.1.12",
+    "@vueuse/core": "^13.9.0",
+    "faker": "^5.5.3",
+    "firebase": "^12.2.1",
+    "firebase-admin": "^13.5.0",
+    "firebase-functions": "^6.4.0",
+    "lodash-es": "^4.17.21",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.7.0",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.2",
+    "vue-tsc": "^3.0.5"
+  }
+}
