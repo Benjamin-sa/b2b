@@ -1,22 +1,43 @@
 const { onRequest } = require("firebase-functions/v2/https");
-const stripe = require("../config/stripe");
+const {
+  stripeSecretKey,
+  stripeWebhookSecret,
+  getStripe,
+  getWebhookSecret,
+  isEmulator,
+} = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
+
+// Configure function options based on environment
+const getFunctionOptions = () => {
+  const baseOptions = {};
+
+  // Only add secrets in production
+  if (!isEmulator) {
+    baseOptions.secrets = [stripeSecretKey, stripeWebhookSecret];
+  }
+
+  return baseOptions;
+};
 
 /**
  * Handle Stripe webhooks
  */
-const stripeWebhook = onRequest(async (req, res) => {
+const stripeWebhook = onRequest(getFunctionOptions(), async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!webhookSecret) {
-    console.error("Stripe webhook secret not configured");
+  let webhookSecret;
+  try {
+    webhookSecret = getWebhookSecret();
+  } catch (error) {
+    console.error("Stripe webhook secret not configured:", error.message);
     res.status(500).send("Webhook secret not configured");
     return;
   }
 
   let event;
   try {
+    const stripe = getStripe();
     event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);

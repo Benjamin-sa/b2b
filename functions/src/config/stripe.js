@@ -1,58 +1,143 @@
-const functions = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
+const Stripe = require("stripe");
 
-if (process.env.FUNCTIONS_EMULATOR === "true") {
-  require("dotenv").config();
-}
+// Define secrets using Firebase Functions v2 approach (for production)
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
-let stripeInstance;
-let webhookSecretCache;
+// Detect if we're running in emulator
+const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
 
+// Singleton instance to prevent multiple initializations
+let stripeInstance = null;
+
+/**
+ * Get Stripe secret key - uses .env in emulator, secrets in production
+ */
+const getStripeSecretKey = () => {
+  if (isEmulator) {
+    // In emulator, use environment variable from .env with _LOCAL suffix
+    const key = process.env.STRIPE_SECRET_KEY_LOCAL;
+    if (!key) {
+      throw new Error(
+        "STRIPE_SECRET_KEY_LOCAL not found in .env file for emulator"
+      );
+    }
+    return key;
+  } else {
+    // In production, use Firebase Functions v2 secrets
+    return stripeSecretKey.value();
+  }
+};
+
+/**
+ * Get Stripe webhook secret - uses .env in emulator, secrets in production
+ */
+const getStripeWebhookSecret = () => {
+  if (isEmulator) {
+    // In emulator, use environment variable from .env with _LOCAL suffix
+    const secret = process.env.STRIPE_WEBHOOK_SECRET_LOCAL;
+    if (!secret) {
+      throw new Error(
+        "STRIPE_WEBHOOK_SECRET_LOCAL not found in .env file for emulator"
+      );
+    }
+    return secret;
+  } else {
+    // In production, use Firebase Functions v2 secrets
+    return stripeWebhookSecret.value();
+  }
+};
+
+/**
+ * Get Stripe instance with lazy initialization and error handling
+ */
 const getStripe = () => {
-  if (stripeInstance) return stripeInstance;
+  if (stripeInstance) {
+    return stripeInstance;
+  }
 
-  let stripeKey;
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
-    stripeKey = process.env.STRIPE_SECRET_KEY;
-  } else {
-    // functions.config() + fallback naar env (voor het geval)
-    const cfg =
-      typeof functions.config === "function" ? functions.config() : {};
-    stripeKey = cfg?.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  try {
+    const secretKey = getStripeSecretKey();
+
+    // Validate key format
+    if (!secretKey || !secretKey.startsWith("sk_")) {
+      throw new Error(
+        "Invalid Stripe secret key format. Must start with 'sk_'"
+      );
+    }
+
+    stripeInstance = new Stripe(secretKey, {
+      apiVersion: process.env.STRIPE_API_VERSION || "2024-06-20",
+    });
+
     console.log(
-      "stripe cfg present:",
-      !!cfg?.stripe,
-      "keyLen:",
-      stripeKey ? String(stripeKey).length : 0
+      `✅ Stripe initialized successfully (${
+        isEmulator ? "emulator" : "production"
+      })`
     );
+    return stripeInstance;
+  } catch (error) {
+    console.error("❌ Failed to initialize Stripe:", error.message);
+    throw new Error(`Failed to initialize Stripe: ${error.message}`);
   }
-
-  if (!stripeKey) {
-    throw new Error(
-      "Stripe config (stripe.secret_key) ontbreekt. Zet met: firebase functions:config:set stripe.secret_key=..."
-    );
-  }
-  stripeInstance = require("stripe")(stripeKey);
-  return stripeInstance;
 };
 
+/**
+ * Get webhook secret with validation
+ */
 const getWebhookSecret = () => {
-  if (webhookSecretCache) return webhookSecretCache;
+  try {
+    const secret = getStripeWebhookSecret();
 
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
-    webhookSecretCache = process.env.STRIPE_WEBHOOK_SECRET;
-  } else {
-    const cfg =
-      typeof functions.config === "function" ? functions.config() : {};
-    webhookSecretCache =
-      cfg?.stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
-  }
+    // Validate webhook secret format
+    if (!secret || !secret.startsWith("whsec_")) {
+      throw new Error(
+        "Invalid Stripe webhook secret format. Must start with 'whsec_'"
+      );
+    }
 
-  if (!webhookSecretCache) {
-    throw new Error(
-      "Stripe webhook secret ontbreekt. Zet met: firebase functions:config:set stripe.webhook_secret=..."
+    console.log(
+      `✅ Stripe webhook secret retrieved (${
+        isEmulator ? "emulator" : "production"
+      })`
     );
+    return secret;
+  } catch (error) {
+    console.error("❌ Failed to get webhook secret:", error.message);
+    throw new Error(`Failed to get webhook secret: ${error.message}`);
   }
-  return webhookSecretCache;
 };
 
-module.exports = { getStripe, getWebhookSecret };
+/**
+ * Test Stripe connection without throwing errors
+ */
+const testStripeConnection = async () => {
+  try {
+    const stripe = getStripe();
+    await stripe.balance.retrieve();
+    return {
+      success: true,
+      message: `Stripe connection successful (${
+        isEmulator ? "emulator" : "production"
+      })`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Stripe connection failed: ${error.message}`,
+      error: error,
+      environment: isEmulator ? "emulator" : "production",
+    };
+  }
+};
+
+// Export secrets and helper functions
+module.exports = {
+  stripeSecretKey, // Only used in production
+  stripeWebhookSecret, // Only used in production
+  getStripe,
+  getWebhookSecret,
+  testStripeConnection,
+  isEmulator, // Export for debugging
+};

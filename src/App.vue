@@ -27,8 +27,8 @@ onMounted(async () => {
   }
 
   // If authenticated but not verified (and not admin), redirect to verification page
-  if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin && 
-      route.path !== '/verification-pending' && route.path !== '/auth') {
+  if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin &&
+    route.path !== '/verification-pending' && route.path !== '/auth') {
     router.push('/verification-pending')
   }
 })

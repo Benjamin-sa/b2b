@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
+    "deploy:firebase": "firebase deploy --only hosting",
     "populate-emulator": "node scripts/populateEmulatorProducts.js",
     "mock-product:10": "node scripts/populateEmulatorProducts.js 10",
     "mock-product:50": "node scripts/populateEmulatorProducts.js 50",

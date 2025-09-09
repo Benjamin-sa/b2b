@@ -1,5 +1,9 @@
 const { onRequest } = require("firebase-functions/v2/https");
-const stripe = require("../config/stripe");
+const {
+  getStripe,
+  testStripeConnection,
+  getConfigStatus,
+} = require("../config/stripe");
 const { db } = require("../config/firebase");
 
 /**
@@ -7,21 +11,32 @@ const { db } = require("../config/firebase");
  */
 const stripeHealth = onRequest(async (req, res) => {
   try {
-    const apiVersion = process.env.STRIPE_API_VERSION || "default";
+    // Get configuration status
+    const configStatus = getConfigStatus();
 
-    // Test Stripe connectivity
-    await stripe.products.list({ limit: 1 });
+    // Test Stripe connectivity (non-throwing version)
+    const stripeTest = await testStripeConnection();
 
     // Test Firestore connectivity
     await db.collection("health_checks").add({
       timestamp: new Date(),
       service: "stripe_health_check",
+      configStatus,
     });
+
+    if (!stripeTest.success) {
+      return res.status(503).json({
+        ok: false,
+        message: stripeTest.message,
+        configStatus,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     res.status(200).json({
       ok: true,
       message: "All services reachable",
-      apiVersion,
+      configStatus,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
@@ -29,6 +44,7 @@ const stripeHealth = onRequest(async (req, res) => {
     res.status(500).json({
       ok: false,
       message: err instanceof Error ? err.message : "Unknown error",
+      configStatus: getConfigStatus(),
       timestamp: new Date().toISOString(),
     });
   }
@@ -40,22 +56,17 @@ const stripeHealth = onRequest(async (req, res) => {
 const systemStatus = onRequest(async (req, res) => {
   const status = {
     timestamp: new Date().toISOString(),
+    configStatus: getConfigStatus(),
     services: {},
   };
 
-  // Test Stripe
-  try {
-    await stripe.products.list({ limit: 1 });
-    status.services.stripe = {
-      status: "healthy",
-      apiVersion: process.env.STRIPE_API_VERSION || "default",
-    };
-  } catch (error) {
-    status.services.stripe = {
-      status: "unhealthy",
-      error: error.message,
-    };
-  }
+  // Test Stripe with non-throwing method
+  const stripeTest = await testStripeConnection();
+  status.services.stripe = {
+    status: stripeTest.success ? "healthy" : "unhealthy",
+    message: stripeTest.message,
+    ...(stripeTest.error && { error: stripeTest.error.message }),
+  };
 
   // Test Firestore
   try {
@@ -72,8 +83,7 @@ const systemStatus = onRequest(async (req, res) => {
   }
 
   // Check environment variables
-  const requiredEnvVars = ["STRIPE_SECRET", "STRIPE_WEBHOOK_SECRET"];
-
+  const requiredEnvVars = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"];
   status.environment = {};
   requiredEnvVars.forEach((envVar) => {
     status.environment[envVar] = process.env[envVar] ? "configured" : "missing";
