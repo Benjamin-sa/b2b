@@ -5,6 +5,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 const allowedOrigins = [
   "http://localhost:5173", // Je lokale Vite dev server
   "https://motordash-cf401.web.app", // Je productie domein
+  "https://4tparts.com",
 ];
 
 export default {
