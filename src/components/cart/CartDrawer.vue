@@ -4,7 +4,8 @@
         <Transition name="drawer" appear>
             <div v-if="isOpen" class="fixed inset-0 z-50 overflow-hidden" @click="closeDrawer">
                 <!-- Background overlay -->
-                <div class="drawer-backdrop absolute inset-0 bg-black bg-opacity-50"></div>
+                <div class="drawer-content absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl"
+                    style="box-shadow: -20px 0 50px rgba(0,0,0,0.50);"></div>
 
                 <!-- Drawer panel -->
                 <div class="drawer-content absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl"

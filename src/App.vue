@@ -1,40 +1,37 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
-import AuthModal from './components/auth/AuthModal.vue'
 import Navigation from './components/Navigation.vue'
-// ...existing code...
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const showAuthModal = ref(false)
 
 // Initialize auth
 onMounted(async () => {
   await authStore.initAuth()
-  if (!authStore.isAuthenticated) {
-    showAuthModal.value = true
+
+  // If not authenticated and not on auth page, redirect to auth
+  if (!authStore.isAuthenticated && route.path !== '/auth') {
+    router.push('/auth')
+  }
+
+  // If authenticated and on auth page, redirect based on verification status
+  if (authStore.isAuthenticated && route.path === '/auth') {
+    if (authStore.isVerified || authStore.isAdmin) {
+      router.push('/')
+    } else {
+      router.push('/verification-pending')
+    }
+  }
+
+  // If authenticated but not verified (and not admin), redirect to verification page
+  if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin && 
+      route.path !== '/verification-pending' && route.path !== '/auth') {
+    router.push('/verification-pending')
   }
 })
-
-const closeAuthModal = () => {
-  if (authStore.isAuthenticated) {
-    showAuthModal.value = false
-  }
-}
-
-const handleLogout = async () => {
-  try {
-    await authStore.logout()
-    showAuthModal.value = true
-    // After logout, ensure we go back to main view
-    router.push('/')
-  } catch (error) {
-    console.error('Logout error:', error)
-  }
-}
 
 // Toggle admin: navigate to /admin or back to /
 const toggleAdminPanel = () => {
@@ -71,9 +68,7 @@ const onAfterEnter = () => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <AuthModal :is-open="(!authStore.isAuthenticated && !authStore.initializing) || showAuthModal"
-      @close="closeAuthModal" />
-
+    <!-- Loading state tijdens initialisatie -->
     <div v-if="authStore.initializing" class="min-h-screen flex items-center justify-center bg-gray-50">
       <div class="text-center">
         <svg class="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -88,7 +83,8 @@ const onAfterEnter = () => {
       </div>
     </div>
 
-    <div v-else-if="authStore.isAuthenticated && !authStore.initializing" class="min-h-screen">
+    <!-- Authenticated and verified users: show navigation and main content -->
+    <div v-else-if="authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin)" class="min-h-screen">
       <Navigation :showAdminPanel="showAdminPanel" @toggle-admin="toggleAdminPanel" />
 
       <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -102,6 +98,26 @@ const onAfterEnter = () => {
           </router-view>
         </div>
       </main>
+    </div>
+
+    <!-- Authenticated but unverified users: show verification pending or auth only -->
+    <div v-else-if="authStore.isAuthenticated && !authStore.isVerified" class="min-h-screen">
+      <router-view v-slot="{ Component, route }">
+        <Transition :name="(route.meta?.transition as string) || 'fade'" mode="out-in" @before-enter="onBeforeEnter"
+          @after-enter="onAfterEnter">
+          <component :is="Component" :key="route.path" />
+        </Transition>
+      </router-view>
+    </div>
+
+    <!-- Unauthenticated users: show full-screen auth view -->
+    <div v-else class="min-h-screen">
+      <router-view v-slot="{ Component, route }">
+        <Transition :name="(route.meta?.transition as string) || 'fade'" mode="out-in" @before-enter="onBeforeEnter"
+          @after-enter="onAfterEnter">
+          <component :is="Component" :key="route.path" />
+        </Transition>
+      </router-view>
     </div>
   </div>
 </template>

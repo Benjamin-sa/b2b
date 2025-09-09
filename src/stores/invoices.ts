@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { db, functions } from '../init/firebase'
+import { functions } from '../init/firebase'
 import { useAuthStore } from './auth'
 import { appCache } from '../services/cache'
 

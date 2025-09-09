@@ -1,7 +1,6 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const stripe = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
-const { metadata } = require("@vueuse/core/metadata.mjs");
 
 /**
  * Create invoice for B2B payments
@@ -10,11 +9,13 @@ const createInvoice = onCall(
   {
     cors: [
       "http://localhost:5173", // Vite dev server
-      "http://localhost:3000", // Common React dev port
+      "http://localhost:3000",
+      "https://motordash-cf401.web.app",
     ],
   },
   async (request) => {
     const data = request.data;
+    const stripe = getStripe();
 
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
@@ -151,9 +152,13 @@ const getUserInvoices = onCall(
     cors: [
       "http://localhost:5173", // Vite dev server
       "http://localhost:3000", // Common React dev port
+      "https://motordash-cf401.web.app",
     ],
   },
+
   async (request) => {
+    const stripe = getStripe();
+
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }

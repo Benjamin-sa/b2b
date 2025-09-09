@@ -3,7 +3,7 @@ const {
   onDocumentUpdated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
-const stripe = require("../config/stripe");
+const { getStripe } = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
 
 /**
@@ -27,6 +27,8 @@ const getCountryCode = (countryName) => {
  * Create Stripe customer when a user document is created
  */
 const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
+  const stripe = getStripe();
+
   const snap = event.data;
   if (!snap) return;
 
@@ -109,6 +111,8 @@ const onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
  * Update Stripe customer when user data is updated
  */
 const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
+  const stripe = getStripe();
+
   const change = event.data;
   if (!change?.before || !change?.after) return;
 
@@ -200,6 +204,8 @@ const onUserUpdate = onDocumentUpdated("users/{userId}", async (event) => {
  * Archive Stripe customer when user is deleted
  */
 const onUserDelete = onDocumentDeleted("users/{userId}", async (event) => {
+  const stripe = getStripe();
+
   const snap = event.data;
   if (!snap) return;
 

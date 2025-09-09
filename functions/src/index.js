@@ -1,4 +1,6 @@
-// Import all function modules
+const { createInvoice, getUserInvoices } = require("./functions/payments");
+const { stripeWebhook } = require("./functions/webhooks");
+const { stripeHealth, systemStatus } = require("./functions/health");
 const {
   onProductCreate,
   onProductUpdate,
@@ -9,28 +11,22 @@ const {
   onUserUpdate,
   onUserDelete,
 } = require("./functions/customers");
-const { createInvoice, getUserInvoices } = require("./functions/payments");
-const { stripeWebhook } = require("./functions/webhooks");
-const { stripeHealth, systemStatus } = require("./functions/health");
 
-// Export all functions
-// Product management functions
+// Product
 exports.onProductCreate = onProductCreate;
 exports.onProductUpdate = onProductUpdate;
 exports.onProductDelete = onProductDelete;
 
-// Customer management functions (NEW FEATURE)
+// Customers
 exports.onUserCreate = onUserCreate;
 exports.onUserUpdate = onUserUpdate;
 exports.onUserDelete = onUserDelete;
 
-// Payment functions
+// Payments
 exports.createInvoice = createInvoice;
 exports.getUserInvoices = getUserInvoices;
 
-// Webhook handling
+// Webhooks / Health
 exports.stripeWebhook = stripeWebhook;
-
-// Health check functions
 exports.stripeHealth = stripeHealth;
 exports.systemStatus = systemStatus;

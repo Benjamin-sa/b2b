@@ -35,8 +35,7 @@ interface Specification {
 interface Props {
     specifications?: Specification[]
 }
-
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     specifications: () => []
 })
 </script>

@@ -3,7 +3,7 @@ const {
   onDocumentUpdated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
-const stripe = require("../config/stripe");
+const { getStripe } = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
 
 /**
@@ -12,6 +12,8 @@ const { db, getServerTimestamp } = require("../config/firebase");
 const onProductCreate = onDocumentCreated(
   "products/{productId}",
   async (event) => {
+    const stripe = getStripe();
+
     const snap = event.data;
     if (!snap) return;
 

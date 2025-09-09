@@ -150,11 +150,10 @@
                                         </svg>
                                     </button>
                                     <input v-model.number="quantity" type="number" :min="product.minOrderQuantity || 1"
-                                        :max="product.maxOrderQuantity || 999"
+                                        :max="effectiveMaxQuantity"
                                         class="w-20 px-3 py-3 text-center border-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         @blur="validateQuantity" @input="validateQuantity" />
-                                    <button @click="increaseQuantity"
-                                        :disabled="quantity >= (product.maxOrderQuantity || 999)"
+                                    <button @click="increaseQuantity" :disabled="quantity >= effectiveMaxQuantity"
                                         class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-lg">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -165,14 +164,31 @@
                                 <div class="text-sm text-gray-600">
                                     <div v-if="product.minOrderQuantity">Min: {{ product.minOrderQuantity }} {{
                                         product.unit || 'pieces' }}</div>
-                                    <div v-if="product.maxOrderQuantity">Max: {{ product.maxOrderQuantity }} {{
+                                    <div v-if="effectiveMaxQuantity < (product.maxOrderQuantity || 999)">
+                                        Max: {{ effectiveMaxQuantity }} {{ product.unit || 'pieces' }}
+                                        <span class="text-red-600">(limited by stock)</span>
+                                    </div>
+                                    <div v-else-if="product.maxOrderQuantity">Max: {{ product.maxOrderQuantity }} {{
                                         product.unit || 'pieces' }}</div>
                                     <div v-if="product.stock" class="text-xs text-gray-500 mt-1">
-                                        {{ product.stock }} available
+                                        {{ availableStock }} available
                                     </div>
                                 </div>
                             </div>
+                            <!-- Stock warning -->
+                            <div v-if="quantity > availableStock"
+                                class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                                <p class="text-sm text-red-700 flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    Only {{ availableStock }} items available in stock
+                                </p>
+                            </div>
                         </div>
+
 
                         <!-- Total Price -->
                         <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
@@ -381,11 +397,39 @@ const formatPrice = (price: number) => {
     return price.toFixed(2)
 }
 
+const effectiveMaxQuantity = computed(() => {
+    if (!product.value) return 1
+
+    let max = product.value.maxOrderQuantity || 999
+
+    // If stock is available, limit by stock
+    if (product.value.stock !== undefined && product.value.stock !== null) {
+        max = Math.min(max, availableStock.value)
+    }
+
+    return Math.max(max, product.value.minOrderQuantity || 1)
+})
+
+const availableStock = computed(() => {
+    if (!product.value) return 0
+
+    // Get current stock
+    let stock = product.value.stock || 0
+
+    // Subtract items already in cart for this product
+    const existingCartItem = cartStore.items.find(item => item.productId === product.value!.id)
+    if (existingCartItem) {
+        stock -= existingCartItem.quantity
+    }
+
+    return Math.max(0, stock)
+})
+
 const validateQuantity = () => {
     if (!product.value) return
 
     const min = product.value.minOrderQuantity || 1
-    const max = product.value.maxOrderQuantity || 999
+    const max = effectiveMaxQuantity.value
 
     if (quantity.value < min) quantity.value = min
     if (quantity.value > max) quantity.value = max
@@ -393,8 +437,7 @@ const validateQuantity = () => {
 
 const increaseQuantity = () => {
     if (!product.value) return
-    const max = product.value.maxOrderQuantity || 999
-    if (quantity.value < max) {
+    if (quantity.value < effectiveMaxQuantity.value) {
         quantity.value++
     }
 }
@@ -408,7 +451,14 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = async () => {
-    if (!product.value || !product.value.inStock || !canOrder.value) return
+    if (!product.value || !product.value.inStock || !canOrder.value || quantity.value > availableStock.value) return
+
+    // Double-check stock availability before adding
+    if (quantity.value > availableStock.value) {
+        alert(`Sorry, only ${availableStock.value} items are available in stock.`)
+        quantity.value = Math.max(availableStock.value, product.value.minOrderQuantity || 1)
+        return
+    }
 
     isAddingToCart.value = true
     addedToCartRecently.value = false
@@ -432,13 +482,11 @@ const addToCart = async () => {
             addedToCartRecently.value = false
         }, 5000)
 
-        // Optional: Show a toast notification
         console.log(`✅ Added ${quantity.value} × ${product.value.name} to cart`)
 
     } catch (error) {
         console.error('Error adding to cart:', error)
 
-        // Show user-friendly error message
         const errorMessage = error instanceof Error ? error.message : 'Failed to add product to cart. Please try again.'
         alert(errorMessage)
 

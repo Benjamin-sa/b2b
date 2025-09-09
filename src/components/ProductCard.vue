@@ -1,5 +1,6 @@
 <template>
-    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden cursor-pointer"
+        role="button" tabindex="0" @click="onCardClick" @keydown.enter="onCardClick">
         <!-- Product Image -->
         <div class="aspect-w-16 aspect-h-9 bg-gray-200">
             <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name" class="w-full h-48 object-cover"
@@ -103,12 +104,6 @@
                     <span v-else-if="isInCart">Added to Cart ✓</span>
                     <span v-else>Add to Cart</span>
                 </button>
-
-                <!-- View Details Button -->
-                <router-link :to="{ name: 'ProductDetail', params: { id: product.id } }"
-                    class="w-full bg-gray-100 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors duration-200 text-center block">
-                    View Details
-                </router-link>
             </div>
         </div>
     </div>
@@ -116,6 +111,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import type { Product, CartItem } from '../types'
 
@@ -133,6 +129,12 @@ const emit = defineEmits<{
 }>()
 
 const cartStore = useCartStore()
+
+const router = useRouter()
+
+const onCardClick = () => {
+    router.push({ name: 'ProductDetail', params: { id: props.product.id } })
+}
 
 const quantity = ref(props.product.minOrderQuantity || 1)
 const isLoading = ref(false)

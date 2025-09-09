@@ -9,6 +9,7 @@ import AdminPanel from '../views/Admin.vue'
 import Checkout from '../views/Checkout.vue'
 import Orders from '../views/Orders.vue'
 import Auth from '../views/Auth.vue'
+import VerificationPending from '../views/VerificationPending.vue'
 
 const routes = [
   {
@@ -16,7 +17,8 @@ const routes = [
     name: 'Home',
     component: home,
     meta: { 
-      requiresAuth: false,
+      requiresAuth: true,
+      requiresVerified: true,
       transition: 'slide-right',
       title: 'Home'
     }
@@ -32,11 +34,23 @@ const routes = [
     }
   },
   {
+    path: '/verification-pending',
+    name: 'VerificationPending',
+    component: VerificationPending,
+    meta: { 
+      requiresAuth: true,
+      requiresVerified: false,
+      transition: 'fade',
+      title: 'Verification Pending'
+    }
+  },
+  {
     path: '/products',
     name: 'Products',
     component: Products,
     meta: { 
       requiresAuth: true,
+      requiresVerified: true,
       transition: 'slide-left',
       title: 'Products'
     }
@@ -47,6 +61,7 @@ const routes = [
     component: ProductDetail,
     meta: { 
       requiresAuth: true,
+      requiresVerified: true,
       transition: 'fade',
       title: 'Product Details'
     }
@@ -57,6 +72,7 @@ const routes = [
     component: Orders,
     meta: { 
       requiresAuth: true,
+      requiresVerified: true,
       transition: 'fade',
       title: 'Orders'
     }
@@ -67,6 +83,7 @@ const routes = [
     component: Checkout,
     meta: { 
       requiresAuth: true,
+      requiresVerified: true,
       transition: 'slide-left',
       title: 'Checkout'
     }
@@ -114,6 +131,20 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
+  // If authenticated but not verified, redirect to verification pending page
+  if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin) {
+    if (to.path !== '/verification-pending' && to.path !== '/auth') {
+      next('/verification-pending')
+      return
+    }
+  }
+
+  // If verified user tries to access verification pending page, redirect to home
+  if (to.path === '/verification-pending' && authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin)) {
+    next('/')
+    return
+  }
+
   // Check if route requires admin access
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next('/auth')
@@ -122,7 +153,7 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check if route requires verified user
   if (to.meta.requiresVerified && !authStore.isVerified && !authStore.isAdmin) {
-    next('/auth')
+    next('/verification-pending')
     return
   }
 

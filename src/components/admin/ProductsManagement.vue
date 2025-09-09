@@ -223,7 +223,6 @@ const deleteProduct = async () => {
 
 const searchProducts = () => {
     if (searchTerm.value.trim()) {
-        productStore.searchProducts(searchTerm.value)
     } else {
         filterProducts()
     }
@@ -245,7 +244,6 @@ const filterProducts = () => {
     }
 
     if (Object.keys(filters).length > 0) {
-        productStore.filterProducts(filters)
     } else {
         productStore.fetchProducts()
     }

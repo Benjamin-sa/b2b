@@ -204,7 +204,7 @@
                         Product Tags
                     </label>
                     <div class="space-y-2">
-                        <div v-for="(tag, index) in form.tags" :key="index" class="flex gap-2">
+                        <div v-for="(_, index) in form.tags" :key="index" class="flex gap-2">
                             <input v-model="form.tags![index]" type="text" placeholder="Enter tag"
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             <button type="button" @click="removeTag(index)"
@@ -223,7 +223,7 @@
             <div>
                 <h3 class="text-lg font-semibold mb-4">Specifications</h3>
                 <div class="space-y-2">
-                    <div v-for="(spec, index) in form.specifications" :key="index" class="flex gap-2">
+                    <div v-for="(_, index) in form.specifications" :key="index" class="flex gap-2">
                         <input v-model="form.specifications![index].key" type="text" placeholder="Property name"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <input v-model="form.specifications![index].value" type="text" placeholder="Value"
