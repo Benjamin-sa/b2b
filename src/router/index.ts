@@ -8,6 +8,7 @@ import ProductDetail from '../views/ProductDetail.vue'
 import AdminPanel from '../views/Admin.vue'
 import Checkout from '../views/Checkout.vue'
 import Orders from '../views/Orders.vue'
+import Auth from '../views/Auth.vue'
 
 const routes = [
   {
@@ -18,6 +19,16 @@ const routes = [
       requiresAuth: false,
       transition: 'slide-right',
       title: 'Home'
+    }
+  },
+  {
+    path: '/auth',
+    name: 'Auth',
+    component: Auth,
+    meta: { 
+      requiresAuth: false,
+      transition: 'fade',
+      title: 'Login / Register'
     }
   },
   {
@@ -96,22 +107,22 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Don't redirect to home if already on home to avoid loops
-    if (to.path !== '/') {
-      next('/')
+    // Redirect to auth page if user is not authenticated
+    if (to.path !== '/auth') {
+      next('/auth')
       return
     }
   }
 
   // Check if route requires admin access
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    next('/')
+    next('/auth')
     return
   }
 
   // Check if route requires verified user
   if (to.meta.requiresVerified && !authStore.isVerified && !authStore.isAdmin) {
-    next('/')
+    next('/auth')
     return
   }
 
