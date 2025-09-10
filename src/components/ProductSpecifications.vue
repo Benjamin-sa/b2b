@@ -8,11 +8,11 @@
             Specifications
         </h3>
 
-        <div v-if="specifications && specifications.length > 0" class="space-y-3">
+        <div v-if="specifications && specifications.length > 0" class="space-y-0">
             <div v-for="(spec, index) in specifications" :key="index"
-                class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                class="grid grid-cols-2 gap-4 py-3 border-b border-gray-100 last:border-b-0">
                 <span class="text-sm font-medium text-gray-600">{{ spec.key }}</span>
-                <span class="text-sm text-gray-900 text-right">{{ spec.value }}</span>
+                <span class="text-sm text-gray-900">{{ spec.value }}</span>
             </div>
         </div>
 
