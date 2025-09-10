@@ -35,7 +35,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Auth emulator (if you plan to use it)
   try {
-  connectAuthEmulator(auth, 'http://192.168.129.22:9099');
+  connectAuthEmulator(auth, '192.168.129.22', 9099);
     console.log('✅ Connected to Auth emulator');
   } catch (error) {
     console.warn('⚠️ Auth emulator connection failed (might already be connected):', error);

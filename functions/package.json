@@ -2,7 +2,12 @@
   "main": "src/index.js",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "test-telegram": "node test-telegram.js",
+    "test-telegram-payment": "node test-telegram.js payment",
+    "test-telegram-invoice": "node test-telegram.js invoice",
+    "test-telegram-invoice-payment": "node test-telegram.js invoice-payment",
+    "test-telegram-connection": "node test-telegram.js connection"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0",
