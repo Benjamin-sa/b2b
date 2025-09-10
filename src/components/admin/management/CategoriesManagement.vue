@@ -156,10 +156,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useCategoryStore } from '../../stores/categories'
-import { useNotificationStore } from '../../stores/notifications'
-import type { Category } from '../../types/category'
-import CategoryFormModal from './CategoryFormModal.vue'
+import { useCategoryStore } from '../../../stores/categories'
+import { useNotificationStore } from '../../../stores/notifications'
+import type { Category } from '../../../types/category'
+import CategoryFormModal from '../CategoryFormModal.vue'
 
 const categoryStore = useCategoryStore()
 const notificationStore = useNotificationStore()

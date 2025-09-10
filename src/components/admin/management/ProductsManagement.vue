@@ -170,9 +170,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useProductStore } from '../../stores/products'
-import type { Product } from '../../types'
-import ProductForm from './ProductForm.vue'
+import { useProductStore } from '../../../stores/products'
+import type { Product } from '../../../types'
+import ProductForm from '../ProductForm.vue'
 
 const productStore = useProductStore()
 

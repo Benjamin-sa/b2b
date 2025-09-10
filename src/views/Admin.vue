@@ -69,9 +69,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import ProductsManagement from '../components/admin/ProductsManagement.vue'
-import CategoriesManagement from '../components/admin/CategoriesManagement.vue'
-import UsersManagement from '../components/admin/UsersManagement.vue'
+import ProductsManagement from '../components/admin/management/ProductsManagement.vue'
+import CategoriesManagement from '../components/admin/management/CategoriesManagement.vue'
+import UsersManagement from '../components/admin/management/UsersManagement.vue'
 
 const authStore = useAuthStore()
 const activeTab = ref('products')

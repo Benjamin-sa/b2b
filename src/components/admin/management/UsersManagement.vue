@@ -403,8 +403,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '../../stores/auth'
-import type { UserProfile } from '../../types'
+import { useAuthStore } from '../../../stores/auth'
+import type { UserProfile } from '../../../types'
 
 const authStore = useAuthStore()
 const loading = ref(false)
