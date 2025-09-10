@@ -47,8 +47,7 @@
                             <!-- Register Form -->
                             <RegisterForm v-else key="register-form" :loading="authStore.loading"
                                 :vatValidation="vatValidation" :canSubmit="canSubmitRegister"
-                                :passwordsMatch="passwordsMatch" :form="registerForm"
-                                @update:form="val => registerForm = val" @vat-input="validateBTW"
+                                :passwordsMatch="passwordsMatch" :form="registerForm" @vat-input="validateBTW"
                                 @submit="handleRegister" />
                         </Transition>
                     </div>
@@ -177,30 +176,36 @@ const toggleMode = () => {
 
 const handleLogin = async () => {
     try {
+        console.log('Attempting login...')
         await authStore.login(loginForm.value.email, loginForm.value.password)
-        notificationStore.success('Welcome back!', 'You have been successfully logged in.')
+        console.log('Login successful, showing notification')
+        await notificationStore.success('Welcome back!', 'You have been successfully logged in.')
         router.push('/')
         // Reset form
         loginForm.value = { email: '', password: '' }
     } catch (error) {
-        notificationStore.error('Login failed', authStore.error || 'An unexpected error occurred during login.')
+        console.error('Login error:', error)
+        const errorMessage = authStore.error || 'An unexpected error occurred during login.'
+        console.log('Showing error notification:', errorMessage)
+        await notificationStore.error('Login failed', errorMessage)
     }
 }
 
 const handleRegister = async () => {
     if (!passwordsMatch.value) {
-        notificationStore.warning('Password mismatch', 'Please make sure your passwords match.')
+        await notificationStore.warning('Password mismatch', 'Please make sure your passwords match.')
         return
     }
 
     // Extra BTW validatie voor submit
     validateBTW()
     if (!vatValidation.value.isValid) {
-        notificationStore.error('VAT validation failed', vatValidation.value.error || 'Invalid VAT number.')
+        await notificationStore.error('VAT validation failed', vatValidation.value.error || 'Invalid VAT number.')
         return
     }
 
     try {
+        console.log('Attempting registration...')
         await authStore.register(
             registerForm.value.email,
             registerForm.value.password,
@@ -212,7 +217,8 @@ const handleRegister = async () => {
             registerForm.value.phone
         )
 
-        notificationStore.success('Account created!', 'Welcome to MotorDash B2B Platform.')
+        console.log('Registration successful, showing notification')
+        await notificationStore.success('Account created!', 'Welcome to MotorDash B2B Platform.')
 
         // Small delay to ensure all registration processes complete
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -238,7 +244,10 @@ const handleRegister = async () => {
         }
         vatValidation.value = { isValid: true }
     } catch (error) {
-        notificationStore.error('Registration failed', authStore.error || 'An unexpected error occurred during registration.')
+        console.error('Registration error:', error)
+        const errorMessage = authStore.error || 'An unexpected error occurred during registration.'
+        console.log('Showing registration error notification:', errorMessage)
+        await notificationStore.error('Registration failed', errorMessage)
     }
 }
 </script>

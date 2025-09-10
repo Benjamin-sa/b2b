@@ -12,17 +12,21 @@
 
                     <!-- Desktop Navigation -->
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <router-link to="/"
+                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            Home
+                        </router-link>
                         <router-link to="/products"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
                             Products
                         </router-link>
                         <router-link to="/orders"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            My Orders
+                            Orders
                         </router-link>
                         <router-link to="/profile"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            My Profile
+                            Account
                         </router-link>
                         <!-- Replace router-link with button for admin toggle -->
                         <button v-if="authStore.isAdmin" @click="$emit('toggle-admin')" :class="[

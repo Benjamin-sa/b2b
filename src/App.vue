@@ -27,7 +27,7 @@ onMounted(async () => {
     }
   }
 
-  // If authenticated but not verified (and not admin), redirect to verification page
+  // If authenticated but not verifbooleanied (and not admin), redirect to verification page
   if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin &&
     route.path !== '/verification-pending' && route.path !== '/auth') {
     router.push('/verification-pending')
@@ -91,8 +91,8 @@ const onAfterEnter = () => {
     <div v-else-if="authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin)" class="min-h-screen">
       <Navigation :showAdminPanel="showAdminPanel" @toggle-admin="toggleAdminPanel" />
 
-      <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
+      <main class="max-w-screen-2xl mx-auto py-10 sm:px-8 lg:px-14">
+        <div class="px-4 py-8 sm:px-0">
           <!-- Render routed views with dynamic transitions -->
           <router-view v-slot="{ Component, route }">
             <Transition :name="(route.meta?.transition as string) || 'page'" mode="out-in" @before-enter="onBeforeEnter"

@@ -6,6 +6,7 @@ const allowedOrigins = [
   "http://localhost:5173", // Je lokale Vite dev server
   "https://motordash-cf401.web.app", // Je productie domein
   "https://4tparts.com",
+  "http://192.168.129.22:3000", // Je lokale netwerk IP (indien nodig)
 ];
 
 export default {

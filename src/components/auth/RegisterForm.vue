@@ -229,32 +229,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
 import type { VATValidationResult } from '../../utils/vatValidation'
 
-const props = defineProps<{
+defineProps<{
     loading: boolean,
     vatValidation: VATValidationResult,
     canSubmit: boolean,
     passwordsMatch: boolean,
     form: any
 }>()
+
 const emit = defineEmits(['update:form', 'vat-input', 'submit'])
 
-const form = ref({ ...props.form })
-
-watch(() => props.form, (val) => {
-    form.value = { ...val }
-})
-
-const onVatInput = () => {
-    emit('vat-input', form.value.btwNumber)
-    emit('update:form', { ...form.value })
+const onVatInput = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    emit('vat-input', target.value)
 }
-
-watch(form, (val) => {
-    emit('update:form', { ...val })
-}, { deep: true })
 
 const onSubmit = () => {
     emit('submit')

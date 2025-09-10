@@ -72,7 +72,7 @@
                     <!-- Basic Info -->
                     <div>
                         <div class="flex items-start justify-between mb-4">
-                            <div>
+                            <div class="flex-1">
                                 <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
@@ -80,18 +80,18 @@
                                     <span v-if="product.partNumber">Part #: {{ product.partNumber }}</span>
                                 </div>
                             </div>
-                            <div class="text-right">
+                            <div class="flex items-center ml-4">
                                 <div v-if="!product.inStock"
-                                    class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full mb-2">
+                                    class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
                                     Out of Stock
                                 </div>
                                 <div v-else-if="product.stock && product.stock < 10"
-                                    class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full mb-2">
+                                    class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
                                     Low Stock ({{ product.stock }} left)
                                 </div>
                                 <div v-else
-                                    class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full mb-2">
-                                    ✅ In Stock
+                                    class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                                    In Stock
                                 </div>
                             </div>
                         </div>
@@ -195,7 +195,7 @@
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-medium text-gray-900">Total Price:</span>
                                 <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
 

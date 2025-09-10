@@ -4,18 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand Colors
+        // Brand Colors - Updated with #466478 as primary
         primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6", // Main brand blue
-          600: "#2563eb", // Darker blue for gradients
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+          50: "#f0f2f4",
+          100: "#e8edef",
+          200: "#c5d0d8",
+          300: "#a2b3c1",
+          400: "#7b909f",
+          500: "#466478", // Main brand color
+          600: "#3a5563", // Darker for hover states
+          700: "#2d4754",
+          800: "#233a45",
+          900: "#1a2c36",
         },
         secondary: {
           50: "#f8fafc",
@@ -29,18 +29,18 @@ export default {
           800: "#1e293b",
           900: "#0f172a",
         },
-        // Status Colors
+        // Status Colors - Optimized for accessibility and UX
         success: {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          200: "#bbf7d0",
-          300: "#86efac",
-          400: "#4ade80",
-          500: "#22c55e", // Success green
-          600: "#16a34a",
-          700: "#15803d",
-          800: "#166534",
-          900: "#14532d",
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          200: "#a7f3d0",
+          300: "#6ee7b7",
+          400: "#34d399",
+          500: "#059669", // Updated success green
+          600: "#047857",
+          700: "#065f46",
+          800: "#064e3b",
+          900: "#064e3b",
         },
         warning: {
           50: "#fffbeb",
@@ -48,10 +48,10 @@ export default {
           200: "#fde68a",
           300: "#fcd34d",
           400: "#fbbf24",
-          500: "#f59e0b", // Warning yellow
-          600: "#d97706",
-          700: "#b45309",
-          800: "#92400e",
+          500: "#d97706", // Updated warning orange
+          600: "#b45309",
+          700: "#92400e",
+          800: "#78350f",
           900: "#78350f",
         },
         danger: {
@@ -60,19 +60,19 @@ export default {
           200: "#fecaca",
           300: "#fca5a5",
           400: "#f87171",
-          500: "#ef4444", // Danger red
-          600: "#dc2626",
-          700: "#b91c1c",
-          800: "#991b1b",
+          500: "#dc2626", // Consistent danger red
+          600: "#b91c1c",
+          700: "#991b1b",
+          800: "#7f1d1d",
           900: "#7f1d1d",
         },
-        // Specialized Colors for Automotive Theme
+        // Specialized Colors for Automotive Theme - Harmonized palette
         automotive: {
-          "engine-blue": "#2563eb",
+          "engine-blue": "#466478",
           "brake-red": "#dc2626",
-          "suspension-green": "#16a34a",
-          "tools-purple": "#9333ea",
-          "oil-amber": "#f59e0b",
+          "suspension-green": "#059669",
+          "tools-purple": "#7c3aed",
+          "oil-amber": "#d97706",
         },
       },
       // Custom spacing and sizing
