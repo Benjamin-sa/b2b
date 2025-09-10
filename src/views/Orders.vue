@@ -1,14 +1,14 @@
 <template>
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-secondary-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">My Orders</h1>
-                    <p class="text-gray-600 mt-2">Track your invoices and order status</p>
+                    <h1 class="text-3xl font-bold text-secondary-900">Orders</h1>
+                    <p class="text-secondary-600 mt-2">Track your invoices and order status</p>
                 </div>
                 <button @click="refreshOrders" :disabled="isLoading"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 flex items-center">
+                    class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:bg-secondary-300 flex items-center">
                     <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
                         viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -27,8 +27,8 @@
 
             <!-- Loading State -->
             <div v-if="isLoading && invoices.length === 0" class="text-center py-12">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p class="mt-4 text-gray-600">Loading your orders...</p>
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p class="mt-4 text-secondary-600">Loading your orders...</p>
             </div>
 
             <!-- Error State -->

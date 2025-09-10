@@ -16,6 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.879.0",
     "@aws-sdk/s3-request-presigner": "^3.879.0",
+    "@heroicons/vue": "^2.2.0",
     "@stripe/stripe-js": "^7.9.0",
     "@tailwindcss/vite": "^4.1.12",
     "@vueuse/core": "^13.9.0",

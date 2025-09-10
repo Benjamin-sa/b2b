@@ -8,6 +8,7 @@ import ProductDetail from '../views/ProductDetail.vue'
 import AdminPanel from '../views/Admin.vue'
 import Checkout from '../views/Checkout.vue'
 import Orders from '../views/Orders.vue'
+import Profile from '../views/Profile.vue'
 import Auth from '../views/Auth.vue'
 import VerificationPending from '../views/VerificationPending.vue'
 
@@ -75,6 +76,17 @@ const routes = [
       requiresVerified: true,
       transition: 'fade',
       title: 'Orders'
+    }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { 
+      requiresAuth: true,
+      requiresVerified: true,
+      transition: 'fade',
+      title: 'My Profile'
     }
   },
   {

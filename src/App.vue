@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Navigation from './components/Navigation.vue'
+import NotificationContainer from './components/NotificationContainer.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -68,6 +69,9 @@ const onAfterEnter = () => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Notification Container - Global -->
+    <NotificationContainer />
+
     <!-- Loading state tijdens initialisatie -->
     <div v-if="authStore.initializing" class="min-h-screen flex items-center justify-center bg-gray-50">
       <div class="text-center">

@@ -3,14 +3,17 @@ const {
   onDocumentUpdated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
-const { getStripe } = require("../config/stripe");
+const { stripeSecretKey, getStripe } = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
 
 /**
  * Create product in Stripe when a product document is created
  */
 const onProductCreate = onDocumentCreated(
-  "products/{productId}",
+  {
+    document: "products/{productId}",
+    secrets: [stripeSecretKey],
+  },
   async (event) => {
     const stripe = getStripe();
 
@@ -75,8 +78,13 @@ const onProductCreate = onDocumentCreated(
  * Update product in Stripe when a product document is updated
  */
 const onProductUpdate = onDocumentUpdated(
-  "products/{productId}",
+  {
+    document: "products/{productId}",
+    secrets: [stripeSecretKey],
+  },
   async (event) => {
+    const stripe = getStripe();
+
     const change = event.data;
     if (!change?.before || !change?.after) return;
 
@@ -154,8 +162,13 @@ const onProductUpdate = onDocumentUpdated(
  * Archive product in Stripe when a product document is deleted
  */
 const onProductDelete = onDocumentDeleted(
-  "products/{productId}",
+  {
+    document: "products/{productId}",
+    secrets: [stripeSecretKey],
+  },
   async (event) => {
+    const stripe = getStripe();
+
     const snap = event.data;
     if (!snap) return;
 
