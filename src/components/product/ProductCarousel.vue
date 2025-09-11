@@ -74,8 +74,8 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import ProductCard from './ProductCard.vue'
-import { useProductStore } from '../stores/products'
-import type { Product, ProductFilter } from '../types/product'
+import { useProductStore } from '../../stores/products'
+import type { Product, ProductFilter } from '../../types/product'
 
 interface Props {
     title: string

@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '../stores/auth'
-import ProductCarousel from '../components/ProductCarousel.vue'
+import ProductCarousel from '../components/product/ProductCarousel.vue'
 
 const authStore = useAuthStore()
 </script>

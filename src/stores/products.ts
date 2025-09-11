@@ -41,8 +41,17 @@ export const useProductStore = defineStore('products', () => {
       // 2. Build Firestore Query
       let q = query(collection(db, 'products'));
 
+      // Apply filters that can be done server-side
       if (filters.category) q = query(q, where('category', '==', filters.category));
-      if (filters.inStock) q = query(q, where('inStock', '==', true));
+      if (filters.inStock !== undefined) q = query(q, where('inStock', '==', filters.inStock));
+      if (filters.brand) q = query(q, where('brand', '==', filters.brand));
+      if (filters.tags && filters.tags.length > 0) {
+        q = query(q, where('tags', 'array-contains-any', filters.tags));
+      }
+      
+      // Price range filtering (if using numeric fields)
+      if (filters.minPrice !== undefined) q = query(q, where('price', '>=', filters.minPrice));
+      if (filters.maxPrice !== undefined) q = query(q, where('price', '<=', filters.maxPrice));
       
       const sortBy = filters.sortBy || 'name';
       const sortOrder = filters.sortOrder || 'asc';
@@ -59,10 +68,16 @@ export const useProductStore = defineStore('products', () => {
       let fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
 
       // 4. Client-side Filtering (for full-text search)
-      // Note: For large datasets, a dedicated search service like Algolia is superior.
+      // TODO: Replace with proper search service (Algolia/ElasticSearch) for better performance
       if (filters.searchTerm) {
         const term = filters.searchTerm.toLowerCase();
-        fetchedProducts = fetchedProducts.filter(p => p.name.toLowerCase().includes(term));
+        fetchedProducts = fetchedProducts.filter(p => 
+          p.name.toLowerCase().includes(term) ||
+          p.description?.toLowerCase().includes(term) ||
+          p.brand?.toLowerCase().includes(term) ||
+          p.partNumber?.toLowerCase().includes(term) ||
+          p.tags?.some(tag => tag.toLowerCase().includes(term))
+        );
       }
 
       // 5. Update State

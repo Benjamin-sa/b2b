@@ -1,0 +1,31 @@
+{
+  "name": "motordash-workers",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers for MotorDash B2B Platform",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run",
+    "lint": "eslint src --ext .ts,.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.450.0",
+    "@aws-sdk/s3-request-presigner": "^3.450.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231025.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "typescript": "^5.2.0",
+    "wrangler": "^3.15.0"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "image-upload",
+    "r2-storage",
+    "motordash"
+  ]
+}

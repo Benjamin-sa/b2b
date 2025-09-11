@@ -41,6 +41,8 @@ export interface ProductFilter {
   limit?: number
   sortBy?: 'name' | 'price' | 'createdAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
+  tags?: string[]
+  brand?: string
 }
 
 export interface PaginationResult<T> {

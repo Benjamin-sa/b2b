@@ -114,8 +114,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCartStore } from '../stores/cart'
-import type { Product, CartItem } from '../types'
+import { useCartStore } from '../../stores/cart'
+import type { Product, CartItem } from '../../types'
 
 interface Props {
     product: Product

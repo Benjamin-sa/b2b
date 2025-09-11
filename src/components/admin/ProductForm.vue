@@ -43,14 +43,7 @@
                         <select id="category" v-model="form.category" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Select a category</option>
-                            <option v-for="category in activeCategories" :key="category.id" :value="category.id">
-                                {{ category.name }}
-                            </option>
                         </select>
-                        <p v-if="activeCategories.length === 0" class="text-sm text-gray-500 mt-1">
-                            No categories available. <span class="text-blue-600 underline cursor-pointer"
-                                @click="$router.push('/admin')">Create categories first</span>
-                        </p>
                     </div>
 
                     <!-- Brand -->
@@ -256,7 +249,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductStore } from '../../stores/products'
-import { useCategoryStore } from '../../stores/categories'
 import type { Product } from '../../types'
 import ImageUpload from './ImageUpload.vue'
 
@@ -271,13 +263,8 @@ const emit = defineEmits<{
 }>()
 
 const productStore = useProductStore()
-const categoryStore = useCategoryStore()
 const loading = ref(false)
 
-// Computed property to get active categories
-const activeCategories = computed(() =>
-    categoryStore.categories.filter(cat => cat.isActive)
-)
 
 const form = reactive<Product>({
     id: '', // Will be set for editing, ignored for new products
@@ -316,8 +303,6 @@ const isEditing = computed(() => !!props.product)
 
 // Initialize form data when editing
 onMounted(async () => {
-    // Load categories
-    await categoryStore.fetchCategories()
 
     if (props.product) {
         Object.assign(form, {

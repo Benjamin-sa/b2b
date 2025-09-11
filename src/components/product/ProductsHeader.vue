@@ -23,7 +23,7 @@
                 <!-- Title and Description -->
                 <div class="flex-1">
                     <h1 class="text-2xl font-bold text-gray-900 mb-1">
-                        {{ activeCategory || 'Automotive Parts' }}
+                        {{ activeCategory || '4Tparts' }}
                     </h1>
                     <p class="text-gray-600">
                         {{ getHeaderDescription() }}

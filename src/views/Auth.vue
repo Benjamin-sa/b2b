@@ -57,7 +57,7 @@
                         <p class="text-center text-sm text-gray-600">
                             {{ isLoginMode ? "Don't have an account?" : 'Already have an account?' }}
                             <button @click="toggleMode"
-                                class="font-semibold text-blue-600 hover:text-blue-500 ml-1 focus:outline-none focus:underline transition-colors">
+                                class="font-semibold text-blue-600 hover:text-blue-500 ml-1 focus:outline-none focus:underline transition-colors cursor-pointer">
                                 {{ isLoginMode ? 'Sign up here' : 'Sign in here' }}
                             </button>
                         </p>
@@ -68,9 +68,11 @@
                 <div class="mt-8 text-center">
                     <p class="text-sm text-gray-500">
                         By creating an account, you agree to our
-                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium">Terms of Service</a>
+                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">Terms of
+                            Service</a>
                         and
-                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium">Privacy Policy</a>
+                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">Privacy
+                            Policy</a>
                     </p>
                 </div>
             </div>

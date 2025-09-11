@@ -119,8 +119,8 @@
 import { ref, onMounted, watch, reactive } from 'vue';
 import { useProductStore } from '../stores/products';
 import { useAuthStore } from '../stores/auth';
-import ProductCard from '../components/ProductCard.vue';
-import ProductsHeader from '../components/ProductsHeader.vue';
+import ProductCard from '../components/product/ProductCard.vue';
+import ProductsHeader from '../components/product/ProductsHeader.vue';
 import type { ProductFilter } from '../types';
 
 const productStore = useProductStore();
