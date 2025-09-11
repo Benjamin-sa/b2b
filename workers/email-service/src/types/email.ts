@@ -33,4 +33,5 @@ export interface Environment {
   ENVIRONMENT: string;
   FRONTEND_URL: string;
   ALLOWED_ORIGINS: string;
+  FIREBASE_AUTH_SECRET?: string;
 }

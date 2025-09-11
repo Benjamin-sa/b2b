@@ -12,6 +12,10 @@ const {
   onUserDelete,
 } = require("./functions/customers");
 const { requestPasswordReset } = require("./functions/passwordReset");
+const { sendWelcomeEmailOnUserCreate } = require("./functions/welcomeEmail");
+const {
+  sendVerificationEmailOnApproval,
+} = require("./functions/verificationEmail");
 
 // Product
 exports.onProductCreate = onProductCreate;
@@ -25,6 +29,10 @@ exports.onUserDelete = onUserDelete;
 
 // Auth
 exports.requestPasswordReset = requestPasswordReset;
+
+// Email Functions
+exports.sendWelcomeEmailOnUserCreate = sendWelcomeEmailOnUserCreate;
+exports.sendVerificationEmailOnApproval = sendVerificationEmailOnApproval;
 
 // Payments
 exports.createInvoice = createInvoice;

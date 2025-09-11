@@ -4,6 +4,8 @@ compatibility_date = "2023-10-30"
 
 [vars]
 R2_BUCKET_NAME = "motordash"
+PUBLIC_R2_URL = "https://pub-cb149d2752ce4088be2178bfdad56f1d.r2.dev"
+CLOUDFLARE_ACCOUNT_ID = "7824f06799e44bc7e9bdc5570341991a"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"

@@ -22,9 +22,7 @@
 
         <!-- Forgot Password Link -->
         <div class="text-right">
-            <button type="button" 
-                @click="handleForgotPassword"
-                :disabled="loading || !email"
+            <button type="button" @click="handleForgotPassword" :disabled="loading || !email"
                 class="text-sm text-blue-600 hover:text-blue-500 font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors focus:outline-none focus:underline">
                 Forgot Password?
             </button>
@@ -79,13 +77,13 @@ const handleForgotPassword = async () => {
     try {
         await authStore.requestPasswordReset(email.value);
         await notificationStore.success(
-            'Reset Email Sent', 
+            'Reset Email Sent',
             `Password reset instructions have been sent to ${email.value}. Please check your email and follow the instructions.`
         );
     } catch (error) {
         console.error('Password reset request failed:', error);
         await notificationStore.error(
-            'Reset Failed', 
+            'Reset Failed',
             'Failed to send password reset email. Please try again or contact support if the problem persists.'
         );
     }

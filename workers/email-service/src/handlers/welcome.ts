@@ -1,6 +1,6 @@
 import type { Environment, WelcomeEmailRequest, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, jsonResponse, corsHeaders } from '../utils/validators';
+import { validateRequest, validateFirebaseAuth, jsonResponse, corsHeaders } from '../utils/validators';
 
 export async function handleWelcomeEmail(request: Request, env: Environment): Promise<Response> {
   const origin = request.headers.get('Origin');
@@ -15,6 +15,15 @@ export async function handleWelcomeEmail(request: Request, env: Environment): Pr
     return jsonResponse(
       { success: false, error: 'Method not allowed' }, 
       405, 
+      cors
+    );
+  }
+
+  // Validate Firebase authentication
+  if (!validateFirebaseAuth(request, env)) {
+    return jsonResponse(
+      { success: false, error: 'Unauthorized' },
+      401,
       cors
     );
   }

@@ -2,6 +2,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore } = require("firebase-admin/firestore");
 const { logger } = require("firebase-functions");
+const { sendPasswordResetEmail } = require("../utils/emailService");
 
 /**
  * Callable function to request a password reset
@@ -13,6 +14,10 @@ const { logger } = require("firebase-functions");
 exports.requestPasswordReset = onCall(
   {
     cors: true,
+    secrets: [
+      "CLOUDFLARE_EMAIL_SERVICE_URL",
+      "CLOUDFLARE_EMAIL_SERVICE_SECRET",
+    ],
   },
   async (request) => {
     try {
@@ -84,7 +89,7 @@ exports.requestPasswordReset = onCall(
       const resetLink = await getAuth().generatePasswordResetLink(
         trimmedEmail,
         {
-          url: `${process.env.VITE_APP_URL || "http://localhost:5173"}/auth`, // Redirect after reset
+          url: `https://4tparts.com/auth`, // Redirect after reset
           handleCodeInApp: false,
         }
       );
@@ -94,45 +99,21 @@ exports.requestPasswordReset = onCall(
         email: trimmedEmail,
       });
 
-      // Call Cloudflare email service
-      const emailServiceUrl = process.env.CLOUDFLARE_EMAIL_SERVICE_URL;
-      if (!emailServiceUrl) {
-        logger.error("CLOUDFLARE_EMAIL_SERVICE_URL not configured");
-        throw new HttpsError("internal", "Email service not configured");
-      }
+      // Prepare user display name
+      const userName =
+        userProfile.firstName && userProfile.lastName
+          ? `${userProfile.firstName} ${userProfile.lastName}`
+          : userProfile.companyName || "Valued Customer";
 
-      const emailResponse = await fetch(`${emailServiceUrl}/password-reset`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Origin: "https://firebase-functions", // For CORS
-        },
-        body: JSON.stringify({
-          to: trimmedEmail,
-          userName:
-            userProfile.firstName && userProfile.lastName
-              ? `${userProfile.firstName} ${userProfile.lastName}`
-              : userProfile.companyName || "Valued Customer",
-          resetLink: resetLink,
-          companyName: userProfile.companyName,
-        }),
-      });
+      const companyName = userProfile.companyName || "Your Company";
 
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        logger.error("Failed to send password reset email", {
-          status: emailResponse.status,
-          error: errorText,
-          email: trimmedEmail,
-        });
-        throw new HttpsError("internal", "Failed to send password reset email");
-      }
-
-      const emailResult = await emailResponse.json();
-      logger.info("Password reset email sent successfully", {
-        email: trimmedEmail,
-        messageId: emailResult.messageId,
-      });
+      // Send password reset email using shared service
+      const emailResult = await sendPasswordResetEmail(
+        trimmedEmail,
+        userName,
+        companyName,
+        resetLink
+      );
 
       return {
         success: true,

@@ -196,7 +196,15 @@ const uploadFiles = async (files: File[]) => {
                 throw new Error(`Failed to get an upload URL (status: ${response.status}): ${errorText}`);
             }
 
-            const { uploadUrl, publicUrl } = await response.json();
+            const responseData = await response.json();
+            console.log('Full worker response:', responseData);
+
+            // Extract data from the nested response structure
+            const { uploadUrl, publicUrl } = responseData.data || {};
+
+            if (!uploadUrl || !publicUrl) {
+                throw new Error('Invalid response from worker: missing uploadUrl or publicUrl');
+            }
 
             // Stap 2: Upload het bestand naar de ontvangen presigned URL
             await fetch(uploadUrl, {
@@ -206,6 +214,8 @@ const uploadFiles = async (files: File[]) => {
             });
 
             uploadProgress.value = Math.round(((index + 1) / validFiles.length) * 100)
+
+            console.log('About to create URL from publicUrl:', publicUrl);
 
             // Stap 3: Geef de permanente, publieke URL terug
             return {

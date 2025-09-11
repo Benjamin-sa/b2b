@@ -301,6 +301,57 @@ Status: <b>✅ PAID</b>
   }
 };
 
+/**
+ * Send new user registration notification to Telegram
+ */
+const notifyNewUserRegistration = async (userData, userId) => {
+  try {
+    const userName =
+      userData.firstName && userData.lastName
+        ? `${userData.firstName} ${userData.lastName}`
+        : userData.companyName || "Unknown User";
+
+    const companyName = userData.companyName || "N/A";
+    const email = userData.email || "N/A";
+    const phone = userData.phone || "N/A";
+    const btwNumber = userData.btwNumber || "N/A";
+    const registrationTime = new Date().toLocaleString("nl-NL");
+
+    // Format address if available
+    let addressInfo = "N/A";
+    if (userData.address) {
+      const { street, houseNumber, postalCode, city, country } =
+        userData.address;
+      addressInfo = `${street} ${houseNumber}, ${postalCode} ${city}, ${country}`;
+    }
+
+    const message = `
+<b>New User Registration!</b>
+
+<b>Name:</b> ${userName}
+<b>Company:</b> ${companyName}
+<b>Email:</b> <code>${email}</code>
+<b>Phone:</b> ${phone}
+<b>BTW Number:</b> ${btwNumber}
+<b>Address:</b> ${addressInfo}
+<b>Registered:</b> ${registrationTime}
+
+<b>User ID:</b> <code>${userId}</code>
+<b>Status:</b> <i>Needs manual verification</i>
+
+<i>Please review and approve this user in the admin panel.</i>
+    `.trim();
+
+    await sendTelegramMessage(message);
+  } catch (error) {
+    console.error(
+      "❌ Failed to send new user registration notification:",
+      error
+    );
+    // Don't throw - we don't want to fail user creation because of notification issues
+  }
+};
+
 module.exports = {
   telegramBotToken,
   telegramChatId,
@@ -308,6 +359,7 @@ module.exports = {
   notifyPaymentSuccess,
   notifyInvoiceCreated,
   notifyInvoicePaymentSucceeded,
+  notifyNewUserRegistration,
   formatCurrency,
   isEmulator,
 };

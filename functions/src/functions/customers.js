@@ -6,6 +6,9 @@ const {
 const { stripeSecretKey, getStripe } = require("../config/stripe");
 const { db, getServerTimestamp } = require("../config/firebase");
 
+// Note: Welcome email is now handled by the separate welcomeEmail function
+// This function focuses only on Stripe customer creation
+
 /**
  * Convert country name to ISO country code for Stripe
  */

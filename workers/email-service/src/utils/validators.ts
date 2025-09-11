@@ -5,35 +5,45 @@ export function validateEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-export function validateRequest(request: any, requiredFields: string[]): { valid: boolean; error?: string } {
+export function validateRequest(
+  body: any, 
+  requiredFields: string[]
+): { valid: boolean; error?: string } {
+  if (!body) {
+    return { valid: false, error: 'Request body is required' };
+  }
+
   for (const field of requiredFields) {
-    if (!request[field]) {
-      return { valid: false, error: `Missing required field: ${field}` };
+    if (!body[field] || (typeof body[field] === 'string' && body[field].trim() === '')) {
+      return { valid: false, error: `${field} is required` };
     }
   }
-  
-  if (request.to && !validateEmail(request.to)) {
-    return { valid: false, error: 'Invalid email address' };
-  }
-  
+
   return { valid: true };
 }
 
-export function corsHeaders(env: Environment, origin?: string): Record<string, string> {
-  // Fallback for ALLOWED_ORIGINS if not set
-  const allowedOriginsString = env.ALLOWED_ORIGINS || 'localhost:5173,localhost:3000';
-  const allowedOrigins = allowedOriginsString.split(',');
-  const isAllowed = origin && allowedOrigins.includes(new URL(origin).hostname);
+export function validateFirebaseAuth(request: Request, env: Environment): boolean {
+  const authHeader = request.headers.get('X-Firebase-Auth');
+  const expectedSecret = env.FIREBASE_AUTH_SECRET;
   
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400'
-  };
+  if (!expectedSecret) {
+    console.warn('FIREBASE_AUTH_SECRET not configured - allowing all requests');
+    return true; // Allow if not configured for backward compatibility
+  }
+  
+  if (!authHeader || authHeader !== expectedSecret) {
+    console.error('Invalid or missing Firebase auth header');
+    return false;
+  }
+  
+  return true;
 }
 
-export function jsonResponse(data: any, status = 200, headers: Record<string, string> = {}): Response {
+export function jsonResponse(
+  data: any, 
+  status: number = 200, 
+  headers: Record<string, string> = {}
+): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -41,4 +51,18 @@ export function jsonResponse(data: any, status = 200, headers: Record<string, st
       ...headers
     }
   });
+}
+
+export function corsHeaders(env: Environment, origin?: string): Record<string, string> {
+  const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || ['localhost:5173', 'localhost:3000'];
+  const isAllowedOrigin = origin && allowedOrigins.some(allowed => 
+    origin.includes(allowed) || allowed === '*'
+  );
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Firebase-Auth',
+    'Access-Control-Max-Age': '3600',
+  };
 }

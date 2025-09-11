@@ -7,7 +7,6 @@ const getFunctionOptions = () => {
   const baseOptions = {
     cors: [
       "http://localhost:5173", // Vite dev server
-      "http://localhost:3000",
       "https://motordash-cf401.web.app",
       "https://4tparts.com",
     ],

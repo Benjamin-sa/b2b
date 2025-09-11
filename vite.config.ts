@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [vue(), tailwindcss()],
   server: {
     host: '0.0.0.0', // Expose to local network
-    port: 3000, // Optional: Choose a port, defaults to 5173
+    port: 5173, // Optional: Choose a port, defaults to 5173
   },
   build: {
     // Optimize for Cloudflare Pages
