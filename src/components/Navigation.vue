@@ -20,6 +20,10 @@
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
                             Products
                         </router-link>
+                        <router-link to="/categories"
+                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            Categories
+                        </router-link>
                         <router-link to="/orders"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
                             Orders
@@ -139,6 +143,10 @@
                         <router-link to="/products"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
                             Products
+                        </router-link>
+                        <router-link to="/categories"
+                            class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
+                            Categories
                         </router-link>
                         <router-link to="/orders"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">

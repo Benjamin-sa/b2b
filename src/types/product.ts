@@ -7,7 +7,8 @@ export interface Product {
   originalPrice?: number
   imageUrl?: string
   images?: string[]
-  category?: string
+  categoryId?: string // Reference to category ID instead of string
+  category?: string // Keep for backward compatibility, will be deprecated
   sku?: string
   inStock: boolean
   stock?: number
@@ -32,7 +33,8 @@ export interface Product {
 }
 
 export interface ProductFilter {
-  category?: string
+  categoryId?: string // Updated to use categoryId
+  category?: string // Keep for backward compatibility
   minPrice?: number
   maxPrice?: number
   inStock?: boolean

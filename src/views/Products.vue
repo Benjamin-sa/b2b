@@ -1,5 +1,36 @@
 <template>
     <div class="min-h-screen bg-gray-50">
+        <!-- Category Breadcrumb (shown when filtering by category) -->
+        <div v-if="currentCategory" class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-4">
+                        <li>
+                            <router-link to="/categories" class="text-gray-500 hover:text-gray-700">
+                                Categories
+                            </router-link>
+                        </li>
+                        <li>
+                            <svg class="flex-shrink-0 h-4 w-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </li>
+                        <li class="text-sm">
+                            <span class="font-medium text-gray-900">{{ currentCategory.name }}</span>
+                        </li>
+                    </ol>
+                </nav>
+                <div class="mt-2">
+                    <h1 class="text-2xl font-bold text-gray-900">{{ currentCategory.name }}</h1>
+                    <p v-if="currentCategory.description" class="text-sm text-gray-600 mt-1">
+                        {{ currentCategory.description }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <ProductsHeader :search-term="filters.searchTerm" :active-category="filters.category"
             :in-stock-only="filters.inStock" :sort-by="filters.sortBy" :is-loading="productStore.isLoading"
             :product-count="productStore.products.length" :total-count="productStore.products.length"
@@ -116,15 +147,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive } from 'vue';
+import { ref, onMounted, watch, reactive, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useProductStore } from '../stores/products';
+import { useCategoryStore } from '../stores/categories';
 import { useAuthStore } from '../stores/auth';
 import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
 import type { ProductFilter } from '../types';
 
 const productStore = useProductStore();
+const categoryStore = useCategoryStore();
 const authStore = useAuthStore();
+const route = useRoute();
 
 // Local state
 const viewMode = ref<'grid' | 'list'>('grid');
@@ -143,9 +178,13 @@ const debounce = (func: Function, wait: number) => {
     };
 };
 
+// Get category ID from route if we're filtering by category
+const categoryIdFromRoute = computed(() => route.params.categoryId as string || null);
+
 // --- Local State for Filters ---
 const filters = reactive<ProductFilter>({
     searchTerm: '',
+    categoryId: '',
     category: '',
     inStock: undefined,
     sortBy: 'name',
@@ -155,6 +194,22 @@ const filters = reactive<ProductFilter>({
 
 const categories = ref<string[]>([]);
 
+// Watch for route changes to update category filter
+watch(categoryIdFromRoute, (newCategoryId) => {
+    if (newCategoryId) {
+        filters.categoryId = newCategoryId;
+        filters.category = ''; // Clear old category filter
+    } else {
+        filters.categoryId = '';
+    }
+}, { immediate: true });
+
+// Get current category info for display
+const currentCategory = computed(() => {
+    if (!filters.categoryId) return null;
+    return categoryStore.categories.find(cat => cat.id === filters.categoryId);
+});
+
 // --- Event Handlers ---
 const handleSearch = (searchTerm: string) => {
     filters.searchTerm = searchTerm;
@@ -162,6 +217,7 @@ const handleSearch = (searchTerm: string) => {
 
 const handleCategoryChange = (category: string) => {
     filters.category = category;
+    filters.categoryId = ''; // Clear categoryId when using old category filter
 };
 
 const handleStockFilterChange = (inStock: boolean) => {
@@ -203,6 +259,7 @@ const loadMore = () => {
 const clearFilters = () => {
     filters.searchTerm = '';
     filters.category = '';
+    filters.categoryId = categoryIdFromRoute.value || ''; // Keep category from route
     filters.inStock = undefined;
     filters.sortBy = 'name';
     showAdvancedFilters.value = false;
@@ -211,10 +268,13 @@ const clearFilters = () => {
 
 // --- Lifecycle ---
 onMounted(async () => {
+    // Load categories first
+    await categoryStore.fetchCategories();
+
     // Initial fetch when the component loads
     applyFiltersAndFetch(false);
 
-    // Fetch available categories for the dropdown
+    // Fetch available categories for the dropdown (legacy support)
     categories.value = await productStore.getCategories();
 });
 </script>

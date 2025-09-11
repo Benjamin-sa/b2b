@@ -4,9 +4,12 @@
             <!-- Background overlay -->
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="$emit('close')"></div>
 
+            <!-- This invisible element is to trick the browser into centering the modal contents. -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
             <!-- Modal panel -->
             <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50">
                 <form @submit.prevent="handleSubmit">
                     <!-- Header -->
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -25,18 +28,6 @@
                                         <input v-model="form.name" type="text" required
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                             placeholder="Enter category name" />
-                                    </div>
-
-                                    <!-- Slug -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Slug *
-                                        </label>
-                                        <input v-model="form.slug" type="text" required
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="url-friendly-name" />
-                                        <p class="text-xs text-gray-500 mt-1">Used in URLs. Auto-generated from name if
-                                            left empty.</p>
                                     </div>
 
                                     <!-- Description -->
@@ -87,14 +78,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- Image URL -->
+                                    <!-- Image Upload -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Image URL
+                                            Category Image
                                         </label>
-                                        <input v-model="form.imageUrl" type="url"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="https://example.com/image.jpg" />
+                                        <ImageUpload v-model="categoryImages" :max-images="1" :max-file-size="5" />
+                                        <p class="text-xs text-gray-500 mt-1">Upload a single image to represent this
+                                            category</p>
                                     </div>
 
                                     <!-- Active Status -->
@@ -138,6 +129,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useCategoryStore } from '../../stores/categories'
+import ImageUpload from './ImageUpload.vue'
 import type { Category } from '../../types/category'
 
 interface Props {
@@ -159,7 +151,6 @@ const categoryStore = useCategoryStore()
 // Form state
 const form = ref({
     name: '',
-    slug: '',
     description: '',
     parentId: '',
     displayOrder: 0,
@@ -168,6 +159,7 @@ const form = ref({
     isActive: true
 })
 
+const categoryImages = ref<string[]>([])
 const isSubmitting = ref(false)
 
 // Computed
@@ -190,7 +182,6 @@ const availableParents = computed(() => {
 const resetForm = () => {
     form.value = {
         name: '',
-        slug: '',
         description: '',
         parentId: '',
         displayOrder: 0,
@@ -198,14 +189,7 @@ const resetForm = () => {
         imageUrl: '',
         isActive: true
     }
-}
-
-const generateSlug = (name: string): string => {
-    return name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/-+/g, '-') // Replace multiple hyphens with single
-        .trim()
+    categoryImages.value = []
 }
 
 const handleSubmit = async () => {
@@ -214,20 +198,28 @@ const handleSubmit = async () => {
     isSubmitting.value = true
 
     try {
-        // Auto-generate slug if empty
-        if (!form.value.slug && form.value.name) {
-            form.value.slug = generateSlug(form.value.name)
+        // Build category data object, only including fields with actual values
+        const categoryData: any = {
+            name: form.value.name.trim(),
+            displayOrder: form.value.displayOrder || 0,
+            color: form.value.color,
+            isActive: form.value.isActive
         }
 
-        const categoryData = {
-            name: form.value.name,
-            slug: form.value.slug,
-            description: form.value.description || undefined,
-            parentId: form.value.parentId || undefined,
-            displayOrder: form.value.displayOrder,
-            color: form.value.color,
-            imageUrl: form.value.imageUrl || undefined,
-            isActive: form.value.isActive
+        // Only add optional fields if they have values
+        if (form.value.description && form.value.description.trim()) {
+            categoryData.description = form.value.description.trim()
+        }
+
+        if (form.value.parentId && form.value.parentId.trim()) {
+            categoryData.parentId = form.value.parentId.trim()
+        }
+
+        // Use uploaded image if available, otherwise fall back to imageUrl field (backward compatibility)
+        if (categoryImages.value.length > 0) {
+            categoryData.imageUrl = categoryImages.value[0]
+        } else if (form.value.imageUrl && form.value.imageUrl.trim()) {
+            categoryData.imageUrl = form.value.imageUrl.trim()
         }
 
         if (isEditing.value && props.category) {
@@ -253,7 +245,6 @@ watch(
         if (newCategory) {
             form.value = {
                 name: newCategory.name,
-                slug: newCategory.slug,
                 description: newCategory.description || '',
                 parentId: newCategory.parentId || '',
                 displayOrder: newCategory.displayOrder,
@@ -261,6 +252,8 @@ watch(
                 imageUrl: newCategory.imageUrl || '',
                 isActive: newCategory.isActive
             }
+            // Set category images array if there's an existing image
+            categoryImages.value = newCategory.imageUrl ? [newCategory.imageUrl] : []
         } else {
             resetForm()
         }
@@ -268,15 +261,7 @@ watch(
     { immediate: true }
 )
 
-// Auto-generate slug when name changes (only for new categories)
-watch(
-    () => form.value.name,
-    (newName) => {
-        if (!isEditing.value && newName && !form.value.slug) {
-            form.value.slug = generateSlug(newName)
-        }
-    }
-)
+// Remove slug generation watcher since we no longer use slugs
 
 // Reset form when modal opens
 watch(

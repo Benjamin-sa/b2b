@@ -37,12 +37,15 @@
 
                     <!-- Category -->
                     <div>
-                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-2">
                             Category *
                         </label>
-                        <select id="category" v-model="form.category" required
+                        <select id="category" v-model="form.categoryId" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Select a category</option>
+                            <option v-for="category in availableCategories" :key="category.id" :value="category.id">
+                                {{ getIndentedCategoryName(category) }}
+                            </option>
                         </select>
                     </div>
 
@@ -249,6 +252,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useProductStore } from '../../stores/products'
+import { useCategoryStore } from '../../stores/categories'
 import type { Product } from '../../types'
 import ImageUpload from './ImageUpload.vue'
 
@@ -263,7 +267,21 @@ const emit = defineEmits<{
 }>()
 
 const productStore = useProductStore()
+const categoryStore = useCategoryStore()
 const loading = ref(false)
+
+// Get available categories sorted by display order
+const availableCategories = computed(() => {
+    return categoryStore.categories
+        .filter(cat => cat.isActive)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+})
+
+// Helper to show indented category names for nested structure
+const getIndentedCategoryName = (category: any) => {
+    if (!category.parentId) return category.name
+    return `└ ${category.name}`
+}
 
 
 const form = reactive<Product>({
@@ -274,7 +292,8 @@ const form = reactive<Product>({
     originalPrice: 0,
     imageUrl: '',
     images: [],
-    category: '',
+    categoryId: '', // Use categoryId instead of category
+    category: '', // Keep for backward compatibility
     sku: '',
     inStock: false,
     stock: 0,
@@ -301,8 +320,11 @@ const form = reactive<Product>({
 
 const isEditing = computed(() => !!props.product)
 
+
 // Initialize form data when editing
 onMounted(async () => {
+    // Load categories
+    await categoryStore.fetchCategories()
 
     if (props.product) {
         Object.assign(form, {
@@ -311,6 +333,7 @@ onMounted(async () => {
             price: props.product.price,
             originalPrice: props.product.originalPrice || 0,
             imageUrl: props.product.imageUrl || '',
+            categoryId: props.product.categoryId || '',
             category: props.product.category || '',
             sku: props.product.sku || '',
             inStock: props.product.inStock,
@@ -361,7 +384,7 @@ const submitForm = async () => {
             name: form.name,
             description: form.description,
             price: form.price,
-            category: form.category,
+            categoryId: form.categoryId, // Use categoryId primarily
             stock: form.stock!,
             specifications: cleanedSpecs,
             tags: cleanedTags,
@@ -369,6 +392,14 @@ const submitForm = async () => {
             imageUrl: form.images![0] || '',
             inStock: form.stock! > 0,
             images: form.images
+        }
+
+        // Keep category field for backward compatibility
+        if (form.categoryId) {
+            const selectedCategory = categoryStore.categories.find(cat => cat.id === form.categoryId)
+            if (selectedCategory) {
+                productData.category = selectedCategory.name
+            }
         }
 
         // Only add optional fields if they have meaningful values (not defaults)

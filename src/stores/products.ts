@@ -42,7 +42,8 @@ export const useProductStore = defineStore('products', () => {
       let q = query(collection(db, 'products'));
 
       // Apply filters that can be done server-side
-      if (filters.category) q = query(q, where('category', '==', filters.category));
+      if (filters.categoryId) q = query(q, where('categoryId', '==', filters.categoryId));
+      if (filters.category) q = query(q, where('category', '==', filters.category)); // Backward compatibility
       if (filters.inStock !== undefined) q = query(q, where('inStock', '==', filters.inStock));
       if (filters.brand) q = query(q, where('brand', '==', filters.brand));
       if (filters.tags && filters.tags.length > 0) {
@@ -153,6 +154,32 @@ export const useProductStore = defineStore('products', () => {
 
   // --- Utility Actions ---
 
+  const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
+    const cacheKey = `products_by_category_${categoryId}`;
+    const cachedProducts = appCache.get<Product[]>(cacheKey);
+    if (cachedProducts) return cachedProducts;
+
+    try {
+      const q = query(
+        collection(db, 'products'),
+        where('categoryId', '==', categoryId),
+        where('inStock', '==', true),
+        orderBy('name', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      const products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Product));
+      
+      appCache.set(cacheKey, products, 5 * 60 * 1000); // Cache for 5 minutes
+      return products;
+    } catch (err) {
+      console.error('Error fetching products by category:', err);
+      return [];
+    }
+  };
+
   const getCategories = async (): Promise<string[]> => {
     const cacheKey = 'all_categories';
     const cachedCategories = appCache.get<string[]>(cacheKey);
@@ -188,6 +215,7 @@ export const useProductStore = defineStore('products', () => {
     // Actions
     fetchProducts,
     getProductById,
+    getProductsByCategory,
     addProduct,
     updateProduct,
     deleteProduct,

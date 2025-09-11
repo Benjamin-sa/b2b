@@ -14,141 +14,12 @@
                         <div class="px-6 py-4 border-b border-secondary-200">
                             <div class="flex items-center justify-between">
                                 <h2 class="text-xl font-semibold text-secondary-900">Profile Information</h2>
-                                <button v-if="!isEditing" @click="startEditing"
-                                    class="inline-flex items-center px-3 py-1.5 border border-secondary-300 shadow-sm text-sm font-medium rounded-md text-secondary-700 bg-white hover:bg-secondary-50">
-                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Edit Profile
-                                </button>
                             </div>
                         </div>
 
                         <div class="px-6 py-6">
-                            <form v-if="isEditing" @submit.prevent="saveProfile" class="space-y-6">
-                                <!-- Personal Information -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-secondary-700 mb-2">
-                                            First Name *
-                                        </label>
-                                        <input v-model="editForm.firstName" type="text" required
-                                            class="w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-secondary-700 mb-2">
-                                            Last Name *
-                                        </label>
-                                        <input v-model="editForm.lastName" type="text" required
-                                            class="w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                                    </div>
-                                </div>
-
-                                <!-- Company Information -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            Company Name *
-                                        </label>
-                                        <input v-model="editForm.companyName" type="text" required
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            BTW Number *
-                                        </label>
-                                        <input v-model="editForm.btwNumber" type="text" required
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    </div>
-                                </div>
-
-                                <!-- Contact Information -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            Email
-                                        </label>
-                                        <input :value="authStore.userProfile?.email" type="email" disabled
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                                        <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            Phone
-                                        </label>
-                                        <input v-model="editForm.phone" type="tel"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    </div>
-                                </div>
-
-                                <!-- Address Information -->
-                                <div class="space-y-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Address</h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div class="md:col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Street *
-                                            </label>
-                                            <input v-model="editForm.address.street" type="text" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                House Number *
-                                            </label>
-                                            <input v-model="editForm.address.houseNumber" type="text" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Postal Code *
-                                            </label>
-                                            <input v-model="editForm.address.postalCode" type="text" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                City *
-                                            </label>
-                                            <input v-model="editForm.address.city" type="text" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Country *
-                                            </label>
-                                            <input v-model="editForm.address.country" type="text" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Form Actions -->
-                                <div class="flex items-center justify-end space-x-4 pt-4 border-t border-secondary-200">
-                                    <button type="button" @click="cancelEditing"
-                                        class="px-4 py-2 border border-secondary-300 rounded-md text-secondary-700 bg-white hover:bg-secondary-50">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" :disabled="loading"
-                                        class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-secondary-300 flex items-center">
-                                        <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                                            fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                            </path>
-                                        </svg>
-                                        Save Changes
-                                    </button>
-                                </div>
-                            </form>
-
                             <!-- Read-only Profile Display -->
-                            <div v-else class="space-y-6">
+                            <div class="space-y-6">
                                 <!-- Personal Information -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -319,137 +190,15 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Success Message -->
-            <Transition name="slide-up">
-                <div v-if="showSuccessMessage"
-                    class="fixed bottom-4 right-4 bg-green-50 border border-green-200 rounded-md p-4 shadow-lg z-50">
-                    <div class="flex">
-                        <svg class="flex-shrink-0 w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-green-800">Profile updated successfully!</p>
-                        </div>
-                    </div>
-                </div>
-            </Transition>
-
-            <!-- Error Message -->
-            <Transition name="slide-up">
-                <div v-if="error"
-                    class="fixed bottom-4 right-4 bg-red-50 border border-red-200 rounded-md p-4 shadow-lg z-50">
-                    <div class="flex">
-                        <svg class="flex-shrink-0 w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-red-800">{{ error }}</p>
-                        </div>
-                    </div>
-                </div>
-            </Transition>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { doc, updateDoc } from 'firebase/firestore'
-import { db } from '../init/firebase'
+import { onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import type { UserProfile } from '../types'
 
 const authStore = useAuthStore()
-
-const isEditing = ref(false)
-const loading = ref(false)
-const error = ref('')
-const showSuccessMessage = ref(false)
-
-// Form for editing profile
-const editForm = reactive({
-    firstName: '',
-    lastName: '',
-    companyName: '',
-    btwNumber: '',
-    phone: '',
-    address: {
-        street: '',
-        houseNumber: '',
-        postalCode: '',
-        city: '',
-        country: ''
-    }
-})
-
-const startEditing = () => {
-    // Populate form with current user data
-    if (authStore.userProfile) {
-        editForm.firstName = authStore.userProfile.firstName
-        editForm.lastName = authStore.userProfile.lastName
-        editForm.companyName = authStore.userProfile.companyName
-        editForm.btwNumber = authStore.userProfile.btwNumber
-        editForm.phone = authStore.userProfile.phone || ''
-        editForm.address = { ...authStore.userProfile.address }
-    }
-    isEditing.value = true
-}
-
-const cancelEditing = () => {
-    isEditing.value = false
-    error.value = ''
-}
-
-const saveProfile = async () => {
-    if (!authStore.userProfile) return
-
-    loading.value = true
-    error.value = ''
-
-    try {
-        const updatedProfile: Partial<UserProfile> = {
-            firstName: editForm.firstName,
-            lastName: editForm.lastName,
-            companyName: editForm.companyName,
-            btwNumber: editForm.btwNumber,
-            phone: editForm.phone || undefined,
-            address: editForm.address
-        }
-
-        // Update in Firestore
-        await updateDoc(doc(db, 'users', authStore.userProfile.uid), updatedProfile)
-
-        // Update local store
-        authStore.userProfile = {
-            ...authStore.userProfile,
-            ...updatedProfile
-        }
-
-        isEditing.value = false
-        showSuccessMessage.value = true
-
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-            showSuccessMessage.value = false
-        }, 3000)
-
-    } catch (err: any) {
-        console.error('Error updating profile:', err)
-        error.value = err.message || 'Failed to update profile'
-
-        // Hide error message after 5 seconds
-        setTimeout(() => {
-            error.value = ''
-        }, 5000)
-    } finally {
-        loading.value = false
-    }
-}
 
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A'
@@ -476,15 +225,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Transitions */
-.slide-up-enter-active,
-.slide-up-leave-active {
-    transition: all 0.3s ease;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-    transform: translateY(20px);
-    opacity: 0;
-}
+/* No additional styles needed */
 </style>

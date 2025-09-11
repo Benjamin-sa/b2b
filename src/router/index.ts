@@ -57,6 +57,28 @@ const routes = [
     }
   },
   {
+    path: '/products/category/:categoryId',
+    name: 'CategoryProducts',
+    component: Products,
+    meta: { 
+      requiresAuth: true,
+      requiresVerified: true,
+      transition: 'slide-left',
+      title: 'Products by Category'
+    }
+  },
+  {
+    path: '/categories',
+    name: 'Categories',
+    component: () => import('../views/Categories.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiresVerified: true,
+      transition: 'slide-left',
+      title: 'Categories'
+    }
+  },
+  {
     path: '/products/:id',
     name: 'ProductDetail',
     component: ProductDetail,

@@ -3,7 +3,6 @@ export interface Category {
   id: string
   name: string
   description?: string
-  slug: string // URL-friendly version of name
   parentId?: string // For nested categories
   imageUrl?: string
   displayOrder: number // For sorting categories

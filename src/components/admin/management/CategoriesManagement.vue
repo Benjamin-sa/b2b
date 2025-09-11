@@ -1,7 +1,11 @@
 <template>
     <div class="space-y-6">
-        <!-- Header -->
-        <div class="flex justify-between items-center">
+        <!-- Head                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Parent
+                            </th>      <div class="flex justify-between items-center">
             <div>
                 <h2 class="text-2xl font-bold text-gray-900">Category Management</h2>
                 <p class="text-gray-600 mt-1">Manage product categories and subcategories</p>
@@ -58,9 +62,6 @@
                                 Category
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Slug
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Parent
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -93,9 +94,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ category.slug }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ getParentName(category.parentId) }}
@@ -179,8 +177,7 @@ const filteredCategories = computed(() => {
         const term = searchTerm.value.toLowerCase()
         filtered = filtered.filter(cat =>
             cat.name.toLowerCase().includes(term) ||
-            cat.description?.toLowerCase().includes(term) ||
-            cat.slug.toLowerCase().includes(term)
+            cat.description?.toLowerCase().includes(term)
         )
     }
 

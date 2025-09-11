@@ -48,13 +48,7 @@ export const useCategoryStore = defineStore('categories', () => {
   })
 
   // --- Helper Functions ---
-  const generateSlug = (name: string): string => {
-    return name.toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .trim()
-  }
+  // No longer need generateSlug function
 
   // --- Actions ---
   const fetchCategories = async (filters: CategoryFilter = {}) => {
@@ -136,9 +130,9 @@ export const useCategoryStore = defineStore('categories', () => {
     }
   }
 
-  const getCategoryBySlug = async (slug: string): Promise<Category | null> => {
+  const getCategoryByName = async (name: string): Promise<Category | null> => {
     try {
-      const q = query(collection(db, 'categories'), where('slug', '==', slug))
+      const q = query(collection(db, 'categories'), where('name', '==', name))
       const querySnapshot = await getDocs(q)
       
       if (!querySnapshot.empty) {
@@ -147,25 +141,21 @@ export const useCategoryStore = defineStore('categories', () => {
       }
       return null
     } catch (err) {
-      console.error('Error fetching category by slug:', err)
+      console.error('Error fetching category by name:', err)
       return null
     }
   }
 
   const addCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Generate slug if not provided
-      const slug = categoryData.slug || generateSlug(categoryData.name)
-      
-      // Check if slug already exists
-      const existingCategory = await getCategoryBySlug(slug)
+      // Check if category name already exists
+      const existingCategory = await getCategoryByName(categoryData.name)
       if (existingCategory) {
         throw new Error('A category with this name already exists')
       }
 
       const newCategory = {
         ...categoryData,
-        slug,
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -186,12 +176,9 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const updateCategory = async (id: string, updates: Partial<Omit<Category, 'id' | 'createdAt'>>) => {
     try {
-      // Generate new slug if name is being updated
-      if (updates.name && !updates.slug) {
-        updates.slug = generateSlug(updates.name)
-        
-        // Check if new slug already exists (excluding current category)
-        const existingCategory = await getCategoryBySlug(updates.slug)
+      // Check if new name already exists (excluding current category)
+      if (updates.name) {
+        const existingCategory = await getCategoryByName(updates.name)
         if (existingCategory && existingCategory.id !== id) {
           throw new Error('A category with this name already exists')
         }
@@ -292,7 +279,7 @@ export const useCategoryStore = defineStore('categories', () => {
     // Actions
     fetchCategories,
     getCategoryById,
-    getCategoryBySlug,
+    getCategoryByName,
     addCategory,
     updateCategory,
     deleteCategory,

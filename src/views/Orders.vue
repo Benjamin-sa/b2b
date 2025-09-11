@@ -103,17 +103,6 @@
                     <!-- Order Details -->
                     <div class="px-6 py-4">
                         <!-- Order Items -->
-                        <div v-if="invoice.items && invoice.items.length > 0" class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Items</h4>
-                            <div class="space-y-2">
-                                <div v-for="item in invoice.items" :key="item.stripePriceId"
-                                    class="flex justify-between text-sm">
-                                    <span class="text-gray-600">
-                                        {{ item.quantity }}x {{ item.stripePriceId }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Shipping Address -->
                         <div v-if="invoice.orderMetadata?.shippingAddress" class="mb-4">
