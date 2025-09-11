@@ -182,7 +182,7 @@ const uploadFiles = async (files: File[]) => {
     try {
         const uploadPromises = validFiles.map(async (file, index) => {
             // Stap 1: Vraag een presigned URL aan bij de Cloudflare Worker
-            const response = await fetch(workerUrl, {
+            const response = await fetch(`${workerUrl}/api/images`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

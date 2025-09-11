@@ -32,60 +32,134 @@ export async function handleWelcomeEmail(request: Request, env: Environment): Pr
       );
     }
     
-    // Create email content (simple HTML for now)
+    // Create email content with deliverability best practices
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
         <meta charset="utf-8">
-        <title>Welcome to MotorDash B2B</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to 4Tparts B2B</title>
+        <!--[if mso]>
+        <noscript>
+          <xml>
+            <o:OfficeDocumentSettings>
+              <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+          </xml>
+        </noscript>
+        <![endif]-->
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <h1 style="color: #466478; margin-bottom: 20px;">Welcome to MotorDash B2B!</h1>
-          <p>Hello ${body.userName},</p>
-          <p>Thank you for creating an account with MotorDash B2B for <strong>${body.companyName}</strong>.</p>
-          <p>Your account is currently under review. Once verified by our team, you'll receive another email with access to our full B2B platform.</p>
-          <div style="background: #e8edef; padding: 15px; border-radius: 4px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #466478;">What's Next?</h3>
-            <ul style="margin: 0; padding-left: 20px;">
-              <li>Our team will review your account within 24-48 hours</li>
-              <li>You'll receive a verification email once approved</li>
-              <li>Then you can access our full product catalog and place orders</li>
-            </ul>
-          </div>
-          <p>If you have any questions, feel free to contact our support team.</p>
-          <p>Best regards,<br>The MotorDash Team</p>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #ffffff;">
+        <!-- Preheader text -->
+        <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
+          Your 4Tparts B2B account is being reviewed. We'll notify you once approved.
         </div>
+        
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <!-- Header -->
+                <tr>
+                  <td align="center" style="padding: 40px 40px 20px 40px;">
+                    <h1 style="margin: 0; color: #466478; font-size: 28px; font-weight: 600; text-align: center;">
+                      Welcome to 4Tparts B2B!
+                    </h1>
+                  </td>
+                </tr>
+                
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 0 40px 40px 40px;">
+                    <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+                      Hello <strong>${body.userName}</strong>,
+                    </p>
+                    
+                    <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+                      Thank you for creating an account with 4Tparts B2B for <strong>${body.companyName}</strong>. 
+                      We're excited to welcome you to our business platform!
+                    </p>
+                    
+                    <p style="margin: 0 0 30px 0; font-size: 16px; line-height: 1.6;">
+                      Your account is currently under review by our team. Once verified, you'll receive another email 
+                      with access to our full B2B platform and exclusive pricing.
+                    </p>
+                    
+                    <!-- What's Next Box -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #e8edef; border-radius: 6px; margin: 30px 0;">
+                      <tr>
+                        <td style="padding: 25px;">
+                          <h3 style="margin: 0 0 15px 0; color: #466478; font-size: 18px; font-weight: 600;">
+                            What's Next?
+                          </h3>
+                          <ul style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.8;">
+                            <li style="margin-bottom: 8px;">Our team will review your account within 48 hours</li>
+                            <li style="margin-bottom: 8px;">You'll receive a verification email once approved</li>
+                            <li style="margin-bottom: 0;">Access our full product catalog and place orders</li>
+                          </ul>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="margin: 30px 0 20px 0; font-size: 16px; line-height: 1.6;">
+                      If you have any questions or need assistance, don't hesitate to contact our support team 
+                      at <a href="mailto:support@4tparts.com" style="color: #466478; text-decoration: none;">support@4tparts.com</a>.
+                    </p>
+                    
+                    <p style="margin: 30px 0 0 0; font-size: 16px; line-height: 1.6;">
+                      Best regards,<br>
+                      <strong>The 4Tparts Team</strong>
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #eee;">
+                    <p style="margin: 0; font-size: 12px; color: #666; text-align: center; line-height: 1.5;">
+                      This email was sent to ${body.to} because you created an account on 4Tparts B2B.<br>
+                      If you didn't create this account, please contact us immediately.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
     
     const textContent = `
-      Welcome to MotorDash B2B!
-      
-      Hello ${body.userName},
-      
-      Thank you for creating an account with MotorDash B2B for ${body.companyName}.
-      
-      Your account is currently under review. Once verified by our team, you'll receive another email with access to our full B2B platform.
-      
-      What's Next?
-      - Our team will review your account within 24-48 hours
-      - You'll receive a verification email once approved
-      - Then you can access our full product catalog and place orders
-      
-      If you have any questions, feel free to contact our support team.
-      
-      Best regards,
-      The MotorDash Team
+4Tparts B2B - Welcome!
+
+Hello ${body.userName},
+
+Thank you for creating an account with 4Tparts B2B for ${body.companyName}. We're excited to welcome you to our business platform!
+
+Your account is currently under review by our team. Once verified, you'll receive another email with access to our full B2B platform and exclusive pricing.
+
+WHAT'S NEXT?
+• Our team will review your account within 48 hours
+• You'll receive a verification email once approved  
+• Access our full product catalog and place orders
+
+If you have any questions or need assistance, contact our support team at support@4tparts.com.
+
+Best regards,
+The 4Tparts Team
+
+---
+This email was sent to ${body.to} because you created an account on 4Tparts B2B.
+If you didn't create this account, please contact us immediately.
     `;
     
     // Send email via SendGrid
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
       body.to,
-      'Welcome to MotorDash B2B Platform',
+      'Welcome to 4Tparts B2B Platform',
       htmlContent,
       textContent
     );

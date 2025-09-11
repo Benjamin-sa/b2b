@@ -20,6 +20,16 @@
             </div>
         </div>
 
+        <!-- Forgot Password Link -->
+        <div class="text-right">
+            <button type="button" 
+                @click="handleForgotPassword"
+                :disabled="loading || !email"
+                class="text-sm text-blue-600 hover:text-blue-500 font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors focus:outline-none focus:underline">
+                Forgot Password?
+            </button>
+        </div>
+
         <button type="submit" :disabled="loading"
             class="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl">
             <span v-if="loading" class="flex items-center justify-center">
@@ -39,6 +49,8 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits, ref } from 'vue';
+import { useAuthStore } from '../../stores/auth';
+import { useNotificationStore } from '../../stores/notifications';
 
 defineProps({
     loading: {
@@ -48,11 +60,34 @@ defineProps({
 })
 
 const emit = defineEmits(['login']);
+const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 
 const email = ref('');
 const password = ref('');
 
 const handleLogin = () => {
     emit('login', { email: email.value, password: password.value });
+};
+
+const handleForgotPassword = async () => {
+    if (!email.value.trim()) {
+        await notificationStore.warning('Email Required', 'Please enter your email address first to reset your password.');
+        return;
+    }
+
+    try {
+        await authStore.requestPasswordReset(email.value);
+        await notificationStore.success(
+            'Reset Email Sent', 
+            `Password reset instructions have been sent to ${email.value}. Please check your email and follow the instructions.`
+        );
+    } catch (error) {
+        console.error('Password reset request failed:', error);
+        await notificationStore.error(
+            'Reset Failed', 
+            'Failed to send password reset email. Please try again or contact support if the problem persists.'
+        );
+    }
 };
 </script>

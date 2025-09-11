@@ -10,6 +10,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src/**/*", "../src/handlers/imageHandler.ts"],
+  "include": ["src/**/*", "../r2-bucket/src/handlers/imageHandler.ts"],
   "exclude": ["node_modules", "dist"]
 }

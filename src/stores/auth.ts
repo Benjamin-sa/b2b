@@ -8,8 +8,9 @@ import {
   type User
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { auth, db } from '../init/firebase'
+import { auth, db, functions } from '../init/firebase'
 import type { UserProfile } from '../types'
+import { httpsCallable } from 'firebase/functions'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -165,6 +166,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const requestPasswordReset = async (email: string) => {
+    loading.value = true
+    error.value = ''
+    
+    try {
+      console.log('Requesting password reset for:', email)
+      const requestPasswordResetFunction = httpsCallable(functions, 'requestPasswordReset')
+      const result = await requestPasswordResetFunction({ email })
+      
+      console.log('Password reset request successful:', result.data)
+      return result.data
+    } catch (err: any) {
+      console.error('Password reset request failed:', err)
+      error.value = getErrorMessage(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   
   const updateUserVerification = async (uid: string, isVerified: boolean) => {
     // Security check: Only admins can verify/unverify users
@@ -267,6 +288,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
+    requestPasswordReset,
     clearError,
     // Admin functions
     updateUserVerification,

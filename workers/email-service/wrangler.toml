@@ -6,16 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 # Environment variables (set these in Cloudflare dashboard or via wrangler secret)
 [env.production.vars]
 ENVIRONMENT = "production"
-FRONTEND_URL = "https://yourdomain.com"
-ALLOWED_ORIGINS = "yourdomain.com"
+FRONTEND_URL = "https://4tparts.com"
+ALLOWED_ORIGINS = "4tparts.com"
 
 [env.development.vars]
 ENVIRONMENT = "development" 
 FRONTEND_URL = "http://localhost:5173"
 ALLOWED_ORIGINS = "localhost:5173,localhost:3000"
 
-# Secrets (use: wrangler secret put SENDGRID_API_KEY)
-# SENDGRID_API_KEY = "your-sendgrid-api-key"
 
-[build]
-command = "npm run build"

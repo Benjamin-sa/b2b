@@ -13,10 +13,12 @@ export interface WelcomeEmailRequest extends EmailRequest {
 export interface VerificationEmailRequest extends EmailRequest {
   userName: string;
   companyName: string;
+  verificationUrl: string;
 }
 
 export interface PasswordResetRequest extends EmailRequest {
   resetToken: string;
+  resetUrl: string;
   userName: string;
 }
 

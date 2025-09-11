@@ -1,4 +1,4 @@
-name = "motordash-workers"
+name = "b2b-image-handler"
 main = "src/index.ts"
 compatibility_date = "2023-10-30"
 

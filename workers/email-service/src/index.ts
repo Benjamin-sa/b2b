@@ -1,5 +1,7 @@
 import type { Environment } from './types/email';
 import { handleWelcomeEmail } from './handlers/welcome';
+import { handlePasswordResetEmail } from './handlers/passwordReset';
+import { handleVerificationEmail } from './handlers/verification';
 import { jsonResponse, corsHeaders } from './utils/validators';
 
 export default {
@@ -17,6 +19,12 @@ export default {
     switch (url.pathname) {
       case '/api/email/welcome':
         return handleWelcomeEmail(request, env);
+        
+      case '/api/email/password-reset':
+        return handlePasswordResetEmail(request, env);
+        
+      case '/api/email/verification':
+        return handleVerificationEmail(request, env);
         
       case '/health':
         return jsonResponse(
@@ -37,6 +45,8 @@ export default {
             version: '1.0.0',
             endpoints: [
               'POST /api/email/welcome',
+              'POST /api/email/password-reset',
+              'POST /api/email/verification',
               'GET /health'
             ]
           },

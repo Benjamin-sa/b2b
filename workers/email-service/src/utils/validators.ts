@@ -20,7 +20,9 @@ export function validateRequest(request: any, requiredFields: string[]): { valid
 }
 
 export function corsHeaders(env: Environment, origin?: string): Record<string, string> {
-  const allowedOrigins = env.ALLOWED_ORIGINS.split(',');
+  // Fallback for ALLOWED_ORIGINS if not set
+  const allowedOriginsString = env.ALLOWED_ORIGINS || 'localhost:5173,localhost:3000';
+  const allowedOrigins = allowedOriginsString.split(',');
   const isAllowed = origin && allowedOrigins.includes(new URL(origin).hostname);
   
   return {

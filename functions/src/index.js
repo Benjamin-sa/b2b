@@ -11,6 +11,7 @@ const {
   onUserUpdate,
   onUserDelete,
 } = require("./functions/customers");
+const { requestPasswordReset } = require("./functions/passwordReset");
 
 // Product
 exports.onProductCreate = onProductCreate;
@@ -21,6 +22,9 @@ exports.onProductDelete = onProductDelete;
 exports.onUserCreate = onUserCreate;
 exports.onUserUpdate = onUserUpdate;
 exports.onUserDelete = onUserDelete;
+
+// Auth
+exports.requestPasswordReset = requestPasswordReset;
 
 // Payments
 exports.createInvoice = createInvoice;

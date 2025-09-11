@@ -23,26 +23,60 @@ export class SendGridClient {
           }
         ],
         from: {
-          email: 'noreply@motordash.com',
-          name: 'MotorDash B2B'
+          email: 'n@4tparts.com',
+          name: '4Tparts B2B'
+        },
+        // Reply-to for better deliverability and customer support
+        reply_to: {
+          email: 'support@4tparts.com',
+          name: '4Tparts Support Team'
         },
         content: [
-          {
-            type: 'text/html',
-            value: htmlContent
-          },
           ...(textContent ? [{
             type: 'text/plain',
             value: textContent
-          }] : [])
-        ]
+          }] : []),
+          {
+            type: 'text/html',
+            value: htmlContent
+          }
+        ],
+        // Tracking settings for better analytics
+        tracking_settings: {
+          click_tracking: {
+            enable: true,
+            enable_text: false
+          },
+          open_tracking: {
+            enable: true,
+            substitution_tag: '%open-track%'
+          },
+          subscription_tracking: {
+            enable: false // B2B emails typically don't need this
+          }
+        },
+        // Mail settings for better deliverability
+        mail_settings: {
+          sandbox_mode: {
+            enable: false
+          }
+        },
+        // Categories for analytics and organization
+        categories: ['b2b-transactional', 'welcome-email'],
+        // Custom args for internal tracking
+        custom_args: {
+          email_type: 'welcome',
+          platform: '4tparts-b2b'
+        }
       };
 
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          // User-Agent for better identification
+          'User-Agent': '4Tparts-EmailService/1.0'
         },
         body: JSON.stringify(emailData)
       });

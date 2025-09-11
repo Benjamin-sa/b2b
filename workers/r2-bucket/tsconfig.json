@@ -15,12 +15,12 @@
     "types": ["@cloudflare/workers-types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["r2-bucket/src/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": [
-    "r2-bucket/src/**/*"
-, "r2-bucket/src/handlers/imageHandler.ts"  ],
+    "src/**/*"
+, "src/handlers/imageHandler.ts"  ],
   "exclude": [
     "node_modules",
     "dist"
