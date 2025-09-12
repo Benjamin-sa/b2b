@@ -9,7 +9,7 @@
                         <img src="/vite.svg" alt="4Tparts Logo" class="w-20 h-20 drop-shadow" />
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900">MotorDash</h1>
+                        <h1 class="text-xl font-bold text-gray-900">4Tparts</h1>
                         <p class="text-sm text-gray-500">B2B Platform</p>
                     </div>
                 </div>
@@ -30,7 +30,7 @@
                                 <p class="text-gray-600">Sign in to your B2B account</p>
                             </div>
                             <div v-else key="register-header">
-                                <h2 class="text-3xl font-bold text-gray-900 mb-3">Join MotorDash</h2>
+                                <h2 class="text-3xl font-bold text-gray-900 mb-3">Join 4Tparts</h2>
                                 <p class="text-gray-600">Create your B2B account</p>
                             </div>
                         </Transition>
@@ -81,7 +81,7 @@
         <!-- Footer -->
         <footer class="w-full px-6 py-4 border-t border-gray-200">
             <div class="max-w-7xl mx-auto text-center text-sm text-gray-500">
-                © 2025 MotorDash B2B Platform. All rights reserved.
+                © 2025 4Tparts B2B Platform. All rights reserved.
             </div>
         </footer>
     </div>
@@ -220,7 +220,7 @@ const handleRegister = async () => {
         )
 
         console.log('Registration successful, showing notification')
-        await notificationStore.success('Account created!', 'Welcome to MotorDash B2B Platform.')
+        await notificationStore.success('Account created!', 'Welcome to 4Tparts B2B Platform.')
 
         // Small delay to ensure all registration processes complete
         await new Promise(resolve => setTimeout(resolve, 200))

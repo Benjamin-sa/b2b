@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Navigation from './components/Navigation.vue'
 import NotificationContainer from './components/NotificationContainer.vue'
+import Footer from './components/Footer.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -124,6 +125,8 @@ const onAfterEnter = () => {
       </router-view>
     </div>
   </div>
+  <Footer />
+
 </template>
 
 <style scoped>

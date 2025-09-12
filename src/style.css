@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import './assets/animations.css';
 
-/* MotorDash Design System - CSS Custom Properties */
+/* 4Tparts Design System - CSS Custom Properties */
 :root {
   /* Brand Colors - Updated with #466478 as primary */
   --color-brand-primary: #466478;

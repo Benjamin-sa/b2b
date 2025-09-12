@@ -62,8 +62,8 @@
 
                 <div class="text-xs text-gray-500 pt-2">
                     Need help? Contact support:
-                    <a href="mailto:support@motordash.com" class="text-blue-600 hover:text-blue-800 underline">
-                        support@motordash.com
+                    <a href="mailto:support@4Tparts.com" class="text-blue-600 hover:text-blue-800 underline">
+                        support@4Tparts.com
                     </a>
                 </div>
             </div>

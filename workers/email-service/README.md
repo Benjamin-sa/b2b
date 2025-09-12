@@ -1,4 +1,4 @@
-# MotorDash Email Service
+# 4Tparts Email Service
 
 A Cloudflare Worker service for handling email notifications via SendGrid.
 

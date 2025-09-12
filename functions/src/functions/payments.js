@@ -71,7 +71,7 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
       customer: userData.stripeCustomerId,
       collection_method: "send_invoice",
       days_until_due: 30,
-      description: data.metadata?.notes || "Bestelling via Motordash B2B",
+      description: data.metadata?.notes || "Bestelling via 4Tparts B2B",
       metadata: {
         userId: request.auth.uid,
         orderMetadata: JSON.stringify(data.metadata || {}),
