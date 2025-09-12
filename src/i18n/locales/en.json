@@ -1,0 +1,78 @@
+{
+  "navigation": {
+    "home": "Home",
+    "products": "Products",
+    "categories": "Categories",
+    "orders": "Orders",
+    "profile": "Profile",
+    "admin": "Admin",
+    "cart": "Cart",
+    "logout": "Logout"
+  },
+  "footer": {
+    "company": {
+      "title": "B2B Platform",
+      "description": "Your trusted business partner for wholesale products and services."
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "home": "Home",
+      "products": "Products",
+      "orders": "Orders",
+      "profile": "Profile"
+    },
+    "contact": {
+      "title": "Contact",
+      "email": "Email: support@b2bplatform.com",
+      "phone": "Phone: +31 (0) 20 123 4567",
+      "hours": "Business Hours: Mon-Fri 9:00-17:00"
+    },
+    "bottom": {
+      "copyright": "B2B Platform. All rights reserved.",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "or": "or"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "tabs": {
+      "products": "Products",
+      "categories": "Categories",
+      "users": "Users",
+      "orders": "Orders"
+    },
+    "orders": {
+      "title": "Orders Management",
+      "comingSoon": "Orders management coming soon..."
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "name": "Name",
+    "description": "Description",
+    "price": "Price",
+    "category": "Category",
+    "status": "Status"
+  }
+}

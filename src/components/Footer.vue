@@ -4,37 +4,37 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Company Info -->
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">B2B Platform</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('footer.company.title') }}</h3>
                     <p class="text-gray-600 text-sm">
-                        Your trusted business partner for wholesale products and services.
+                        {{ $t('footer.company.description') }}
                     </p>
                 </div>
 
                 <!-- Quick Links -->
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('footer.quickLinks.title') }}</h3>
                     <ul class="space-y-2">
                         <li>
                             <router-link to="/" class="text-gray-600 hover:text-gray-900 text-sm transition-colors">
-                                Home
+                                {{ $t('footer.quickLinks.home') }}
                             </router-link>
                         </li>
                         <li>
                             <router-link to="/products"
                                 class="text-gray-600 hover:text-gray-900 text-sm transition-colors">
-                                Products
+                                {{ $t('footer.quickLinks.products') }}
                             </router-link>
                         </li>
                         <li>
                             <router-link to="/orders"
                                 class="text-gray-600 hover:text-gray-900 text-sm transition-colors">
-                                Orders
+                                {{ $t('footer.quickLinks.orders') }}
                             </router-link>
                         </li>
                         <li>
                             <router-link to="/profile"
                                 class="text-gray-600 hover:text-gray-900 text-sm transition-colors">
-                                Profile
+                                {{ $t('footer.quickLinks.profile') }}
                             </router-link>
                         </li>
                     </ul>
@@ -42,10 +42,11 @@
 
                 <!-- Contact Info -->
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('footer.contact.title') }}</h3>
                     <div class="space-y-2 text-sm text-gray-600">
-                        <p>Email: support@b2bplatform.com</p>
-                        <p>Phone: +31 (0) 20 123 4567</p>
+                        <p>{{ $t('footer.contact.email') }}</p>
+                        <p>{{ $t('footer.contact.phone') }}</p>
+                        <p>{{ $t('footer.contact.hours') }}</p>
                     </div>
                 </div>
             </div>
@@ -53,14 +54,14 @@
             <!-- Bottom Bar -->
             <div class="border-t border-gray-200 pt-6 mt-6 flex flex-col sm:flex-row justify-between items-center">
                 <p class="text-sm text-gray-500">
-                    © {{ currentYear }} B2B Platform. All rights reserved.
+                    © {{ currentYear }} {{ $t('footer.bottom.copyright') }}
                 </p>
                 <div class="flex space-x-6 mt-4 sm:mt-0">
                     <a href="#" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                        Privacy Policy
+                        {{ $t('footer.bottom.privacy') }}
                     </a>
                     <a href="#" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                        Terms of Service
+                        {{ $t('footer.bottom.terms') }}
                     </a>
                 </div>
             </div>

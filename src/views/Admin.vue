@@ -9,7 +9,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    Products
+                    {{ $t('admin.tabs.products') }}
                 </button>
                 <button @click="activeTab = 'categories'" :class="[
                     activeTab === 'categories'
@@ -17,7 +17,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    Categories
+                    {{ $t('admin.tabs.categories') }}
                 </button>
                 <button @click="activeTab = 'users'" :class="[
                     activeTab === 'users'
@@ -25,7 +25,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    Users
+                    {{ $t('admin.tabs.users') }}
                 </button>
                 <button @click="activeTab = 'orders'" :class="[
                     activeTab === 'orders'
@@ -33,7 +33,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    Orders
+                    {{ $t('admin.tabs.orders') }}
                 </button>
             </nav>
         </div>
@@ -58,8 +58,8 @@
             <!-- Orders Tab -->
             <div v-if="activeTab === 'orders'">
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Orders Management</h3>
-                    <p class="text-gray-500">Orders management coming soon...</p>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('admin.orders.title') }}</h3>
+                    <p class="text-gray-500">{{ $t('admin.orders.comingSoon') }}</p>
                 </div>
             </div>
         </div>
