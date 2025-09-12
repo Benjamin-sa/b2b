@@ -10,7 +10,10 @@ const { sendVerificationEmail } = require("../utils/emailService");
 exports.sendVerificationEmailOnApproval = onDocumentUpdated(
   {
     document: "users/{userId}",
-    // Remove secrets config for now - use env vars in development
+    secrets: [
+      "CLOUDFLARE_EMAIL_SERVICE_URL",
+      "CLOUDFLARE_EMAIL_SERVICE_SECRET",
+    ],
   },
   async (event) => {
     const change = event.data;

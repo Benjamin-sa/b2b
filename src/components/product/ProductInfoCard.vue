@@ -19,7 +19,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {{ tab.name }}
+                        {{ $t(`products.info.tabs.${tab.id}`) }}
                     </div>
                 </button>
             </nav>
@@ -43,7 +43,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <p class="text-sm">No specifications available</p>
+                        <p class="text-sm">{{ $t('products.info.empty.specifications') }}</p>
                     </div>
                 </div>
 
@@ -53,19 +53,23 @@
                         <!-- Left Column -->
                         <div class="space-y-1">
                             <div v-if="product.category" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Category</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.category') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.category }}</span>
                             </div>
                             <div v-if="product.brand" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Brand</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.brand') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.brand }}</span>
                             </div>
                             <div v-if="product.weight" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Weight</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.weight') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.weight }} kg</span>
                             </div>
                             <div v-if="product.unit" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Unit</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.unit') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.unit }}</span>
                             </div>
                         </div>
@@ -73,7 +77,8 @@
                         <!-- Right Column -->
                         <div class="space-y-1">
                             <div v-if="product.dimensions" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Dimensions</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.dimensions') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">
                                     {{ product.dimensions.length }} × {{ product.dimensions.width }} × {{
                                         product.dimensions.height }} cm
@@ -81,15 +86,17 @@
                             </div>
                             <div v-if="product.minOrderQuantity"
                                 class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Min Order</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.minOrder') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.minOrderQuantity }} {{
-                                    product.unit || 'pieces' }}</span>
+                                    product.unit || $t('products.info.labels.pieces') }}</span>
                             </div>
                             <div v-if="product.maxOrderQuantity"
                                 class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">Max Order</span>
+                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
+                                    $t('products.info.labels.maxOrder') }}</span>
                                 <span class="text-sm text-gray-900 col-span-2">{{ product.maxOrderQuantity }} {{
-                                    product.unit || 'pieces' }}</span>
+                                    product.unit || $t('products.info.labels.pieces') }}</span>
                             </div>
                         </div>
                     </div>
@@ -101,7 +108,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p class="text-sm">No additional details available</p>
+                        <p class="text-sm">{{ $t('products.info.empty.details') }}</p>
                     </div>
                 </div>
             </Transition>

@@ -14,23 +14,23 @@
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
                         <router-link to="/"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            Home
+                            {{ $t('navigation.home') }}
                         </router-link>
                         <router-link to="/products"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            Products
+                            {{ $t('navigation.products') }}
                         </router-link>
                         <router-link to="/categories"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            Categories
+                            {{ $t('navigation.categories') }}
                         </router-link>
                         <router-link to="/orders"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            Orders
+                            {{ $t('navigation.orders') }}
                         </router-link>
                         <router-link to="/profile"
                             class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
-                            Account
+                            {{ $t('navigation.profile') }}
                         </router-link>
                         <!-- Replace router-link with button for admin toggle -->
                         <button v-if="authStore.isAdmin" @click="$emit('toggle-admin')" :class="[
@@ -39,7 +39,7 @@
                                 : 'text-secondary-700 hover:text-primary-600',
                             'px-3 py-2 rounded-md text-sm font-medium transition-smooth btn-animate'
                         ]">
-                            {{ showAdminPanel ? 'Back to Dashboard' : 'Admin Panel' }}
+                            {{ showAdminPanel ? $t('navigation.backToDashboard') : $t('navigation.adminPanel') }}
                         </button>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                                 <div
                                     class="px-4 py-3 text-sm text-secondary-700 border-b border-gray-100 bg-gray-50 rounded-t-lg">
                                     <div class="font-medium truncate">{{ authStore.user?.email }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">Account Settings</div>
+                                    <div class="text-xs text-gray-500 mt-1">{{ $t('navigation.accountSettings') }}</div>
                                 </div>
                                 <router-link to="/profile" @click="showUserMenu = false"
                                     class="block w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 transition-all duration-200 cursor-pointer">
@@ -98,7 +98,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
-                                        <span>My Profile</span>
+                                        <span>{{ $t('navigation.profile') }}</span>
                                     </div>
                                 </router-link>
                                 <router-link to="/orders" @click="showUserMenu = false"
@@ -108,7 +108,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
-                                        <span>My Orders</span>
+                                        <span>{{ $t('navigation.orders') }}</span>
                                     </div>
                                 </router-link>
                                 <hr class="my-1 border-gray-100">
@@ -119,7 +119,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                         </svg>
-                                        <span>Sign out</span>
+                                        <span>{{ $t('navigation.signOut') }}</span>
                                     </div>
                                 </button>
                             </div>
@@ -142,24 +142,24 @@
                     <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
                         <router-link to="/products"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            Products
+                            {{ $t('navigation.products') }}
                         </router-link>
                         <router-link to="/categories"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            Categories
+                            {{ $t('navigation.categories') }}
                         </router-link>
                         <router-link to="/orders"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            My Orders
+                            {{ $t('navigation.orders') }}
                         </router-link>
                         <router-link to="/profile"
                             class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            My Profile
+                            {{ $t('navigation.profile') }}
                         </router-link>
                         <!-- Replace router-link with button for admin toggle in mobile -->
                         <button v-if="authStore.isAdmin" @click="$emit('toggle-admin')"
                             class="block w-full text-left px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium btn-animate transition-smooth hover-lift">
-                            {{ showAdminPanel ? 'Back to Dashboard' : 'Admin Panel' }}
+                            {{ showAdminPanel ? $t('navigation.backToDashboard') : $t('navigation.adminPanel') }}
                         </button>
                     </div>
                 </div>

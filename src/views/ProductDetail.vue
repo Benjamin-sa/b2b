@@ -6,7 +6,7 @@
                 <div
                     class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
                 </div>
-                <p class="text-lg text-gray-600 font-medium">Loading product details...</p>
+                <p class="text-lg text-gray-600 font-medium">{{ $t('common.loading') }}...</p>
             </div>
         </div>
 
@@ -35,7 +35,8 @@
             <nav class="flex mb-8" aria-label="Breadcrumb">
                 <ol class="flex items-center space-x-2">
                     <li>
-                        <router-link to="/" class="text-gray-500 hover:text-gray-700">Home</router-link>
+                        <router-link to="/" class="text-gray-500 hover:text-gray-700">{{ $t('navigation.home')
+                            }}</router-link>
                     </li>
                     <li>
                         <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -45,7 +46,8 @@
                         </svg>
                     </li>
                     <li>
-                        <router-link to="/products" class="text-gray-500 hover:text-gray-700">Products</router-link>
+                        <router-link to="/products" class="text-gray-500 hover:text-gray-700">{{
+                            $t('navigation.products') }}</router-link>
                     </li>
                     <li>
                         <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -112,7 +114,9 @@
                                         100) }}% OFF
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">per {{ product.unit || 'piece' }}</p>
+                            <p class="text-sm text-gray-600 mt-1">{{ $t('products.details.per', {
+                                unit: product.unit ||
+                                    $t('products.details.piece') }) }}</p>
                         </div>
 
                         <!-- Tags -->
@@ -127,18 +131,21 @@
 
                         <!-- Description -->
                         <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('products.details.description')
+                                }}</h3>
                             <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
                         </div>
                     </div>
 
                     <!-- Purchase Section -->
                     <div class="bg-gray-50 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Purchase Options</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('products.details.purchaseOptions')
+                            }}</h3>
 
                         <!-- Quantity Selector -->
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{
+                                $t('products.details.quantity') }}</label>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
@@ -162,16 +169,19 @@
                                     </button>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <div v-if="product.minOrderQuantity">Min: {{ product.minOrderQuantity }} {{
-                                        product.unit || 'pieces' }}</div>
+                                    <div v-if="product.minOrderQuantity">{{ $t('products.details.min') }} {{
+                                        product.minOrderQuantity }} {{
+                                            product.unit || $t('products.details.pieces') }}</div>
                                     <div v-if="effectiveMaxQuantity < (product.maxOrderQuantity || 999)">
-                                        Max: {{ effectiveMaxQuantity }} {{ product.unit || 'pieces' }}
-                                        <span class="text-red-600">(limited by stock)</span>
+                                        {{ $t('products.details.max') }} {{ effectiveMaxQuantity }} {{ product.unit ||
+                                        $t('products.details.pieces') }}
+                                        <span class="text-red-600">{{ $t('products.details.limitedByStock') }}</span>
                                     </div>
-                                    <div v-else-if="product.maxOrderQuantity">Max: {{ product.maxOrderQuantity }} {{
-                                        product.unit || 'pieces' }}</div>
+                                    <div v-else-if="product.maxOrderQuantity">{{ $t('products.details.max') }} {{
+                                        product.maxOrderQuantity }} {{
+                                            product.unit || $t('products.details.pieces') }}</div>
                                     <div v-if="product.stock" class="text-xs text-gray-500 mt-1">
-                                        {{ availableStock }} available
+                                        {{ availableStock }} {{ $t('products.details.available') }}
                                     </div>
                                 </div>
                             </div>
@@ -184,7 +194,7 @@
                                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                             clip-rule="evenodd" />
                                     </svg>
-                                    Only {{ availableStock }} items available in stock
+                                    {{ $t('products.details.onlyItemsAvailable', { count: availableStock }) }}
                                 </p>
                             </div>
                         </div>
@@ -193,9 +203,10 @@
                         <!-- Total Price -->
                         <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center">
-                                <span class="text-lg font-medium text-gray-900">Total Price:</span>
-                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
+                                <span class="text-lg font-medium text-gray-900">{{ $t('products.details.totalPrice')
                                     }}</span>
+                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
+                                }}</span>
                             </div>
                         </div>
 

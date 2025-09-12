@@ -3,8 +3,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-secondary-900">Account</h1>
-                <p class="text-secondary-600 mt-2">Manage your profile and account settings</p>
+                <h1 class="text-3xl font-bold text-secondary-900">{{ $t('profile.header.title') }}</h1>
+                <p class="text-secondary-600 mt-2">{{ $t('profile.header.subtitle') }}</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -13,7 +13,8 @@
                     <div class="bg-white rounded-lg shadow-md overflow-hidden">
                         <div class="px-6 py-4 border-b border-secondary-200">
                             <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-secondary-900">Profile Information</h2>
+                                <h2 class="text-xl font-semibold text-secondary-900">{{
+                                    $t('profile.sections.profileInfo') }}</h2>
                             </div>
                         </div>
 
@@ -23,11 +24,13 @@
                                 <!-- Personal Information -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.firstName') }}</label>
                                         <p class="text-gray-900">{{ authStore.userProfile?.firstName }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.lastName') }}</label>
                                         <p class="text-gray-900">{{ authStore.userProfile?.lastName }}</p>
                                     </div>
                                 </div>
@@ -35,11 +38,13 @@
                                 <!-- Company Information -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.companyName') }}</label>
                                         <p class="text-gray-900">{{ authStore.userProfile?.companyName }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">BTW Number</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.btwNumber') }}</label>
                                         <p class="text-gray-900">{{ authStore.userProfile?.btwNumber }}</p>
                                     </div>
                                 </div>
@@ -47,19 +52,23 @@
                                 <!-- Contact Information -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.email') }}</label>
                                         <p class="text-gray-900">{{ authStore.userProfile?.email }}</p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                        <p class="text-gray-900">{{ authStore.userProfile?.phone || 'Not provided' }}
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                            $t('profile.fields.phone') }}</label>
+                                        <p class="text-gray-900">{{ authStore.userProfile?.phone ||
+                                            $t('profile.fields.notProvided') }}
                                         </p>
                                     </div>
                                 </div>
 
                                 <!-- Address Information -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                                        $t('profile.fields.address') }}</label>
                                     <div class="text-gray-900">
                                         <p>{{ authStore.userProfile?.address.street }} {{
                                             authStore.userProfile?.address.houseNumber }}</p>
@@ -78,43 +87,46 @@
                     <!-- Account Status -->
                     <div class="bg-white rounded-lg shadow-md overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Account Status</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ $t('profile.sections.accountStatus') }}
+                            </h3>
                         </div>
                         <div class="px-6 py-4 space-y-4">
                             <!-- Account Status -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Account Status</span>
+                                <span class="text-sm text-gray-600">{{ $t('profile.status.accountStatus') }}</span>
                                 <span :class="[
                                     authStore.isActiveUser ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100',
                                     'px-2 py-1 rounded-full text-xs font-medium'
                                 ]">
-                                    {{ authStore.isActiveUser ? 'Active' : 'Inactive' }}
+                                    {{ authStore.isActiveUser ? $t('profile.status.active') :
+                                    $t('profile.status.inactive') }}
                                 </span>
                             </div>
 
                             <!-- Verification Status -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Verification Status</span>
+                                <span class="text-sm text-gray-600">{{ $t('profile.status.verificationStatus') }}</span>
                                 <span :class="[
                                     authStore.isVerified ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100',
                                     'px-2 py-1 rounded-full text-xs font-medium'
                                 ]">
-                                    {{ authStore.isVerified ? 'Verified' : 'Pending Verification' }}
+                                    {{ authStore.isVerified ? $t('profile.status.verified') :
+                                        $t('profile.status.pendingVerification') }}
                                 </span>
                             </div>
 
                             <!-- Account Type -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Account Type</span>
+                                <span class="text-sm text-gray-600">{{ $t('profile.status.accountType') }}</span>
                                 <span class="px-2 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-medium">
-                                    {{ authStore.userProfile?.role === 'admin' ? 'Administrator' : 'Business Customer'
-                                    }}
+                                    {{ authStore.userProfile?.role === 'admin' ? $t('profile.status.administrator') :
+                                        $t('profile.status.businessCustomer') }}
                                 </span>
                             </div>
 
                             <!-- Member Since -->
                             <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Member Since</span>
+                                <span class="text-sm text-gray-600">{{ $t('profile.status.memberSince') }}</span>
                                 <span class="text-sm text-gray-900">
                                     {{ formatDate(authStore.userProfile?.createdAt) }}
                                 </span>
@@ -125,7 +137,8 @@
                     <!-- Quick Actions -->
                     <div class="bg-white rounded-lg shadow-md overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ $t('profile.sections.quickActions') }}
+                            </h3>
                         </div>
                         <div class="px-6 py-4 space-y-3">
                             <router-link to="/orders"
@@ -136,8 +149,9 @@
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <div>
-                                    <div class="font-medium">My Orders</div>
-                                    <div class="text-sm text-gray-500">View order history and invoices</div>
+                                    <div class="font-medium">{{ $t('profile.actions.myOrders.title') }}</div>
+                                    <div class="text-sm text-gray-500">{{ $t('profile.actions.myOrders.description') }}
+                                    </div>
                                 </div>
                             </router-link>
 
@@ -149,8 +163,9 @@
                                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                 </svg>
                                 <div>
-                                    <div class="font-medium">Browse Products</div>
-                                    <div class="text-sm text-gray-500">Explore our product catalog</div>
+                                    <div class="font-medium">{{ $t('profile.actions.browseProducts.title') }}</div>
+                                    <div class="text-sm text-gray-500">{{
+                                        $t('profile.actions.browseProducts.description') }}</div>
                                 </div>
                             </router-link>
 
@@ -162,8 +177,9 @@
                                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                                 <div>
-                                    <div class="font-medium">Sign Out</div>
-                                    <div class="text-sm text-gray-500">Logout from your account</div>
+                                    <div class="font-medium">{{ $t('profile.actions.signOut.title') }}</div>
+                                    <div class="text-sm text-gray-500">{{ $t('profile.actions.signOut.description') }}
+                                    </div>
                                 </div>
                             </button>
                         </div>
@@ -179,11 +195,10 @@
                             </svg>
                             <div class="ml-3">
                                 <h3 class="text-sm font-medium text-yellow-800">
-                                    Account Verification Pending
+                                    {{ $t('profile.verification.title') }}
                                 </h3>
                                 <div class="mt-2 text-sm text-yellow-700">
-                                    <p>Your account is pending verification by our team. You'll receive an email
-                                        confirmation once approved.</p>
+                                    <p>{{ $t('profile.verification.message') }}</p>
                                 </div>
                             </div>
                         </div>

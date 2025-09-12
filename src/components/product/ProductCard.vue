@@ -23,7 +23,7 @@
                 </h3>
                 <span v-if="!product.inStock"
                     class="bg-danger-100 text-danger-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
-                    Out of Stock
+                    {{ $t('products.card.outOfStock') }}
                 </span>
             </div>
 
@@ -43,23 +43,24 @@
                     </span>
                 </div>
                 <p class="text-sm text-gray-500">
-                    {{ product.unit || 'per piece' }}
+                    {{ product.unit || $t('products.card.perPiece') }}
                 </p>
             </div>
 
             <!-- Product Details -->
             <div class="space-y-1 mb-4 flex-grow">
                 <div v-if="product.category" class="flex items-center text-sm text-gray-600">
-                    <span class="font-medium">Category:</span>
+                    <span class="font-medium">{{ $t('products.card.category') }}:</span>
                     <span class="ml-1">{{ product.category }}</span>
                 </div>
                 <div v-if="product.sku" class="flex items-center text-sm text-gray-600">
-                    <span class="font-medium">SKU:</span>
+                    <span class="font-medium">{{ $t('products.card.sku') }}:</span>
                     <span class="ml-1">{{ product.sku }}</span>
                 </div>
                 <div v-if="product.minOrderQuantity" class="flex items-center text-sm text-gray-600">
-                    <span class="font-medium">Min. Order:</span>
-                    <span class="ml-1">{{ product.minOrderQuantity }} {{ product.unit || 'pieces' }}</span>
+                    <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>
+                    <span class="ml-1">{{ product.minOrderQuantity }} {{ product.unit || $t('products.card.pieces')
+                        }}</span>
                 </div>
             </div>
 
@@ -67,7 +68,7 @@
             <div class="flex flex-col space-y-2 mt-auto">
                 <!-- Quantity Selector -->
                 <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-gray-700">Qty:</label>
+                    <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
                     <div class="flex items-center border rounded-md">
                         <button @click="decreaseQuantity" :disabled="quantity <= (product.minOrderQuantity || 1)"
                             class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -100,11 +101,11 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span v-if="isLoading">Adding...</span>
-                    <span v-else-if="!product.inStock">Out of Stock</span>
-                    <span v-else-if="!canOrder">Account Verification Required</span>
-                    <span v-else-if="isInCart">Added to Cart ✓</span>
-                    <span v-else>Add to Cart</span>
+                    <span v-if="isLoading">{{ $t('products.card.adding') }}</span>
+                    <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                    <span v-else-if="!canOrder">{{ $t('products.card.accountVerificationRequired') }}</span>
+                    <span v-else-if="isInCart">{{ $t('products.card.addedToCart') }}</span>
+                    <span v-else>{{ $t('products.card.addToCart') }}</span>
                 </button>
             </div>
         </div>

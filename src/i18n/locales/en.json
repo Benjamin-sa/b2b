@@ -7,7 +7,11 @@
     "profile": "Profile",
     "admin": "Admin",
     "cart": "Cart",
-    "logout": "Logout"
+    "logout": "Logout",
+    "signOut": "Sign out",
+    "adminPanel": "Admin Panel",
+    "backToDashboard": "Back to Dashboard",
+    "accountSettings": "Account Settings"
   },
   "footer": {
     "company": {
@@ -55,24 +59,243 @@
     "orders": {
       "title": "Orders Management",
       "comingSoon": "Orders management coming soon..."
+    },
+    "categories": {
+      "category": "Category",
+      "parent": "Parent",
+      "order": "Order",
+      "status": "Status",
+      "products": "Products"
+    },
+    "users": {
+      "personalInfo": "Personal Information",
+      "companyInfo": "Company Information",
+      "companyName": "Company Name",
+      "vatNumber": "VAT Number",
+      "accountStatus": "Account Status",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "role": "Role",
+      "verificationStatus": "Verification Status",
+      "verified": "Verified",
+      "pendingVerification": "Pending Verification",
+      "active": "Active",
+      "inactive": "Inactive",
+      "memberSince": "Member Since",
+      "administrator": "Administrator",
+      "businessCustomer": "Business Customer"
+    }
+  },
+  "products": {
+    "header": {
+      "searchPlaceholder": "Search products...",
+      "sortByLabel": "Sort by",
+      "sort": {
+        "newest": "Newest",
+        "oldest": "Oldest",
+        "priceLowHigh": "Price: Low to High",
+        "priceHighLow": "Price: High to Low",
+        "nameAZ": "Name: A to Z",
+        "nameZA": "Name: Z to A"
+      },
+      "viewModes": {
+        "grid": "Grid view",
+        "list": "List view"
+      },
+      "filters": "Filters",
+      "showingResults": "Showing {count} of {total} products",
+      "loading": "Loading products..."
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "allProducts": "All Products"
+    },
+    "filters": {
+      "advanced": "Advanced Filters",
+      "category": "Category",
+      "availability": "Availability",
+      "priceRange": "Price Range",
+      "apply": "Apply Filters",
+      "clear": "Clear All",
+      "availableOnly": "Available Only",
+      "outOfStockOnly": "Out of Stock Only",
+      "all": "All Products"
+    },
+    "detail": {
+      "loading": "Loading product details...",
+      "description": "Description",
+      "quantity": "Quantity",
+      "addToCart": "Add to Cart",
+      "total": "Total",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock ({count} left)",
+      "quantityError": "Please enter a valid quantity",
+      "minQuantityError": "Minimum quantity is {min}",
+      "maxQuantityError": "Maximum quantity is {max}"
+    },
+    "info": {
+      "tabs": {
+        "specifications": "Specifications",
+        "details": "Details"
+      },
+      "empty": {
+        "specifications": "No specifications available",
+        "details": "No additional details available"
+      },
+      "labels": {
+        "category": "Category",
+        "brand": "Brand",
+        "weight": "Weight",
+        "unit": "Unit",
+        "dimensions": "Dimensions",
+        "minOrder": "Min Order",
+        "maxOrder": "Max Order",
+        "pieces": "pieces"
+      }
+    },
+    "loading": "Loading products...",
+    "empty": "No products found",
+    "card": {
+      "addToCart": "Add to Cart",
+      "outOfStock": "Out of Stock",
+      "viewDetails": "View Details",
+      "perPiece": "per piece",
+      "pieces": "pieces",
+      "category": "Category",
+      "sku": "SKU",
+      "minOrder": "Min. Order",
+      "quantity": "Qty",
+      "adding": "Adding...",
+      "addedToCart": "Added to Cart ✓",
+      "accountVerificationRequired": "Account Verification Required"
     }
   },
   "common": {
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "add": "Add",
-    "search": "Search",
-    "filter": "Filter",
-    "sort": "Sort",
-    "name": "Name",
-    "description": "Description",
-    "price": "Price",
-    "category": "Category",
-    "status": "Status"
+    "actions": {
+      "save": "Save",
+      "initializing": "Initializing...",
+      "pleaseWait": "Please wait...",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "add": "Add",
+      "search": "Search",
+      "filter": "Filter",
+      "loading": "Loading...",
+      "submit": "Submit",
+      "close": "Close",
+      "confirm": "Confirm",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "messages": {
+      "noData": "No data available",
+      "error": "An error occurred",
+      "success": "Success",
+      "confirmDelete": "Are you sure you want to delete this item?"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Account",
+      "subtitle": "Manage your profile and account settings"
+    },
+    "sections": {
+      "profileInfo": "Profile Information",
+      "accountStatus": "Account Status",
+      "quickActions": "Quick Actions"
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "companyName": "Company Name",
+      "btwNumber": "BTW Number",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "notProvided": "Not provided"
+    },
+    "status": {
+      "accountStatus": "Account Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "verificationStatus": "Verification Status",
+      "verified": "Verified",
+      "pendingVerification": "Pending Verification",
+      "accountType": "Account Type",
+      "administrator": "Administrator",
+      "businessCustomer": "Business Customer",
+      "memberSince": "Member Since"
+    },
+    "actions": {
+      "myOrders": {
+        "title": "My Orders",
+        "description": "View order history and invoices"
+      },
+      "browseProducts": {
+        "title": "Browse Products",
+        "description": "Explore our product catalog"
+      },
+      "signOut": {
+        "title": "Sign Out",
+        "description": "Logout from your account"
+      }
+    },
+    "verification": {
+      "title": "Account Verification Pending",
+      "message": "Your account is pending verification by our team. You'll receive an email confirmation once approved."
+    }
+  },
+  "home": {
+    "welcome": {
+      "trustedPartner": "Your trusted partner for 4-stroke parts and accessories.",
+      "viewProducts": "View products",
+      "pendingVerification": "⏳ Your account is pending verification. You'll be able to place orders once verified by our team."
+    },
+    "features": {
+      "partsTitle": "4-stroke Parts",
+      "partsDesc": "Parts and accessories for Dax, Monkey, Pitbike and more",
+      "fastDeliveryTitle": "Fast Delivery",
+      "fastDeliveryDesc": "Quick shipping across Europe",
+      "b2bSupportTitle": "B2B Support",
+      "b2bSupportDesc": "Dedicated business support"
+    },
+    "carousel": {
+      "newestProducts": "Newest products"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "browseProducts": "Browse All Products",
+      "viewOrderHistory": "View Order History",
+      "manageProfile": "Manage My Profile"
+    },
+    "accountStatus": {
+      "title": "Account Status",
+      "accountType": "Account Type",
+      "verificationStatus": "Verification Status",
+      "orderingCapability": "Ordering Capability",
+      "administrator": "Administrator",
+      "businessCustomer": "Business Customer",
+      "verified": "Verified",
+      "pending": "Pending",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
+  },
+  "cart": {
+    "shoppingCart": "Shopping Cart",
+    "itemCount": "{count} items"
+  },
+  "app": {
+    "title": "B2B Platform"
   }
 }

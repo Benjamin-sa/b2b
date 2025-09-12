@@ -73,7 +73,7 @@ const onAfterEnter = () => {
     <!-- Notification Container - Global -->
     <NotificationContainer />
 
-    <!-- Loading state tijdens initialisatie -->
+    <!-- Loading state -->
     <div v-if="authStore.initializing" class="min-h-screen flex items-center justify-center bg-gray-50">
       <div class="text-center">
         <svg class="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -83,8 +83,8 @@ const onAfterEnter = () => {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
           </path>
         </svg>
-        <h2 class="text-xl font-semibold text-gray-700">Initializing...</h2>
-        <p class="text-gray-500 mt-2">Please wait while we load your account</p>
+        <h2 class="text-xl font-semibold text-gray-700">{{ $t('common.actions.initializing') }}</h2>
+        <p class="text-gray-500 mt-2">{{ $t('common.actions.pleaseWait') }}</p>
       </div>
     </div>
 

@@ -19,7 +19,7 @@
                     <div class="relative">
                         <div class="relative">
                             <input v-model="searchTerm" type="text"
-                                placeholder="Search by part number, brand, or description..."
+                                :placeholder="$t('products.header.searchPlaceholder')"
                                 class="w-full px-4 py-3 pl-12 pr-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 @keyup.enter="onSearch" />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -32,7 +32,7 @@
                             <div class="absolute inset-y-0 right-0 flex items-center">
                                 <button @click="toggleAdvancedFilters"
                                     class="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 border-l border-gray-300 rounded-r-lg hover:bg-gray-50">
-                                    Filters
+                                    {{ $t('common.filter') }}
                                     <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -58,7 +58,7 @@
                         </span>
                         <span v-if="inStockOnly"
                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            In Stock Only
+                            {{ $t('products.header.inStockOnly') }}
                             <button @click="clearStockFilter"
                                 class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none">
                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +68,7 @@
                             </button>
                         </span>
                         <button @click="clearAllFilters" class="text-xs text-gray-500 hover:text-gray-700 underline">
-                            Clear all
+                            {{ $t('products.header.clearAll') }}
                         </button>
                     </div>
                 </div>
@@ -86,21 +86,21 @@
                         <div v-if="isLoading" class="flex items-center space-x-2">
                             <div class="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin">
                             </div>
-                            <span class="text-sm text-gray-500">Loading...</span>
+                            <span class="text-sm text-gray-500">{{ $t('products.header.loading') }}</span>
                         </div>
                     </div>
 
                     <div class="flex items-center space-x-4">
                         <!-- Sort Dropdown -->
                         <div class="flex items-center space-x-2">
-                            <label class="text-sm text-gray-600">Sort by:</label>
+                            <label class="text-sm text-gray-600">{{ $t('products.header.sortBy') }}</label>
                             <select v-model="sortBy"
                                 class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                 @change="onSortChange">
-                                <option value="name">Name</option>
-                                <option value="price">Price</option>
-                                <option value="createdAt">Newest</option>
-                                <option value="popularity">Popularity</option>
+                                <option value="name">{{ $t('products.header.name') }}</option>
+                                <option value="price">{{ $t('products.header.price') }}</option>
+                                <option value="createdAt">{{ $t('products.header.newest') }}</option>
+                                <option value="popularity">{{ $t('products.header.popularity') }}</option>
                             </select>
                         </div>
 
@@ -134,6 +134,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
     searchTerm?: string;
@@ -182,22 +185,22 @@ const hasActiveFilters = computed(() => {
 // Methods
 const getHeaderDescription = () => {
     if (props.activeCategory) {
-        return `Browse our ${props.activeCategory.toLowerCase()} collection`;
+        return t('products.header.browseCollection', { category: props.activeCategory.toLowerCase() });
     }
-    return 'Professional automotive components for your business';
+    return t('products.header.professionalDescription');
 };
 
 const getResultsText = () => {
     if (props.isLoading && props.productCount === 0) {
-        return 'Loading products...';
+        return t('products.header.loadingProducts');
     }
     if (props.totalCount === 0) {
-        return 'No products found';
+        return t('products.header.noProducts');
     }
     if (props.productCount === props.totalCount) {
-        return `${props.totalCount} products`;
+        return t('products.header.totalProducts', { total: props.totalCount });
     }
-    return `Showing ${props.productCount} of ${props.totalCount} products`;
+    return t('products.header.showingProducts', { count: props.productCount, total: props.totalCount });
 };
 
 const onSearch = () => {

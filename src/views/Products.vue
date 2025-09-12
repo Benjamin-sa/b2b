@@ -7,7 +7,7 @@
                     <ol class="flex items-center space-x-4">
                         <li>
                             <router-link to="/categories" class="text-gray-500 hover:text-gray-700">
-                                Categories
+                                {{ $t('navigation.categories') }}
                             </router-link>
                         </li>
                         <li>
@@ -43,27 +43,30 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
+                            }}</label>
                         <select v-model="filters.category"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Categories</option>
+                            <option value="">{{ $t('products.filters.allCategories') }}</option>
                             <option v-for="category in categories" :key="category" :value="category">{{ category }}
                             </option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+                            $t('products.filters.availability') }}</label>
                         <select v-model="filters.inStock"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option :value="undefined">All Products</option>
-                            <option :value="true">In Stock Only</option>
+                            <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
+                            <option :value="true">{{ $t('products.filters.inStockOnly') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
+                            }}</label>
                         <select
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Any Price</option>
+                            <option value="">{{ $t('products.filters.anyPrice') }}</option>
                             <option value="0-50">€0 - €50</option>
                             <option value="50-100">€50 - €100</option>
                             <option value="100-500">€100 - €500</option>
@@ -73,7 +76,7 @@
                     <div class="flex items-end">
                         <button @click="toggleAdvancedFilters"
                             class="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-md font-medium">
-                            Hide Filters
+                            {{ $t('products.filters.hideFilters') }}
                         </button>
                     </div>
                 </div>
@@ -85,7 +88,7 @@
             <div v-if="productStore.isLoading && !productStore.hasProducts" class="text-center py-24">
                 <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto">
                 </div>
-                <p class="mt-6 text-lg text-gray-600 font-medium">Loading products...</p>
+                <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('products.header.loadingProducts') }}</p>
             </div>
 
             <div v-else-if="!productStore.hasProducts" class="text-center py-24">
@@ -94,11 +97,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-4h-3a2 2 0 00-2 2v1m-3 0V9a2 2 0 012-2h3m-6 3h2m-2 0v2a1 1 0 01-1 1h-1a1 1 0 01-1-1v-2z" />
                     </svg>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">No products found</h3>
-                    <p class="mt-2 text-gray-500">Try adjusting your search criteria or filters.</p>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">{{ $t('products.empty.title') }}</h3>
+                    <p class="mt-2 text-gray-500">{{ $t('products.empty.description') }}</p>
                     <button @click="clearFilters"
                         class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        Clear All Filters
+                        {{ $t('products.empty.clearFilters') }}
                     </button>
                 </div>
             </div>
