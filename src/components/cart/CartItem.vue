@@ -21,14 +21,14 @@
                 {{ item.product.category }}
             </p>
             <p v-if="item.product.sku" class="text-xs text-gray-400">
-                SKU: {{ item.product.sku }}
+                {{ $t('cart.sku', { sku: item.product.sku }) }}
             </p>
             <div class="mt-1">
                 <span class="text-sm font-medium text-gray-900">
                     €{{ formatPrice(item.price) }}
                 </span>
                 <span class="text-xs text-gray-500 ml-1">
-                    per {{ item.product.unit || 'piece' }}
+                    {{ $t('cart.perPiece', { unit: item.product.unit || 'piece' }) }}
                 </span>
             </div>
         </div>

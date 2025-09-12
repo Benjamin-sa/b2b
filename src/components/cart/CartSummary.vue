@@ -1,13 +1,13 @@
 <template>
     <div class="bg-gray-50 p-4 rounded-lg">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Order Summary</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('cart.summaryTitle') }}</h3>
 
         <!-- Summary Lines -->
         <div class="space-y-2">
             <!-- Item Count -->
             <div class="flex justify-between text-sm">
                 <span class="text-gray-600">
-                    Items ({{ itemCount }})
+                    {{ $t('cart.items', { count: itemCount }) }}
                 </span>
                 <span class="text-gray-900">
                     €{{ formatPrice(subtotal) }}
@@ -16,13 +16,13 @@
 
             <!-- Shipping (Free for B2B) -->
             <div class="flex justify-between text-sm">
-                <span class="text-gray-600">Shipping</span>
-                <span class="text-green-600 font-medium">Free</span>
+                <span class="text-gray-600">{{ $t('cart.shipping') }}</span>
+                <span class="text-green-600 font-medium">{{ $t('cart.free') }}</span>
             </div>
 
             <!-- Tax -->
             <div class="flex justify-between text-sm">
-                <span class="text-gray-600">VAT (21%)</span>
+                <span class="text-gray-600">{{ $t('cart.vat') }}</span>
                 <span class="text-gray-900">
                     €{{ formatPrice(tax) }}
                 </span>
@@ -33,7 +33,7 @@
 
             <!-- Total -->
             <div class="flex justify-between text-base font-medium">
-                <span class="text-gray-900">Total</span>
+                <span class="text-gray-900">{{ $t('cart.total') }}</span>
                 <span class="text-gray-900">
                     €{{ formatPrice(grandTotal) }}
                 </span>
@@ -41,7 +41,7 @@
 
             <!-- VAT Info -->
             <p class="text-xs text-gray-500 mt-2">
-                VAT will be shown on your invoice. Prices exclude VAT.
+                {{ $t('cart.vatInfo') }}
             </p>
         </div>
 
@@ -57,20 +57,20 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span v-if="isLoading">Processing...</span>
-                <span v-else>Proceed to Checkout</span>
+                <span v-if="isLoading">{{ $t('cart.processing') }}</span>
+                <span v-else>{{ $t('cart.checkout') }}</span>
             </button>
 
             <!-- Continue Shopping -->
             <button @click="continueShopping"
                 class="w-full bg-gray-100 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors duration-200">
-                Continue Shopping
+                {{ $t('cart.continueShopping') }}
             </button>
 
             <!-- Clear Cart -->
             <button v-if="itemCount > 0" @click="clearCart" :disabled="isLoading"
                 class="w-full text-red-600 hover:text-red-800 text-sm py-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                Clear Cart
+                {{ $t('cart.clearCart') }}
             </button>
         </div>
 
@@ -84,10 +84,10 @@
                 </svg>
                 <div class="ml-3">
                     <h4 class="text-sm font-medium text-yellow-800">
-                        Minimum Order Requirements
+                        {{ $t('cart.minOrderTitle') }}
                     </h4>
                     <p class="text-sm text-yellow-700 mt-1">
-                        Some items have minimum order quantities. Please check individual items.
+                        {{ $t('cart.minOrderMessage') }}
                     </p>
                 </div>
             </div>
@@ -99,6 +99,9 @@
 import { ref, computed } from 'vue'
 import { useCartStore } from '../../stores/cart'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
     close: []
@@ -148,7 +151,7 @@ const continueShopping = () => {
 }
 
 const clearCart = () => {
-    if (confirm('Are you sure you want to clear your cart?')) {
+    if (confirm(t('cart.clearCartConfirm'))) {
         cartStore.clearCart()
     }
 }

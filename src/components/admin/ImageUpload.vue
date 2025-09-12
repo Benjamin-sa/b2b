@@ -2,7 +2,7 @@
     <div class="space-y-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-                Product Images
+                {{ $t('admin.imageUpload.title') }}
             </label>
 
             <!-- Upload Area -->
@@ -18,13 +18,13 @@
                     <div class="text-sm text-gray-600">
                         <label for="file-upload"
                             class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                            <span>Upload files</span>
+                            <span>{{ $t('admin.imageUpload.uploadFiles') }}</span>
                             <input id="file-upload" ref="fileInput" type="file" multiple accept="image/*"
                                 class="sr-only" @change="handleFileSelect" />
                         </label>
-                        <span class="pl-1">or drag and drop</span>
+                        <span class="pl-1">{{ $t('admin.imageUpload.dragAndDrop') }}</span>
                     </div>
-                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+                    <p class="text-xs text-gray-500">{{ $t('admin.imageUpload.fileTypes') }}</p>
                 </div>
 
                 <!-- Uploading State -->
@@ -36,12 +36,12 @@
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <p class="text-sm text-gray-600">Uploading images...</p>
+                    <p class="text-sm text-gray-600">{{ $t('admin.imageUpload.uploading') }}</p>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                         <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                             :style="{ width: uploadProgress + '%' }"></div>
                     </div>
-                    <p class="text-xs text-gray-500">{{ uploadProgress }}% complete</p>
+                    <p class="text-xs text-gray-500">{{ $t('admin.imageUpload.uploadProgress', { progress: uploadProgress }) }}</p>
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
             <div v-for="(image, index) in images" :key="index"
                 class="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden">
 
-                <img :src="image.url" :alt="`Product image ${index + 1}`" class="w-full h-full object-cover" />
+                <img :src="image.url" :alt="$t('admin.imageUpload.productImage', { index: index + 1 })" class="w-full h-full object-cover" />
 
                 <!-- Delete Button -->
                 <button @click="removeImage(index)"
@@ -65,13 +65,13 @@
                 <!-- Primary Image Indicator -->
                 <div v-if="index === 0"
                     class="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                    Primary
+                    {{ $t('admin.imageUpload.primary') }}
                 </div>
 
                 <!-- Set as Primary Button -->
                 <button v-else @click="setPrimaryImage(index)"
                     class="absolute bottom-2 left-2 bg-gray-800 bg-opacity-75 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-900">
-                    Set Primary
+                    {{ $t('admin.imageUpload.setPrimary') }}
                 </button>
             </div>
         </div>
@@ -87,6 +87,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface ImageData {
     url: string // Dit is de publieke R2 URL
@@ -151,15 +154,15 @@ const validateFiles = (files: File[]): { valid: File[], errors: string[] } => {
 
     files.forEach(file => {
         if (!file.type.startsWith('image/')) {
-            fileErrors.push(`${file.name} is not an image file.`)
+            fileErrors.push(t('admin.imageUpload.notAnImage', { fileName: file.name }))
             return
         }
         if (file.size > props.maxFileSize * 1024 * 1024) {
-            fileErrors.push(`${file.name} is too large (max ${props.maxFileSize}MB).`)
+            fileErrors.push(t('admin.imageUpload.fileTooLarge', { fileName: file.name, size: props.maxFileSize }))
             return
         }
         if (images.value.length + validFiles.length >= props.maxImages) {
-            fileErrors.push(`Maximum ${props.maxImages} images allowed.`)
+            fileErrors.push(t('admin.imageUpload.maxImages', { count: props.maxImages }))
             // Stop met valideren als de limiet is bereikt
             return
         }
@@ -230,7 +233,7 @@ const uploadFiles = async (files: File[]) => {
 
     } catch (error) {
         console.error('Upload error:', error)
-        errors.value.push('Failed to upload images. Please try again.')
+        errors.value.push(t('admin.imageUpload.uploadFailed'))
     } finally {
         uploading.value = false;
         if (fileInput.value) fileInput.value.value = '';

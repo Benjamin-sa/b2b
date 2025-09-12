@@ -2,7 +2,7 @@
     <div class="space-y-4">
         <!-- Main Image Display -->
         <div class="relative aspect-square bg-gray-100 rounded-xl overflow-hidden shadow-lg">
-            <img v-if="currentImage" :src="currentImage" :alt="alt || 'Product image'"
+            <img v-if="currentImage" :src="currentImage" :alt="alt || $t('imageGallery.productImage')"
                 class="w-full h-full object-cover" @error="handleImageError" />
             <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
                 <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@
                         ? 'border-blue-500 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                 ]">
-                <img :src="image" :alt="`Thumbnail ${index + 1}`" class="w-full h-full object-cover"
+                <img :src="image" :alt="$t('imageGallery.thumbnail', { index: index + 1 })" class="w-full h-full object-cover"
                     @error="handleImageError" />
             </button>
         </div>
@@ -62,7 +62,7 @@
                 class="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
                 @click="closeLightbox">
                 <div class="relative max-w-7xl max-h-full">
-                    <img v-if="currentImage" :src="currentImage" :alt="alt || 'Product image'"
+                    <img v-if="currentImage" :src="currentImage" :alt="alt || $t('imageGallery.productImage')"
                         class="max-w-full max-h-full object-contain" @click.stop />
 
                     <!-- Close Button -->

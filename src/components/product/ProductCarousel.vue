@@ -31,13 +31,13 @@
         <div v-else-if="error" class="text-center py-8">
             <p class="text-red-600 mb-4">{{ error }}</p>
             <button @click="loadProducts" class="btn-primary">
-                Try Again
+                {{ $t('productCarousel.tryAgain') }}
             </button>
         </div>
 
         <!-- Empty state -->
         <div v-else-if="products.length === 0" class="text-center py-8 text-gray-500">
-            <p>No products available</p>
+            <p>{{ $t('productCarousel.noProducts') }}</p>
         </div>
 
         <!-- Products carousel -->
@@ -62,7 +62,7 @@
         <div class="text-center mt-6" v-if="products.length > 0">
             <router-link :to="viewAllLink"
                 class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors">
-                View all {{ title }}
+                {{ $t('productCarousel.viewAll', { title: title }) }}
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>

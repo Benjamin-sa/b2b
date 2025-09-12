@@ -10,7 +10,7 @@
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">4Tparts</h1>
-                        <p class="text-sm text-gray-500">B2B Platform</p>
+                        <p class="text-sm text-gray-500">{{ $t('auth.b2bPlatform') }}</p>
                     </div>
                 </div>
 
@@ -26,12 +26,12 @@
                     <div class="px-8 pt-8 pb-6 text-center">
                         <Transition name="fade" mode="out-in">
                             <div v-if="isLoginMode" key="login-header">
-                                <h2 class="text-3xl font-bold text-gray-900 mb-3">Welcome Back</h2>
-                                <p class="text-gray-600">Sign in to your B2B account</p>
+                                <h2 class="text-3xl font-bold text-gray-900 mb-3">{{ $t('auth.welcomeBack') }}</h2>
+                                <p class="text-gray-600">{{ $t('auth.signInToB2B') }}</p>
                             </div>
                             <div v-else key="register-header">
-                                <h2 class="text-3xl font-bold text-gray-900 mb-3">Join 4Tparts</h2>
-                                <p class="text-gray-600">Create your B2B account</p>
+                                <h2 class="text-3xl font-bold text-gray-900 mb-3">{{ $t('auth.join4Tparts') }}</h2>
+                                <p class="text-gray-600">{{ $t('auth.createB2BAccount') }}</p>
                             </div>
                         </Transition>
                     </div>
@@ -55,10 +55,10 @@
                     <!-- Footer -->
                     <div class="px-8 py-6 bg-gray-50 border-t border-gray-100">
                         <p class="text-center text-sm text-gray-600">
-                            {{ isLoginMode ? "Don't have an account?" : 'Already have an account?' }}
+                            {{ isLoginMode ? $t('auth.dontHaveAccount') : $t('auth.alreadyHaveAccount') }}
                             <button @click="toggleMode"
                                 class="font-semibold text-blue-600 hover:text-blue-500 ml-1 focus:outline-none focus:underline transition-colors cursor-pointer">
-                                {{ isLoginMode ? 'Sign up here' : 'Sign in here' }}
+                                {{ isLoginMode ? $t('auth.signUpHere') : $t('auth.signInHere') }}
                             </button>
                         </p>
                     </div>
@@ -67,12 +67,14 @@
                 <!-- Additional Info -->
                 <div class="mt-8 text-center">
                     <p class="text-sm text-gray-500">
-                        By creating an account, you agree to our
-                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">Terms of
-                            Service</a>
-                        and
-                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">Privacy
-                            Policy</a>
+                        {{ $t('auth.agreeToTerms') }}
+                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">
+                            {{ $t('auth.termsOfService') }}
+                        </a>
+                        &
+                        <a href="#" class="text-blue-600 hover:text-blue-500 font-medium cursor-pointer">
+                            {{ $t('auth.privacyPolicy') }}
+                        </a>
                     </p>
                 </div>
             </div>
@@ -81,13 +83,14 @@
         <!-- Footer -->
         <footer class="w-full px-6 py-4 border-t border-gray-200">
             <div class="max-w-7xl mx-auto text-center text-sm text-gray-500">
-                © 2025 4Tparts B2B Platform. All rights reserved.
+                {{ $t('auth.copyright') }}
             </div>
         </footer>
     </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LoginForm from '../components/auth/LoginForm.vue'
@@ -96,6 +99,7 @@ import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import { validateVATNumber, type VATValidationResult } from '../utils/vatValidation'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
@@ -141,7 +145,7 @@ const vatValidation = ref<VATValidationResult>({ isValid: true })
 
 const validateBTW = () => {
     if (!registerForm.value.btwNumber.trim()) {
-        vatValidation.value = { isValid: false, error: 'BTW nummer is verplicht' }
+        vatValidation.value = { isValid: false, error: t('auth.vatRequired') }
         return
     }
     vatValidation.value = validateVATNumber(registerForm.value.btwNumber)
@@ -181,28 +185,28 @@ const handleLogin = async () => {
         console.log('Attempting login...')
         await authStore.login(loginForm.value.email, loginForm.value.password)
         console.log('Login successful, showing notification')
-        await notificationStore.success('Welcome back!', 'You have been successfully logged in.')
+        await notificationStore.success(t('auth.welcomeBackMessage'), t('auth.loggedInMessage'))
         router.push('/')
         // Reset form
         loginForm.value = { email: '', password: '' }
     } catch (error) {
         console.error('Login error:', error)
-        const errorMessage = authStore.error || 'An unexpected error occurred during login.'
+        const errorMessage = authStore.error || t('auth.loginFailedMessage')
         console.log('Showing error notification:', errorMessage)
-        await notificationStore.error('Login failed', errorMessage)
+        await notificationStore.error(t('auth.loginFailed'), errorMessage)
     }
 }
 
 const handleRegister = async () => {
     if (!passwordsMatch.value) {
-        await notificationStore.warning('Password mismatch', 'Please make sure your passwords match.')
+        await notificationStore.warning(t('auth.passwordMismatch'), t('auth.passwordMismatchMessage'))
         return
     }
 
     // Extra BTW validatie voor submit
     validateBTW()
     if (!vatValidation.value.isValid) {
-        await notificationStore.error('VAT validation failed', vatValidation.value.error || 'Invalid VAT number.')
+        await notificationStore.error(t('auth.vatValidationFailed'), vatValidation.value.error || t('auth.invalidVatNumber'))
         return
     }
 
@@ -220,7 +224,7 @@ const handleRegister = async () => {
         )
 
         console.log('Registration successful, showing notification')
-        await notificationStore.success('Account created!', 'Welcome to 4Tparts B2B Platform.')
+        await notificationStore.success(t('auth.accountCreated'), t('auth.welcomeToPlatform'))
 
         // Small delay to ensure all registration processes complete
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -247,9 +251,9 @@ const handleRegister = async () => {
         vatValidation.value = { isValid: true }
     } catch (error) {
         console.error('Registration error:', error)
-        const errorMessage = authStore.error || 'An unexpected error occurred during registration.'
+        const errorMessage = authStore.error || t('auth.registrationFailedMessage')
         console.log('Showing registration error notification:', errorMessage)
-        await notificationStore.error('Registration failed', errorMessage)
+        await notificationStore.error(t('auth.registrationFailed'), errorMessage)
     }
 }
 </script>

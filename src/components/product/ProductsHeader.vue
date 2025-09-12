@@ -32,7 +32,7 @@
                             <div class="absolute inset-y-0 right-0 flex items-center">
                                 <button @click="toggleAdvancedFilters"
                                     class="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 border-l border-gray-300 rounded-r-lg hover:bg-gray-50">
-                                    {{ $t('common.filter') }}
+                                    {{ $t('common.actions.filter') }}
                                     <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -192,7 +192,7 @@ const getHeaderDescription = () => {
 
 const getResultsText = () => {
     if (props.isLoading && props.productCount === 0) {
-        return t('products.header.loadingProducts');
+        return t('products.header.loading');
     }
     if (props.totalCount === 0) {
         return t('products.header.noProducts');

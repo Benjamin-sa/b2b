@@ -5,11 +5,11 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Product Categories</h1>
-                        <p class="mt-2 text-gray-600">Browse our products by category</p>
+                        <h1 class="text-3xl font-bold text-gray-900">{{ $t('categories.title') }}</h1>
+                        <p class="mt-2 text-gray-600">{{ $t('categories.subtitle') }}</p>
                     </div>
                     <div class="text-sm text-gray-500">
-                        {{categoryStore.categories.filter(c => c.isActive).length}} categories available
+                        {{ $t('categories.categoriesAvailable', { count: categoryStore.categories.filter(c => c.isActive).length }) }}
                     </div>
                 </div>
             </div>
@@ -18,7 +18,7 @@
         <!-- Loading State -->
         <div v-if="categoryStore.isLoading && !categoryStore.hasCategories" class="text-center py-24">
             <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-            <p class="mt-6 text-lg text-gray-600 font-medium">Loading categories...</p>
+            <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('categories.loading') }}</p>
         </div>
 
         <!-- Error State -->
@@ -30,11 +30,11 @@
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                        <h3 class="text-lg font-medium text-red-800">Error loading categories</h3>
+                        <h3 class="text-lg font-medium text-red-800">{{ $t('categories.error') }}</h3>
                         <p class="text-red-700 mt-1">{{ categoryStore.error }}</p>
                         <button @click="loadCategories"
                             class="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium">
-                            Try Again
+                            {{ $t('categories.tryAgain') }}
                         </button>
                     </div>
                 </div>
@@ -48,8 +48,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <h3 class="mt-4 text-lg font-medium text-gray-900">No categories available</h3>
-                <p class="mt-2 text-gray-500">Categories will be available once they are set up by administrators.</p>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">{{ $t('categories.noCategories') }}</h3>
+                <p class="mt-2 text-gray-500">{{ $t('categories.noCategoriesMessage') }}</p>
             </div>
 
             <div v-else>

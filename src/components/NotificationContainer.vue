@@ -46,7 +46,7 @@
                                 <div class="flex-shrink-0">
                                     <button @click="removeNotification(notification.id)"
                                         class="flex items-center justify-center w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                                        aria-label="Close notification">
+                                        :aria-label="$t('notification.close')">
                                         <XMarkIcon class="h-4 w-4 text-gray-600" />
                                     </button>
                                 </div>

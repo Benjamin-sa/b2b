@@ -10,46 +10,41 @@
                             clip-rule="evenodd" />
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Account Verification Pending</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $t('verificationPending.title') }}</h1>
                 <p class="text-gray-600 mb-6">
-                    Your B2B account is currently under review and awaiting verification.
+                    {{ $t('verificationPending.subtitle') }}
                 </p>
             </div>
 
             <!-- User Info -->
             <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                 <div class="mb-2">
-                    <span class="text-sm font-medium text-gray-700">Company:</span>
+                    <span class="text-sm font-medium text-gray-700">{{ $t('verificationPending.company') }}</span>
                     <span class="text-sm text-gray-900 ml-2">{{ userProfile?.companyName }}</span>
                 </div>
                 <div class="mb-2">
-                    <span class="text-sm font-medium text-gray-700">Email:</span>
+                    <span class="text-sm font-medium text-gray-700">{{ $t('verificationPending.email') }}</span>
                     <span class="text-sm text-gray-900 ml-2">{{ userProfile?.email }}</span>
                 </div>
                 <div class="mb-2">
-                    <span class="text-sm font-medium text-gray-700">BTW Number:</span>
+                    <span class="text-sm font-medium text-gray-700">{{ $t('verificationPending.btwNumber') }}</span>
                     <span class="text-sm text-gray-900 ml-2">{{ userProfile?.btwNumber }}</span>
                 </div>
             </div>
 
             <!-- Main Message -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h2 class="text-lg font-semibold text-blue-900 mb-2">What happens next?</h2>
-                <p class="text-blue-800 text-sm">
-                    Our team will review your account information and verify your business details.
-                    <strong>We will communicate with you via email when your account is verified</strong>
-                    and you can access the full B2B platform.
+                <h2 class="text-lg font-semibold text-blue-900 mb-2">{{ $t('verificationPending.whatHappensNext') }}</h2>
+                <p class="text-blue-800 text-sm" v-html="$t('verificationPending.whatHappensNextMessage')">
                 </p>
             </div>
 
             <!-- Additional Information -->
             <div class="text-sm text-gray-600 mb-6">
-                <p class="mb-2">
-                    <strong>Verification typically takes 1-2 business days.</strong>
+                <p class="mb-2" v-html="$t('verificationPending.verificationTime')">
                 </p>
                 <p>
-                    If you have any questions or need to update your information,
-                    please contact our support team.
+                    {{ $t('verificationPending.contactSupport') }}
                 </p>
             </div>
 
@@ -57,13 +52,13 @@
             <div class="space-y-3">
                 <button @click="logout"
                     class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                    Sign Out
+                    {{ $t('verificationPending.signOut') }}
                 </button>
 
                 <div class="text-xs text-gray-500 pt-2">
-                    Need help? Contact support:
+                    {{ $t('verificationPending.needHelp') }}
                     <a href="mailto:support@4Tparts.com" class="text-blue-600 hover:text-blue-800 underline">
-                        support@4Tparts.com
+                        {{ $t('verificationPending.supportEmail') }}
                     </a>
                 </div>
             </div>

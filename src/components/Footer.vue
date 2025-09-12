@@ -46,7 +46,6 @@
                     <div class="space-y-2 text-sm text-gray-600">
                         <p>{{ $t('footer.contact.email') }}</p>
                         <p>{{ $t('footer.contact.phone') }}</p>
-                        <p>{{ $t('footer.contact.hours') }}</p>
                     </div>
                 </div>
             </div>

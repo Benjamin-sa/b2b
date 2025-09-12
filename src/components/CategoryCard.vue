@@ -36,7 +36,7 @@
 
             <!-- Subcategories -->
             <div v-if="subcategories.length > 0" class="mb-3">
-                <p class="text-xs font-medium text-gray-500 mb-2">Subcategories:</p>
+                <p class="text-xs font-medium text-gray-500 mb-2">{{ $t('categoryCard.subcategories') }}</p>
                 <div class="flex flex-wrap gap-1">
                     <span v-for="subcat in subcategories.slice(0, 3)" :key="subcat.id"
                         class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -44,7 +44,7 @@
                     </span>
                     <span v-if="subcategories.length > 3"
                         class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                        +{{ subcategories.length - 3 }} more
+                        {{ $t('categoryCard.more', { count: subcategories.length - 3 }) }}
                     </span>
                 </div>
             </div>
@@ -53,7 +53,7 @@
             <div class="flex items-center justify-between text-sm">
 
                 <div class="flex items-center text-blue-600 group-hover:text-blue-700">
-                    <span class="text-sm font-medium mr-1">Browse</span>
+                    <span class="text-sm font-medium mr-1">{{ $t('categoryCard.browse') }}</span>
                     <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

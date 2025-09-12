@@ -7,19 +7,19 @@
                                 Parent
                             </th>      <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900">Category Management</h2>
-                <p class="text-gray-600 mt-1">Manage product categories and subcategories</p>
+                <h2 class="text-2xl font-bold text-gray-900">{{ $t('admin.categories.managementTitle') }}</h2>
+                <p class="text-gray-600 mt-1">{{ $t('admin.categories.managementSubtitle') }}</p>
             </div>
             <button @click="openModal()"
                 class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
-                Add Category
+                {{ $t('admin.categories.add') }}
             </button>
         </div>
 
         <!-- Loading state -->
         <div v-if="categoryStore.isLoading && !categoryStore.hasCategories" class="text-center py-8">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-            <p class="text-gray-500 mt-4">Loading categories...</p>
+            <p class="text-gray-500 mt-4">{{ $t('admin.categories.loading') }}</p>
         </div>
 
         <!-- Error state -->
@@ -31,7 +31,7 @@
                 </svg>
                 <p class="text-red-800">{{ categoryStore.error }}</p>
                 <button @click="loadCategories" class="ml-auto text-red-600 hover:text-red-700 font-medium">
-                    Try Again
+                    {{ $t('admin.categories.tryAgain') }}
                 </button>
             </div>
         </div>
@@ -40,14 +40,14 @@
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
-                    <input v-model="searchTerm" type="text" placeholder="Search categories..."
+                    <input v-model="searchTerm" type="text" :placeholder="$t('admin.categories.searchPlaceholder')"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
                 </div>
                 <select v-model="statusFilter"
                     class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="">{{ $t('admin.categories.allStatus') }}</option>
+                    <option value="active">{{ $t('admin.categories.active') }}</option>
+                    <option value="inactive">{{ $t('admin.categories.inactive') }}</option>
                 </select>
             </div>
         </div>
@@ -59,22 +59,22 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Category
+                                {{ $t('admin.categories.category') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Parent
+                                {{ $t('admin.categories.parent') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Order
+                                {{ $t('admin.categories.order') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
+                                {{ $t('admin.categories.status') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Products
+                                {{ $t('admin.categories.products') }}
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
+                                {{ $t('admin.categories.actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -108,7 +108,7 @@
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800'
                                 ]">
-                                    {{ category.isActive ? 'Active' : 'Inactive' }}
+                                    {{ category.isActive ? $t('admin.categories.active') : $t('admin.categories.inactive') }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -117,10 +117,10 @@
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-2">
                                     <button @click="openModal(category)" class="text-indigo-600 hover:text-indigo-900">
-                                        Edit
+                                        {{ $t('admin.categories.edit') }}
                                     </button>
                                     <button @click="deleteCategory(category)" class="text-red-600 hover:text-red-900">
-                                        Delete
+                                        {{ $t('admin.categories.delete') }}
                                     </button>
                                 </div>
                             </td>
@@ -135,12 +135,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No categories found</h3>
-                <p class="mt-1 text-sm text-gray-500">Get started by creating your first category.</p>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">{{ $t('admin.categories.noCategories') }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ $t('admin.categories.noCategoriesMessage') }}</p>
                 <div class="mt-6">
                     <button @click="openModal()"
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-                        Add Category
+                        {{ $t('admin.categories.add') }}
                     </button>
                 </div>
             </div>
@@ -158,7 +158,9 @@ import { useCategoryStore } from '../../../stores/categories'
 import { useNotificationStore } from '../../../stores/notifications'
 import type { Category } from '../../../types/category'
 import CategoryFormModal from '../CategoryFormModal.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const categoryStore = useCategoryStore()
 const notificationStore = useNotificationStore()
 
@@ -205,7 +207,7 @@ const loadCategories = async () => {
 const getParentName = (parentId?: string) => {
     if (!parentId) return '-'
     const parent = categoryStore.categories.find(cat => cat.id === parentId)
-    return parent?.name || 'Unknown'
+    return parent?.name || t('admin.categories.unknown')
 }
 
 const getIndentedName = (category: Category) => {
@@ -227,28 +229,28 @@ const handleCategorySaved = () => {
     closeModal()
     loadCategories() // Refresh the list
     notificationStore.success(
-        editingCategory.value ? 'Category Updated' : 'Category Created',
+        editingCategory.value ? t('admin.categories.updated') : t('admin.categories.created'),
         editingCategory.value
-            ? 'The category has been successfully updated.'
-            : 'The new category has been successfully created.'
+            ? t('admin.categories.updatedMessage')
+            : t('admin.categories.createdMessage')
     )
 }
 
 const deleteCategory = async (category: Category) => {
-    if (!confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+    if (!confirm(t('admin.categories.confirmDelete', { categoryName: category.name }))) {
         return
     }
 
     try {
         await categoryStore.deleteCategory(category.id)
         notificationStore.success(
-            'Category Deleted',
-            'The category has been successfully deleted.'
+            t('admin.categories.deleted'),
+            t('admin.categories.deletedMessage')
         )
     } catch (error: any) {
         notificationStore.error(
-            'Delete Failed',
-            error.message || 'Failed to delete the category.'
+            t('admin.categories.deleteFailed'),
+            error.message || t('admin.categories.deleteFailedMessage')
         )
     }
 }

@@ -88,7 +88,7 @@
             <div v-if="productStore.isLoading && !productStore.hasProducts" class="text-center py-24">
                 <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto">
                 </div>
-                <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('products.header.loadingProducts') }}</p>
+                <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('products.header.loading') }}</p>
             </div>
 
             <div v-else-if="!productStore.hasProducts" class="text-center py-24">
@@ -129,7 +129,7 @@
                                     <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
                                     <button v-if="authStore.isVerified || authStore.isAdmin"
                                         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                        Add to Cart
+                                        {{ $t('products.card.addToCart') }}
                                     </button>
                                 </div>
                             </div>
@@ -141,7 +141,7 @@
                 <div v-if="productStore.hasMoreProducts" class="mt-12 text-center">
                     <button @click="loadMore" :disabled="productStore.isLoading"
                         class="px-8 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                        {{ productStore.isLoading ? 'Loading...' : 'Load More Products' }}
+                        {{ productStore.isLoading ? $t('common.actions.loading') : $t('products.loadMore') }}
                     </button>
                 </div>
             </div>

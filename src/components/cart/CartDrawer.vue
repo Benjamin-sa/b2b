@@ -13,9 +13,9 @@
                     <!-- Header -->
                     <div class="flex items-center justify-between p-4 border-b border-gray-200">
                         <h2 class="text-lg font-medium text-gray-900">
-                            Shopping Cart
+                            {{ $t('cart.shoppingCart') }}
                             <span v-if="cartStore.itemCount > 0" class="text-sm text-gray-500 ml-2">
-                                ({{ cartStore.itemCount }} items)
+                                {{ $t('cart.itemCount', { count: cartStore.itemCount }) }}
                             </span>
                         </h2>
                         <button @click="closeDrawer"
@@ -38,13 +38,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9m0 0l1.5-6M7 13h10" />
                                 </svg>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ $t('cart.emptyTitle') }}</h3>
                                 <p class="text-gray-500 text-center mb-6">
-                                    Browse our products and add items to your cart to get started.
+                                    {{ $t('cart.emptyMessage') }}
                                 </p>
                                 <button @click="goToProducts"
                                     class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 btn-animate transition-smooth">
-                                    Browse Products
+                                    {{ $t('cart.browseProducts') }}
                                 </button>
                             </div>
 

@@ -4,8 +4,8 @@
             <!-- Header -->
             <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-secondary-900">Orders</h1>
-                    <p class="text-secondary-600 mt-2">Track your invoices and order status</p>
+                    <h1 class="text-3xl font-bold text-secondary-900">{{ $t('orders.title') }}</h1>
+                    <p class="text-secondary-600 mt-2">{{ $t('orders.subtitle') }}</p>
                 </div>
                 <button @click="refreshOrders" :disabled="isLoading"
                     class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:bg-secondary-300 flex items-center">
@@ -21,14 +21,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Refresh
+                    {{ $t('orders.refresh') }}
                 </button>
             </div>
 
             <!-- Loading State -->
             <div v-if="isLoading && invoices.length === 0" class="text-center py-12">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                <p class="mt-4 text-secondary-600">Loading your orders...</p>
+                <p class="mt-4 text-secondary-600">{{ $t('orders.loading') }}</p>
             </div>
 
             <!-- Error State -->
@@ -40,7 +40,7 @@
                             clip-rule="evenodd" />
                     </svg>
                     <div class="ml-3">
-                        <h3 class="text-sm font-medium text-red-800">Error loading orders</h3>
+                        <h3 class="text-sm font-medium text-red-800">{{ $t('orders.error') }}</h3>
                         <p class="text-sm text-red-700 mt-1">{{ error }}</p>
                     </div>
                 </div>
@@ -52,12 +52,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
-                <p class="mt-1 text-sm text-gray-500">Start shopping to see your orders here.</p>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">{{ $t('orders.noOrders') }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ $t('orders.noOrdersMessage') }}</p>
                 <div class="mt-6">
                     <router-link to="/products"
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        Browse Products
+                        {{ $t('orders.browseProducts') }}
                     </router-link>
                 </div>
             </div>
@@ -72,10 +72,10 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-lg font-medium text-gray-900">
-                                    Invoice {{ invoice.number || invoice.invoiceId }}
+                                    {{ $t('orders.invoice') }} {{ invoice.number || invoice.invoiceId }}
                                 </h3>
                                 <p class="text-sm text-gray-500">
-                                    Order placed on {{ formatDate(invoice.createdAt) }}
+                                    {{ $t('orders.orderPlacedOn') }} {{ formatDate(invoice.createdAt) }}
                                 </p>
                             </div>
                             <div class="flex items-center space-x-4">
@@ -90,10 +90,10 @@
                                         €{{ formatPrice(invoice.amount / 100) }}
                                     </p>
                                     <p v-if="invoice.paid" class="text-sm text-green-600">
-                                        Paid {{ formatDate(invoice.paidAt) }}
+                                        {{ $t('orders.paidOn') }} {{ formatDate(invoice.paidAt) }}
                                     </p>
                                     <p v-else-if="invoice.dueDate" class="text-sm text-gray-500">
-                                        Due {{ formatDate(invoice.dueDate) }}
+                                        {{ $t('orders.dueOn') }} {{ formatDate(invoice.dueDate) }}
                                     </p>
                                 </div>
                             </div>
@@ -106,7 +106,7 @@
 
                         <!-- Shipping Address -->
                         <div v-if="invoice.orderMetadata?.shippingAddress" class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Shipping Address</h4>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('orders.shippingAddress') }}</h4>
                             <div class="text-sm text-gray-600">
                                 <p>{{ invoice.orderMetadata.shippingAddress.company }}</p>
                                 <p>{{ invoice.orderMetadata.shippingAddress.contactPerson }}</p>
@@ -121,7 +121,7 @@
 
                         <!-- Order Notes -->
                         <div v-if="invoice.orderMetadata?.notes" class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Order Notes</h4>
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('orders.orderNotes') }}</h4>
                             <p class="text-sm text-gray-600">{{ invoice.orderMetadata.notes }}</p>
                         </div>
 
@@ -142,7 +142,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
-                                    View Invoice
+                                    {{ $t('orders.viewInvoice') }}
                                 </a>
 
                                 <!-- Download PDF -->
@@ -152,16 +152,16 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    Download PDF
+                                    {{ $t('orders.downloadPdf') }}
                                 </a>
                             </div>
 
                             <!-- Status Info -->
                             <div class="text-sm text-gray-500">
-                                <span v-if="invoice.paid">Payment received</span>
-                                <span v-else-if="invoice.status === 'sent'">Invoice sent</span>
-                                <span v-else-if="invoice.status === 'open'">Awaiting payment</span>
-                                <span v-else-if="invoice.status === 'draft'">Draft</span>
+                                <span v-if="invoice.paid">{{ $t('orders.paymentReceived') }}</span>
+                                <span v-else-if="invoice.status === 'sent'">{{ $t('orders.invoiceSent') }}</span>
+                                <span v-else-if="invoice.status === 'open'">{{ $t('orders.awaitingPayment') }}</span>
+                                <span v-else-if="invoice.status === 'draft'">{{ $t('orders.status.draft') }}</span>
                                 <span v-else>{{ invoice.status }}</span>
                             </div>
                         </div>
@@ -175,6 +175,9 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
 import { useInvoiceStore } from '../stores/invoices'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Use the invoice store
 const invoiceStore = useInvoiceStore()
@@ -239,12 +242,12 @@ const formatPrice = (price: number) => {
 
 const getStatusText = (status: string) => {
     switch (status) {
-        case 'draft': return 'Draft'
-        case 'open': return 'Pending Payment'
-        case 'paid': return 'Paid'
-        case 'sent': return 'Sent'
-        case 'voided': return 'Voided'
-        case 'uncollectible': return 'Uncollectible'
+        case 'draft': return t('orders.status.draft')
+        case 'open': return t('orders.status.open')
+        case 'paid': return t('orders.status.paid')
+        case 'sent': return t('orders.status.sent')
+        case 'voided': return t('orders.status.voided')
+        case 'uncollectible': return t('orders.status.uncollectible')
         default: return status
     }
 }

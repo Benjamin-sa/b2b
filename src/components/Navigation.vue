@@ -46,6 +46,8 @@
 
                 <!-- Right side -->
                 <div class="flex items-center space-x-4">
+                    <!-- Language Switcher -->
+                    <LanguageSwitcher />
                     <!-- Cart -->
                     <div class="relative">
                         <button @click="toggleCart"
@@ -176,6 +178,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
 import CartDrawer from './cart/CartDrawer.vue'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 
 // Define props and emits
 defineProps<{

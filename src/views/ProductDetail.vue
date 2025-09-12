@@ -17,14 +17,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
-                <p class="text-gray-600 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ $t('productDetail.productNotFound') }}</h2>
+                <p class="text-gray-600 mb-6">{{ $t('productDetail.productNotFoundMessage') }}</p>
                 <router-link to="/products"
                     class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to Products
+                    {{ $t('productDetail.backToProducts') }}
                 </router-link>
             </div>
         </div>
@@ -78,22 +78,22 @@
                                 <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
-                                    <span v-if="product.sku">SKU: {{ product.sku }}</span>
-                                    <span v-if="product.partNumber">Part #: {{ product.partNumber }}</span>
+                                    <span v-if="product.sku">{{ $t('productDetail.sku', { sku: product.sku }) }}</span>
+                                    <span v-if="product.partNumber">{{ $t('productDetail.partNumber', { partNumber: product.partNumber }) }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center ml-4">
                                 <div v-if="!product.inStock"
                                     class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
-                                    Out of Stock
+                                    {{ $t('productDetail.outOfStock') }}
                                 </div>
                                 <div v-else-if="product.stock && product.stock < 10"
                                     class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
-                                    Low Stock ({{ product.stock }} left)
+                                    {{ $t('productDetail.lowStock', { count: product.stock }) }}
                                 </div>
                                 <div v-else
                                     class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                                    In Stock
+                                    {{ $t('productDetail.inStock') }}
                                 </div>
                             </div>
                         </div>
@@ -114,9 +114,7 @@
                                         100) }}% OFF
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">{{ $t('products.details.per', {
-                                unit: product.unit ||
-                                    $t('products.details.piece') }) }}</p>
+                            <p class="text-sm text-gray-600 mt-1">{{ $t('productDetail.per', { unit: product.unit || $t('productDetail.piece') }) }}</p>
                         </div>
 
                         <!-- Tags -->
@@ -131,21 +129,18 @@
 
                         <!-- Description -->
                         <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('products.details.description')
-                                }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}</h3>
                             <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
                         </div>
                     </div>
 
                     <!-- Purchase Section -->
                     <div class="bg-gray-50 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('products.details.purchaseOptions')
-                            }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('productDetail.purchaseOptions') }}</h3>
 
                         <!-- Quantity Selector -->
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">{{
-                                $t('products.details.quantity') }}</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('productDetail.quantity') }}</label>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
@@ -169,19 +164,14 @@
                                     </button>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <div v-if="product.minOrderQuantity">{{ $t('products.details.min') }} {{
-                                        product.minOrderQuantity }} {{
-                                            product.unit || $t('products.details.pieces') }}</div>
+                                    <div v-if="product.minOrderQuantity">{{ $t('productDetail.min') }} {{ product.minOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}</div>
                                     <div v-if="effectiveMaxQuantity < (product.maxOrderQuantity || 999)">
-                                        {{ $t('products.details.max') }} {{ effectiveMaxQuantity }} {{ product.unit ||
-                                        $t('products.details.pieces') }}
-                                        <span class="text-red-600">{{ $t('products.details.limitedByStock') }}</span>
+                                        {{ $t('productDetail.max') }} {{ effectiveMaxQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                        <span class="text-red-600">{{ $t('productDetail.limitedByStock') }}</span>
                                     </div>
-                                    <div v-else-if="product.maxOrderQuantity">{{ $t('products.details.max') }} {{
-                                        product.maxOrderQuantity }} {{
-                                            product.unit || $t('products.details.pieces') }}</div>
+                                    <div v-else-if="product.maxOrderQuantity">{{ $t('productDetail.max') }} {{ product.maxOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}</div>
                                     <div v-if="product.stock" class="text-xs text-gray-500 mt-1">
-                                        {{ availableStock }} {{ $t('products.details.available') }}
+                                        {{ availableStock }} {{ $t('productDetail.available') }}
                                     </div>
                                 </div>
                             </div>
@@ -194,7 +184,7 @@
                                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                             clip-rule="evenodd" />
                                     </svg>
-                                    {{ $t('products.details.onlyItemsAvailable', { count: availableStock }) }}
+                                    {{ $t('productDetail.onlyItemsAvailable', { count: availableStock }) }}
                                 </p>
                             </div>
                         </div>
@@ -203,10 +193,8 @@
                         <!-- Total Price -->
                         <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center">
-                                <span class="text-lg font-medium text-gray-900">{{ $t('products.details.totalPrice')
-                                    }}</span>
-                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
-                                }}</span>
+                                <span class="text-lg font-medium text-gray-900">{{ $t('productDetail.totalPrice') }}</span>
+                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity) }}</span>
                             </div>
                         </div>
 
@@ -245,11 +233,11 @@
                                     d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
                             </svg>
 
-                            <span v-if="isAddingToCart">Adding to Cart...</span>
-                            <span v-else-if="!product.inStock">Out of Stock</span>
-                            <span v-else-if="!canOrder">Account Verification Required</span>
-                            <span v-else-if="addedToCartRecently">Added to Cart!</span>
-                            <span v-else>Add to Cart</span>
+                            <span v-if="isAddingToCart">{{ $t('productDetail.addingToCart') }}</span>
+                            <span v-else-if="!product.inStock">{{ $t('productDetail.outOfStock') }}</span>
+                            <span v-else-if="!canOrder">{{ $t('productDetail.accountVerificationRequired') }}</span>
+                            <span v-else-if="addedToCartRecently">{{ $t('productDetail.addedToCart') }}</span>
+                            <span v-else>{{ $t('productDetail.addToCart') }}</span>
                         </button>
 
                         <!-- Quick Actions -->
@@ -260,11 +248,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15 19l-7-7 7-7"></path>
                                 </svg>
-                                Continue Shopping
+                                {{ $t('productDetail.continueShopping') }}
                             </router-link>
                             <router-link to="/checkout"
                                 class="flex items-center justify-center px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                                View Cart
+                                {{ $t('productDetail.viewCart') }}
                                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 5l7 7-7 7"></path>

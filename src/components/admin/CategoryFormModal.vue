@@ -16,38 +16,38 @@
                         <div class="sm:flex sm:items-start">
                             <div class="w-full">
                                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                    {{ isEditing ? 'Edit Category' : 'Create New Category' }}
+                                    {{ isEditing ? $t('admin.categories.edit') : $t('admin.categories.create') }}
                                 </h3>
 
                                 <div class="space-y-4">
                                     <!-- Name -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Name *
+                                            {{ $t('admin.categories.name') }}
                                         </label>
                                         <input v-model="form.name" type="text" required
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="Enter category name" />
+                                            :placeholder="$t('admin.categories.namePlaceholder')" />
                                     </div>
 
                                     <!-- Description -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Description
+                                            {{ $t('admin.categories.description') }}
                                         </label>
                                         <textarea v-model="form.description" rows="3"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="Optional category description"></textarea>
+                                            :placeholder="$t('admin.categories.descriptionPlaceholder')"></textarea>
                                     </div>
 
                                     <!-- Parent Category -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Parent Category
+                                            {{ $t('admin.categories.parent') }}
                                         </label>
                                         <select v-model="form.parentId"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                                            <option value="">None (Root Category)</option>
+                                            <option value="">{{ $t('admin.categories.noParent') }}</option>
                                             <option v-for="cat in availableParents" :key="cat.id" :value="cat.id">
                                                 {{ cat.name }}
                                             </option>
@@ -57,18 +57,18 @@
                                     <!-- Display Order -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Display Order
+                                            {{ $t('admin.categories.displayOrder') }}
                                         </label>
                                         <input v-model.number="form.displayOrder" type="number" min="0"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                             placeholder="0" />
-                                        <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $t('admin.categories.displayOrderHint') }}</p>
                                     </div>
 
                                     <!-- Color -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Color
+                                            {{ $t('admin.categories.color') }}
                                         </label>
                                         <div class="flex items-center space-x-2">
                                             <input v-model="form.color" type="color"
@@ -81,11 +81,10 @@
                                     <!-- Image Upload -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Category Image
+                                            {{ $t('admin.categories.image') }}
                                         </label>
                                         <ImageUpload v-model="categoryImages" :max-images="1" :max-file-size="5" />
-                                        <p class="text-xs text-gray-500 mt-1">Upload a single image to represent this
-                                            category</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $t('admin.categories.imageHint') }}</p>
                                     </div>
 
                                     <!-- Active Status -->
@@ -93,7 +92,7 @@
                                         <input v-model="form.isActive" type="checkbox" id="isActive"
                                             class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
                                         <label for="isActive" class="ml-2 block text-sm text-gray-700">
-                                            Active
+                                            {{ $t('admin.categories.active') }}
                                         </label>
                                     </div>
                                 </div>
@@ -113,11 +112,11 @@
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
                             </svg>
-                            {{ isSubmitting ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
+                            {{ isSubmitting ? $t('admin.categories.saving') : (isEditing ? $t('admin.categories.update') : $t('admin.categories.createButton')) }}
                         </button>
                         <button type="button" @click="$emit('close')"
                             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancel
+                            {{ $t('common.actions.cancel') }}
                         </button>
                     </div>
                 </form>
