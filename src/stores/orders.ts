@@ -17,7 +17,7 @@ export const useOrderStore = defineStore('orders', () => {
     return cartItems.map(item => ({
       productId: item.productId,
       productName: item.product.name,
-      productSku: item.product.sku,
+      productSku: item.product.shopifyVariantId,
       quantity: item.quantity,
       unitPrice: item.price,
       totalPrice: item.price * item.quantity,
@@ -66,7 +66,7 @@ export const useOrderStore = defineStore('orders', () => {
         } : {},
         orderItems: cartItems.map(item => ({
           productName: item.product.name,
-          productSku: item.product.sku,
+          productSku: item.product.shopifyVariantId,
           quantity: item.quantity,
           unitPrice: item.price
         }))

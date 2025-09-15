@@ -59,14 +59,16 @@
                             :placeholder="$t('admin.products.brandPlaceholder')" />
                     </div>
 
-                    <!-- SKU -->
+                    <!-- SKU removed - using Shopify Variant ID instead -->
+
+                    <!-- Shopify Product ID -->
                     <div>
-                        <label for="sku" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.sku') }}
+                        <label for="shopifyProductId" class="block text-sm font-medium text-gray-700 mb-2">
+                            Shopify Product ID
                         </label>
-                        <input id="sku" v-model="form.sku" type="text"
+                        <input id="shopifyProductId" v-model="form.shopifyProductId" type="text"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.skuPlaceholder')" />
+                            placeholder="Shopify Product ID" />
                     </div>
 
                     <!-- Part Number -->
@@ -105,14 +107,137 @@
                             :placeholder="$t('admin.products.pricePlaceholder')" />
                     </div>
 
-                    <!-- Stock -->
-                    <div>
-                        <label for="stock" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.stock') }}
-                        </label>
-                        <input id="stock" v-model.number="form.stock" type="number" min="0" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.stockPlaceholder')" />
+                    <!-- Inventory Product Linking (Required) -->
+                    <div class="md:col-span-3">
+                        <div :class="[
+                            'border-2 rounded-lg p-4',
+                            showValidationErrors && !form.shopifyVariantId
+                                ? 'border-red-300 bg-red-50'
+                                : form.shopifyVariantId
+                                    ? 'border-green-300 bg-green-50'
+                                    : 'border-blue-300 bg-blue-50'
+                        ]">
+                            <h4 class="text-lg font-medium mb-3 flex items-center">
+                                <span class="mr-2">🔗</span>
+                                Required: Link to Inventory Product
+                                <span v-if="form.shopifyVariantId" class="ml-2 text-green-600">✅</span>
+                                <span v-else-if="showValidationErrors" class="ml-2 text-red-600">⚠️</span>
+                            </h4>
+
+                            <!-- Search for inventory products -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Search Inventory Products
+                                </label>
+                                <div class="flex gap-2">
+                                    <input v-model="inventorySearchQuery" type="text"
+                                        placeholder="Search by product name or Shopify ID..."
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        @input="searchInventoryProducts" />
+                                    <button type="button" @click="searchInventoryProducts"
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Selected Product Display -->
+                            <div v-if="form.shopifyVariantId && selectedInventoryProduct"
+                                class="mb-4 p-4 bg-green-50 border border-green-300 rounded-md">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h5 class="font-medium text-green-900">✅ Linked Product:</h5>
+                                        <div class="text-sm text-green-800 mt-1">
+                                            <div><strong>Name:</strong> {{ selectedInventoryProduct?.title }}</div>
+                                            <div><strong>Shopify Product ID:</strong> {{
+                                                selectedInventoryProduct?.shopify_product_id }}</div>
+                                            <div><strong>Shopify Variant ID:</strong> {{
+                                                selectedInventoryProduct?.shopify_variant_id }}</div>
+                                            <div><strong>Current Stock:</strong> B2C: {{
+                                                selectedInventoryProduct?.b2c_stock }}, B2B: {{
+                                                    selectedInventoryProduct?.b2b_stock }}</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="clearSelectedProduct"
+                                        class="text-red-600 hover:text-red-800 text-sm">
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Current B2B Stock Display -->
+                            <div v-if="form.shopifyVariantId"
+                                class="mb-4 p-3 bg-blue-50 border border-blue-300 rounded-md">
+                                <h5 class="font-medium text-blue-900 mb-2">📊 Current B2B Stock in Firebase</h5>
+                                <div class="text-2xl font-bold text-blue-700">
+                                    {{ form.stock || 0 }} units
+                                </div>
+                                <p class="text-xs text-blue-600 mt-1">
+                                    This stock amount is automatically updated when you transfer inventory
+                                </p>
+                            </div>
+
+                            <!-- B2B Stock Transfer -->
+                            <div v-if="form.shopifyVariantId && selectedInventoryProduct"
+                                class="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-md">
+                                <h5 class="font-medium text-yellow-800 mb-3">📦 Transfer Stock to B2B</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Amount to Transfer to B2B (after product creation)
+                                        </label>
+                                        <input v-model.number="transferAmount" type="number" min="0"
+                                            :max="selectedInventoryProduct?.b2c_stock || 0"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter amount (0 for no transfer)" />
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Available B2C stock: {{ selectedInventoryProduct?.b2c_stock || 0 }}
+                                        </p>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <p class="font-medium mb-1">Current Stock Distribution:</p>
+                                        <p>B2C: {{ selectedInventoryProduct?.b2c_stock || 0 }}</p>
+                                        <p>B2B: {{ selectedInventoryProduct?.b2b_stock || 0 }}</p>
+                                        <p>Total: {{ selectedInventoryProduct?.total_stock || 0 }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    💡 Stock will be transferred automatically after the product is created
+                                </p>
+                            </div>
+
+                            <!-- Validation Error -->
+                            <div v-if="showValidationErrors && !form.shopifyVariantId"
+                                class="mb-4 p-3 bg-red-50 border border-red-300 rounded-md">
+                                <p class="text-red-700 text-sm">⚠️ You must select an inventory product before saving.
+                                </p>
+                            </div>
+
+                            <!-- Search Results -->
+                            <div v-if="inventorySearchResults.length > 0" class="mb-4">
+                                <h5 class="font-medium text-gray-900 mb-2">Search Results (click to select):</h5>
+                                <div class="max-h-60 overflow-y-auto space-y-2">
+                                    <div v-for="item in inventorySearchResults" :key="item.id"
+                                        class="p-3 bg-white border rounded-md cursor-pointer hover:bg-blue-50 transition-colors"
+                                        @click="selectInventoryProduct(item)">
+                                        <div class="font-medium">{{ item.title }}</div>
+                                        <div class="text-sm text-gray-600">
+                                            Product ID: {{ item.shopify_product_id }} | Variant ID: {{
+                                                item.shopify_variant_id }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Stock - B2C: {{ item.b2c_stock }}, B2B: {{ item.b2b_stock }}, Total: {{
+                                                item.total_stock }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="inventorySearchAttempted && inventorySearchResults.length === 0 && inventorySearchQuery"
+                                class="text-sm text-gray-500">
+                                No products found matching "{{ inventorySearchQuery }}"
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Unit -->
@@ -219,9 +344,11 @@
                 <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.specifications') }}</h3>
                 <div class="space-y-2">
                     <div v-for="(_, index) in form.specifications" :key="index" class="flex gap-2">
-                        <input v-model="form.specifications![index].key" type="text" :placeholder="$t('admin.products.propertyName')"
+                        <input v-model="form.specifications![index].key" type="text"
+                            :placeholder="$t('admin.products.propertyName')"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input v-model="form.specifications![index].value" type="text" :placeholder="$t('admin.products.value')"
+                        <input v-model="form.specifications![index].value" type="text"
+                            :placeholder="$t('admin.products.value')"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <button type="button" @click="removeSpecification(index)"
                             class="px-3 py-2 text-red-600 hover:text-red-800">
@@ -242,7 +369,8 @@
                 </button>
                 <button type="submit" :disabled="loading"
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                    {{ loading ? $t('admin.products.saving') : (isEditing ? $t('admin.products.update') : $t('admin.products.addProduct')) }}
+                    {{ loading ? $t('admin.products.saving') : (isEditing ? $t('admin.products.update') :
+                        $t('admin.products.addProduct')) }}
                 </button>
             </div>
         </form>
@@ -283,6 +411,15 @@ const getIndentedCategoryName = (category: any) => {
     return `└ ${category.name}`
 }
 
+// Inventory transfer amount
+const transferAmount = ref<number>(0)
+
+// Inventory linking variables
+const inventorySearchQuery = ref('')
+const inventorySearchResults = ref<any[]>([])
+const inventorySearchAttempted = ref(false)
+const selectedInventoryProduct = ref<any>(null)
+const showValidationErrors = ref(false)
 
 const form = reactive<Product>({
     id: '', // Will be set for editing, ignored for new products
@@ -294,7 +431,6 @@ const form = reactive<Product>({
     images: [],
     categoryId: '', // Use categoryId instead of category
     category: '', // Keep for backward compatibility
-    sku: '',
     inStock: false,
     stock: 0,
     brand: '',
@@ -310,6 +446,9 @@ const form = reactive<Product>({
         width: 0,
         height: 0
     },
+    // Shopify inventory linking fields (required)
+    shopifyProductId: '',
+    shopifyVariantId: '',
     // Stripe fields - not used in form but part of Product interface
     stripeProductId: '',
     stripePriceId: '',
@@ -335,9 +474,8 @@ onMounted(async () => {
             imageUrl: props.product.imageUrl || '',
             categoryId: props.product.categoryId || '',
             category: props.product.category || '',
-            sku: props.product.sku || '',
             inStock: props.product.inStock,
-            stock: props.product.stock || 0,
+            stock: props.product.stock || 0, // B2B stock amount
             brand: props.product.brand || '',
             partNumber: props.product.partNumber || '',
             images: props.product.images || [],
@@ -348,10 +486,18 @@ onMounted(async () => {
             tags: props.product.tags || [],
             weight: props.product.weight || 0,
             dimensions: props.product.dimensions || { length: 0, width: 0, height: 0 },
+            // Shopify inventory linking fields
+            shopifyProductId: props.product.shopifyProductId || '',
+            shopifyVariantId: props.product.shopifyVariantId || '',
             // Stripe fields
             stripeProductId: props.product.stripeProductId || '',
             stripePriceId: props.product.stripePriceId || ''
         })
+
+        // If editing and has inventory link, load inventory info
+        if (props.product.shopifyVariantId) {
+            loadInventoryInfo(props.product.shopifyVariantId)
+        }
     }
 })
 
@@ -371,7 +517,78 @@ const removeSpecification = (index: number) => {
     form.specifications!.splice(index, 1)
 }
 
+// Inventory management functions
+const searchInventoryProducts = async () => {
+    if (!inventorySearchQuery.value.trim()) {
+        inventorySearchResults.value = []
+        inventorySearchAttempted.value = false
+        return
+    }
+
+    try {
+        const inventoryServiceUrl = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://127.0.0.1:8787'
+        const response = await fetch(`${inventoryServiceUrl}/api/inventory/search?q=${encodeURIComponent(inventorySearchQuery.value)}`)
+        const data = await response.json()
+
+        inventorySearchAttempted.value = true
+
+        if (data.success && data.data) {
+            inventorySearchResults.value = data.data
+        } else {
+            inventorySearchResults.value = []
+        }
+    } catch (error) {
+        console.error('Error searching inventory:', error)
+        inventorySearchResults.value = []
+        inventorySearchAttempted.value = true
+    }
+}
+
+const selectInventoryProduct = (product: any) => {
+    form.shopifyProductId = product.shopify_product_id
+    form.shopifyVariantId = product.shopify_variant_id
+    selectedInventoryProduct.value = product
+    inventorySearchResults.value = []
+    inventorySearchQuery.value = ''
+    showValidationErrors.value = false
+}
+
+const clearSelectedProduct = () => {
+    form.shopifyProductId = ''
+    form.shopifyVariantId = ''
+    selectedInventoryProduct.value = null
+    transferAmount.value = 0
+}
+
+const loadInventoryInfo = async (shopifyVariantId: string) => {
+    try {
+        const inventoryInfo = await productStore.getInventoryInfo(shopifyVariantId)
+        if (inventoryInfo) {
+            selectedInventoryProduct.value = inventoryInfo
+
+            // If we're editing an existing product, sync the B2B stock from inventory service to form
+            if (props.product) {
+                form.stock = inventoryInfo.b2b_stock || 0
+                form.inStock = (inventoryInfo.b2b_stock || 0) > 0
+            }
+        }
+    } catch (error) {
+        console.error('Error loading inventory info:', error)
+    }
+}
+
 const submitForm = async () => {
+    // Validate required inventory linking for new products
+    if (!props.product && !form.shopifyVariantId) {
+        showValidationErrors.value = true
+        // Scroll to the inventory section
+        const inventorySection = document.querySelector('.border-blue-300')
+        if (inventorySection) {
+            inventorySection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+        return
+    }
+
     loading.value = true
 
     try {
@@ -385,13 +602,16 @@ const submitForm = async () => {
             description: form.description,
             price: form.price,
             categoryId: form.categoryId, // Use categoryId primarily
-            stock: form.stock!,
             specifications: cleanedSpecs,
             tags: cleanedTags,
             // Convert to proper format for the store
             imageUrl: form.images![0] || '',
-            inStock: form.stock! > 0,
-            images: form.images
+            inStock: (form.stock || 0) > 0, // Calculate based on B2B stock
+            stock: form.stock || 0, // B2B stock amount
+            images: form.images,
+            // Required inventory linking fields (for new products)
+            shopifyProductId: form.shopifyProductId,
+            shopifyVariantId: form.shopifyVariantId
         }
 
         // Keep category field for backward compatibility
@@ -407,7 +627,6 @@ const submitForm = async () => {
             productData.originalPrice = form.originalPrice
         }
         if (form.brand!.trim()) productData.brand = form.brand
-        if (form.sku!.trim()) productData.sku = form.sku
         if (form.partNumber!.trim()) productData.partNumber = form.partNumber
         if (form.unit!.trim()) productData.unit = form.unit
         if (form.minOrderQuantity! > 1) productData.minOrderQuantity = form.minOrderQuantity
@@ -423,8 +642,8 @@ const submitForm = async () => {
             // Update existing product
             await productStore.updateProduct(props.product.id, productData)
         } else {
-            // Add new product
-            await productStore.addProduct(productData)
+            // Add new product - use centralized method that can handle inventory transfer
+            await productStore.addProductWithInventoryTransfer(productData, transferAmount.value > 0 ? transferAmount.value : undefined)
         }
 
         emit('save')

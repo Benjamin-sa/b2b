@@ -292,6 +292,8 @@
       "addSpecification": "+ Add Specification",
       "propertyName": "Property name",
       "value": "Value",
+      "inventoryLinking": "Link to Inventory Product",
+      "inventoryTest": "Inventory Service Test",
       "saving": "Saving...",
       "update": "Update Product",
       "addProduct": "Add Product",

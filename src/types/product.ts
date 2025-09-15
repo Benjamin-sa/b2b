@@ -9,9 +9,8 @@ export interface Product {
   images?: string[]
   categoryId?: string // Reference to category ID instead of string
   category?: string // Keep for backward compatibility, will be deprecated
-  sku?: string
   inStock: boolean
-  stock?: number
+  stock?: number // B2B stock amount (synced from inventory transfers)
   brand?: string
   partNumber?: string
   specifications?: { key: string; value: string }[]
@@ -25,6 +24,9 @@ export interface Product {
     width: number
     height: number
   }
+  // Inventory service integration
+  shopifyProductId?: string
+  shopifyVariantId?: string
   // Stripe integration
   stripeProductId?: string
   stripePriceId?: string

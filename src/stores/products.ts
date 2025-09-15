@@ -152,6 +152,126 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
+  // --- Inventory Transfer Actions ---
+
+  /**
+   * Transfer stock from B2C to B2B for a product
+   */
+  const transferStockToB2B = async (shopifyVariantId: string, amount: number) => {
+    try {
+      // Use environment variable or fallback to localhost for development
+      const inventoryServiceUrl = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://127.0.0.1:8787'
+      
+      const response = await fetch(`${inventoryServiceUrl}/api/inventory/transfer-b2b`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shopify_variant_id: shopifyVariantId,
+          amount: amount
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to transfer stock');
+      }
+
+      return {
+        success: true,
+        data: data.data,
+        message: data.message
+      };
+    } catch (err) {
+      console.error('Error transferring stock to B2B:', err);
+      throw new Error(err instanceof Error ? err.message : 'Failed to transfer stock');
+    }
+  };
+
+  /**
+   * Transfer stock and update product stock field in Firebase
+   */
+  const transferStockAndUpdateProduct = async (productId: string, shopifyVariantId: string, amount: number) => {
+    try {
+      // Perform the transfer
+      const transferResult = await transferStockToB2B(shopifyVariantId, amount);
+      
+      // Update the product's stock field with the new B2B stock amount
+      if (transferResult.success && transferResult.data) {
+        await updateProduct(productId, {
+          stock: transferResult.data.new_b2b_stock,
+          inStock: transferResult.data.new_b2b_stock > 0
+        });
+      }
+
+      return transferResult;
+    } catch (err) {
+      console.error('Error transferring stock and updating product:', err);
+      throw err;
+    }
+  };
+
+  /**
+   * Get inventory information for a specific variant
+   */
+  const getInventoryInfo = async (shopifyVariantId: string) => {
+    try {
+      // Use environment variable or fallback to localhost for development
+      const inventoryServiceUrl = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://127.0.0.1:8787'
+      
+      const response = await fetch(`${inventoryServiceUrl}/api/inventory/search?q=${shopifyVariantId}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch inventory info');
+      }
+
+      // Find the exact variant match
+      const variantInfo = data.data?.find((item: any) => 
+        item.shopify_variant_id === shopifyVariantId
+      );
+
+      return variantInfo || null;
+    } catch (err) {
+      console.error('Error fetching inventory info:', err);
+      throw new Error(err instanceof Error ? err.message : 'Failed to fetch inventory info');
+    }
+  };
+
+  /**
+   * Add product with inventory transfer
+   * This creates the product and then transfers the specified stock amount
+   */
+  const addProductWithInventoryTransfer = async (
+    productData: Omit<Product, 'id'>,
+    transferAmount?: number
+  ) => {
+    try {
+      // First, create the product
+      const newProduct = await addProduct(productData);
+      
+      // If transfer amount is specified and product has shopifyVariantId, perform transfer
+      if (transferAmount && transferAmount > 0 && newProduct.shopifyVariantId) {
+        const transferResult = await transferStockToB2B(newProduct.shopifyVariantId, transferAmount);
+        
+        // Update the product's stock field with the new B2B stock amount
+        if (transferResult.success && transferResult.data) {
+          await updateProduct(newProduct.id, {
+            stock: transferResult.data.new_b2b_stock,
+            inStock: transferResult.data.new_b2b_stock > 0
+          });
+        }
+      }
+
+      return newProduct;
+    } catch (err) {
+      console.error('Error adding product with inventory transfer:', err);
+      throw err;
+    }
+  };
+
   // --- Utility Actions ---
 
   const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
@@ -220,5 +340,10 @@ export const useProductStore = defineStore('products', () => {
     updateProduct,
     deleteProduct,
     getCategories,
+    // Inventory Transfer Actions
+    transferStockToB2B,
+    transferStockAndUpdateProduct,
+    getInventoryInfo,
+    addProductWithInventoryTransfer,
   };
 });

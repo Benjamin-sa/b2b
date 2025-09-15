@@ -36,7 +36,7 @@
                 <ol class="flex items-center space-x-2">
                     <li>
                         <router-link to="/" class="text-gray-500 hover:text-gray-700">{{ $t('navigation.home')
-                            }}</router-link>
+                        }}</router-link>
                     </li>
                     <li>
                         <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -78,8 +78,12 @@
                                 <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
-                                    <span v-if="product.sku">{{ $t('productDetail.sku', { sku: product.sku }) }}</span>
-                                    <span v-if="product.partNumber">{{ $t('productDetail.partNumber', { partNumber: product.partNumber }) }}</span>
+                                    <span v-if="product.shopifyVariantId">{{ $t('productDetail.sku', {
+                                        sku:
+                                        product.shopifyVariantId }) }}</span>
+                                    <span v-if="product.partNumber">{{ $t('productDetail.partNumber', {
+                                        partNumber:
+                                        product.partNumber }) }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center ml-4">
@@ -114,7 +118,9 @@
                                         100) }}% OFF
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">{{ $t('productDetail.per', { unit: product.unit || $t('productDetail.piece') }) }}</p>
+                            <p class="text-sm text-gray-600 mt-1">{{ $t('productDetail.per', {
+                                unit: product.unit ||
+                                $t('productDetail.piece') }) }}</p>
                         </div>
 
                         <!-- Tags -->
@@ -129,18 +135,21 @@
 
                         <!-- Description -->
                         <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}
+                            </h3>
                             <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
                         </div>
                     </div>
 
                     <!-- Purchase Section -->
                     <div class="bg-gray-50 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('productDetail.purchaseOptions') }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('productDetail.purchaseOptions') }}
+                        </h3>
 
                         <!-- Quantity Selector -->
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('productDetail.quantity') }}</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('productDetail.quantity')
+                                }}</label>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
@@ -164,12 +173,17 @@
                                     </button>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <div v-if="product.minOrderQuantity">{{ $t('productDetail.min') }} {{ product.minOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}</div>
+                                    <div v-if="product.minOrderQuantity">{{ $t('productDetail.min') }} {{
+                                        product.minOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                    </div>
                                     <div v-if="effectiveMaxQuantity < (product.maxOrderQuantity || 999)">
-                                        {{ $t('productDetail.max') }} {{ effectiveMaxQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                        {{ $t('productDetail.max') }} {{ effectiveMaxQuantity }} {{ product.unit ||
+                                        $t('productDetail.pieces') }}
                                         <span class="text-red-600">{{ $t('productDetail.limitedByStock') }}</span>
                                     </div>
-                                    <div v-else-if="product.maxOrderQuantity">{{ $t('productDetail.max') }} {{ product.maxOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}</div>
+                                    <div v-else-if="product.maxOrderQuantity">{{ $t('productDetail.max') }} {{
+                                        product.maxOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                    </div>
                                     <div v-if="product.stock" class="text-xs text-gray-500 mt-1">
                                         {{ availableStock }} {{ $t('productDetail.available') }}
                                     </div>
@@ -193,8 +207,10 @@
                         <!-- Total Price -->
                         <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center">
-                                <span class="text-lg font-medium text-gray-900">{{ $t('productDetail.totalPrice') }}</span>
-                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity) }}</span>
+                                <span class="text-lg font-medium text-gray-900">{{ $t('productDetail.totalPrice')
+                                    }}</span>
+                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
+                                    }}</span>
                             </div>
                         </div>
 

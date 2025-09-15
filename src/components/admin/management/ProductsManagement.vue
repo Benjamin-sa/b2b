@@ -26,7 +26,8 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
-                        <input v-model="searchTerm" @input="searchProducts" type="text" :placeholder="$t('admin.products.searchPlaceholder')"
+                        <input v-model="searchTerm" @input="searchProducts" type="text"
+                            :placeholder="$t('admin.products.searchPlaceholder')"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div class="flex gap-2">
@@ -122,11 +123,12 @@
                                         : 'bg-red-100 text-red-800',
                                     'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                 ]">
-                                    {{ product.inStock ? $t('admin.products.inStock') : $t('admin.products.outOfStock') }}
+                                    {{ product.inStock ? $t('admin.products.inStock') : $t('admin.products.outOfStock')
+                                    }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.sku || '-' }}
+                                {{ product.shopifyVariantId || '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900 mr-3">

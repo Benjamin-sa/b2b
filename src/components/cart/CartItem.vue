@@ -20,8 +20,8 @@
             <p class="text-sm text-gray-500 truncate">
                 {{ item.product.category }}
             </p>
-            <p v-if="item.product.sku" class="text-xs text-gray-400">
-                {{ $t('cart.sku', { sku: item.product.sku }) }}
+            <p v-if="item.product.shopifyVariantId" class="text-xs text-gray-400">
+                {{ $t('cart.sku', { sku: item.product.shopifyVariantId }) }}
             </p>
             <div class="mt-1">
                 <span class="text-sm font-medium text-gray-900">

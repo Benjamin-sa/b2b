@@ -53,14 +53,14 @@
                     <span class="font-medium">{{ $t('products.card.category') }}:</span>
                     <span class="ml-1">{{ product.category }}</span>
                 </div>
-                <div v-if="product.sku" class="flex items-center text-sm text-gray-600">
+                <div v-if="product.shopifyVariantId" class="flex items-center text-sm text-gray-600">
                     <span class="font-medium">{{ $t('products.card.sku') }}:</span>
-                    <span class="ml-1">{{ product.sku }}</span>
+                    <span class="ml-1">{{ product.shopifyVariantId }}</span>
                 </div>
                 <div v-if="product.minOrderQuantity" class="flex items-center text-sm text-gray-600">
                     <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>
                     <span class="ml-1">{{ product.minOrderQuantity }} {{ product.unit || $t('products.card.pieces')
-                        }}</span>
+                    }}</span>
                 </div>
             </div>
 

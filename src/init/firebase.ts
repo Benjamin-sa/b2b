@@ -27,7 +27,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Firestore emulator
   try {
-  connectFirestoreEmulator(db, '192.168.129.22', 8086);
+   await connectFirestoreEmulator(db, '192.168.129.22', 8086);
     console.log('✅ Connected to Firestore emulator');
   } catch (error) {
     console.warn('⚠️ Firestore emulator connection failed (might already be connected):', error);

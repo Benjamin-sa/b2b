@@ -11,10 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+*.wrangler
 
 .env
 functions/.env
 workers/.env
+workers/**/.dev.vars
 
 .firebase
 .vscode
