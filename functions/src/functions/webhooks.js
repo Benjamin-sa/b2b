@@ -33,6 +33,7 @@ const getFunctionOptions = () => {
       stripeWebhookSecret,
       telegramBotToken,
       telegramChatId,
+      "INVENTORY_WORKER_TOKEN",
     ];
   }
 

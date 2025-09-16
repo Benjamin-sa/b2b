@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createInventoryRoutes } from './handlers/inventoryHandlers';
+import { createWebhookRoutes } from './handlers/webhookHandlers';
 import type { Env } from './types/inventory';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -64,6 +65,9 @@ app.get('/health', async (c) => {
 // Add inventory routes
 createInventoryRoutes(app);
 
+// Add webhook routes
+createWebhookRoutes(app);
+
 // 404 handler
 app.notFound((c) => {
   return c.json({
@@ -76,8 +80,9 @@ app.notFound((c) => {
       'GET /api/inventory/search?q={query} - Search products by name or product ID',
       'POST /api/inventory/sync-shopify - Sync products from Shopify',
       'POST /api/inventory/transfer-b2b - Transfer stock from B2C to B2B',
-      'POST /api/inventory/webhook/inventory-create - Shopify product creation webhook',
-      'POST /api/inventory/webhook/inventory-update - Shopify inventory update webhook'
+      'POST /webhook/stock-update - Firebase stock update endpoint for B2B inventory',
+      'POST /webhook/shopify/product-create - Shopify product creation webhook',
+      'POST /webhook/shopify/inventory-update - Shopify inventory update webhook'
     ]
   }, 404);
 });

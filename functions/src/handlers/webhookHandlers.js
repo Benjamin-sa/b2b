@@ -8,6 +8,10 @@ const {
   processOrderItemsStock,
   parseOrderMetadata,
 } = require("../utils/database");
+const {
+  notifyStockReduction,
+  notifyStockRestoration,
+} = require("../services/inventoryWorker");
 
 /**
  * Handle invoice creation
@@ -23,7 +27,22 @@ const handleInvoiceCreated = async (invoice) => {
     // Reduce stock for new invoice
     const orderMetadata = parseOrderMetadata(invoice);
     if (orderMetadata?.orderItems) {
+      // Update local database stock
       await processOrderItemsStock(orderMetadata.orderItems, 1);
+
+      // Notify Cloudflare worker about stock reduction
+      try {
+        await notifyStockReduction(orderMetadata.orderItems, {
+          orderMetadata: orderMetadata,
+          userId: invoice.metadata?.userId,
+        });
+      } catch (workerError) {
+        console.error(
+          `⚠️ Failed to notify worker about stock reduction:`,
+          workerError
+        );
+        // Don't throw - worker notification failure shouldn't break the invoice processing
+      }
     }
 
     // Send Telegram notification with invoice data (metadata contains all needed info)
@@ -83,7 +102,22 @@ const handleInvoiceVoided = async (invoice) => {
     // Restore stock for voided invoice
     const orderMetadata = parseOrderMetadata(invoice);
     if (orderMetadata?.orderItems) {
+      // Update local database stock
       await processOrderItemsStock(orderMetadata.orderItems, -1);
+
+      // Notify Cloudflare worker about stock restoration
+      try {
+        await notifyStockRestoration(orderMetadata.orderItems, {
+          orderMetadata: orderMetadata,
+          userId: invoice.metadata?.userId,
+        });
+      } catch (workerError) {
+        console.error(
+          `⚠️ Failed to notify worker about stock restoration:`,
+          workerError
+        );
+        // Don't throw - worker notification failure shouldn't break the invoice processing
+      }
     }
 
     console.log(`✅ Invoice voided processed: ${invoice.id}`);
