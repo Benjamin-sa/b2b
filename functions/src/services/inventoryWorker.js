@@ -4,7 +4,7 @@
 
 const INVENTORY_WORKER_URL =
   process.env.INVENTORY_WORKER_URL ||
-  "https://inventory-service.your-domain.workers.dev";
+  "https://inventory-service.benkee-sauter.workers.dev";
 
 /**
  * Send stock update to Cloudflare Worker

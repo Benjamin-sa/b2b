@@ -63,7 +63,7 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
     }
   });
 
-  // Sync products from Shopify (populate database) - Admin only
+  // Sync products from Shopify (populate database) - Admin only - BATCH VERSION
   inventory.post('/sync-shopify', async (c) => {
     try {
       // Admin key verification
@@ -94,57 +94,76 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
         return c.json(response, 403);
       }
 
+      // Get batch parameters
+      const batchSize = parseInt(c.req.query('batch_size') || '10'); // Default 10 variants per batch
+      const offset = parseInt(c.req.query('offset') || '0'); // Default start from 0
+
       const inventoryService = new InventoryService(c.env.DB);
       const shopifyService = new ShopifyService(c.env.SHOPIFY_STORE_URL, c.env.SHOPIFY_ACCESS_TOKEN);
       
       const products = await shopifyService.getAllProducts();
       
+      // Flatten all variants with product info
+      const allVariants = [];
+      for (const product of products) {
+        for (const variant of product.variants) {
+          allVariants.push({
+            product,
+            variant,
+            stock: variant.inventory_quantity || 0,
+            variantTitle: `${product.title} - Variant ${variant.id}`
+          });
+        }
+      }
+
+      // Get only the batch we need to process
+      const batchVariants = allVariants.slice(offset, offset + batchSize);
       const syncedVariants = [];
       let processedCount = 0;
       let skippedCount = 0;
 
-      for (const product of products) {
-        // Iterate through each variant instead of summing them up
-        for (const variant of product.variants) {
-          const stock = variant.inventory_quantity || 0;
-          
-          // Create a title that includes the product title and variant info
-          const variantTitle = `${product.title} - Variant ${variant.id}`;
-          
-          const syncedItem = await inventoryService.syncVariantFromShopify(
-            product.id.toString(),
-            variant.id.toString(),
-            variant.inventory_item_id.toString(),
-            variantTitle,
-            stock
-          );
+      // Process only this batch
+      for (const item of batchVariants) {
+        const syncedItem = await inventoryService.syncVariantFromShopify(
+          item.product.id.toString(),
+          item.variant.id.toString(),
+          item.variant.inventory_item_id.toString(),
+          item.variantTitle,
+          item.stock
+        );
 
-          if (syncedItem) {
-            syncedVariants.push(syncedItem);
-            processedCount++;
-          } else {
-            skippedCount++;
-          }
-        }
-        
-        // Log progress every 50 items
-        if ((processedCount + skippedCount) % 50 === 0) {
+        if (syncedItem) {
+          syncedVariants.push(syncedItem);
+          processedCount++;
+        } else {
+          skippedCount++;
         }
       }
 
+      // Calculate batch info
+      const totalVariants = allVariants.length;
+      const nextOffset = offset + batchSize;
+      const hasMore = nextOffset < totalVariants;
+      const remainingVariants = Math.max(0, totalVariants - nextOffset);
 
       const response: ApiResponse = {
         success: true,
         data: {
           syncedProducts: syncedVariants,
-          stats: {
-            total_products: products.length,
-            total_variants_synced: syncedVariants.length,
-            variants_with_sku: syncedVariants.length,
-            skipped_products: skippedCount
+          batch_info: {
+            current_batch_size: batchVariants.length,
+            processed_in_batch: processedCount,
+            skipped_in_batch: skippedCount,
+            total_variants: totalVariants,
+            current_offset: offset,
+            next_offset: hasMore ? nextOffset : null,
+            has_more: hasMore,
+            remaining_variants: remainingVariants
           }
         },
-        message: `Successfully synced ${syncedVariants.length} product variants from ${products.length} Shopify products. Skipped ${skippedCount} variants with zero or negative stock.`
+        message: hasMore 
+          ? `Batch complete: Processed ${processedCount} variants (offset ${offset}-${offset + batchSize}). ${remainingVariants} variants remaining. Use offset=${nextOffset} for next batch.`
+          : `Sync complete: Processed ${processedCount} variants in final batch. Total variants: ${totalVariants}`
       };
       
       return c.json(response);
