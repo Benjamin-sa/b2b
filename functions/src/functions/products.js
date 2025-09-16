@@ -36,6 +36,8 @@ const onProductCreate = onDocumentCreated(
           category: productData.category || "",
           brand: productData.brand || "",
           partNumber: productData.partNumber || "",
+          shopifyProductId: productData.shopifyProductId || "",
+          shopifyVariantId: productData.shopifyVariantId || "",
         },
       });
 

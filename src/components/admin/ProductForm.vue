@@ -581,11 +581,6 @@ const submitForm = async () => {
     // Validate required inventory linking for new products
     if (!props.product && !form.shopifyVariantId) {
         showValidationErrors.value = true
-        // Scroll to the inventory section
-        const inventorySection = document.querySelector('.border-blue-300')
-        if (inventorySection) {
-            inventorySection.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
         return
     }
 

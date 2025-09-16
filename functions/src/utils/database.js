@@ -29,55 +29,6 @@ const logWebhookEvent = async (event, processed = true, error = null) => {
 };
 
 /**
- * Update or create order record
- */
-const createOrder = async (paymentIntent) => {
-  try {
-    const orderData = {
-      stripePaymentIntentId: paymentIntent.id,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      status: "completed",
-      paymentStatus: "succeeded",
-      createdAt: getServerTimestamp(),
-      paidAt: getServerTimestamp(),
-    };
-
-    // Add metadata if available
-    if (paymentIntent.metadata?.userId) {
-      orderData.userId = paymentIntent.metadata.userId;
-    }
-
-    if (paymentIntent.metadata?.customerEmail) {
-      orderData.customerEmail = paymentIntent.metadata.customerEmail;
-    }
-
-    if (paymentIntent.customer) {
-      orderData.stripeCustomerId = paymentIntent.customer;
-    }
-
-    // Parse any additional order metadata
-    if (paymentIntent.metadata?.orderData) {
-      try {
-        orderData.orderDetails = JSON.parse(paymentIntent.metadata.orderData);
-      } catch (e) {
-        console.warn("Failed to parse order metadata:", e);
-      }
-    }
-
-    const orderRef = await db.collection("orders").add(orderData);
-    console.log(
-      `✅ Order created: ${orderRef.id} for payment ${paymentIntent.id}`
-    );
-
-    return { id: orderRef.id, ...orderData };
-  } catch (error) {
-    console.error("❌ Error creating order:", error);
-    throw error;
-  }
-};
-
-/**
  * Create or update invoice record
  */
 const createInvoiceRecord = async (invoice) => {
@@ -86,9 +37,13 @@ const createInvoiceRecord = async (invoice) => {
       invoiceId: invoice.id,
       stripeCustomerId: invoice.customer,
       customerEmail: invoice.customer_email,
+      customerName: invoice.customer_name,
       amount: invoice.amount_due,
       currency: invoice.currency,
       status: invoice.status,
+      invoiceNumber: invoice.number,
+      hostedInvoiceUrl: invoice.hosted_invoice_url,
+      invoicePdfUrl: invoice.invoice_pdf,
       createdAt: getServerTimestamp(),
     };
 
@@ -97,9 +52,52 @@ const createInvoiceRecord = async (invoice) => {
       invoiceData.dueDate = new Date(invoice.due_date * 1000);
     }
 
+    // Add payment dates if available
+    if (invoice.status_transitions?.paid_at) {
+      invoiceData.paidAt = new Date(invoice.status_transitions.paid_at * 1000);
+    }
+
+    // Add customer address if available
+    if (invoice.customer_address) {
+      invoiceData.customerAddress = invoice.customer_address;
+    }
+
+    // Add customer shipping if available
+    if (invoice.customer_shipping) {
+      invoiceData.customerShipping = invoice.customer_shipping;
+    }
+
     // Add metadata if available
     if (invoice.metadata?.userId) {
       invoiceData.userId = invoice.metadata.userId;
+    }
+
+    // Parse and store order metadata if available
+    if (invoice.metadata?.orderMetadata) {
+      try {
+        const orderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+        invoiceData.orderDetails = orderMetadata;
+        console.log(`✅ Parsed order metadata for invoice ${invoice.id}`);
+      } catch (parseError) {
+        console.warn(
+          `⚠️ Failed to parse order metadata for invoice ${invoice.id}:`,
+          parseError
+        );
+        // Store raw metadata as fallback
+        invoiceData.rawOrderMetadata = invoice.metadata.orderMetadata;
+      }
+    }
+
+    // Store invoice line items
+    if (invoice.lines?.data) {
+      invoiceData.lineItems = invoice.lines.data.map((item) => ({
+        id: item.id,
+        amount: item.amount,
+        currency: item.currency,
+        description: item.description,
+        quantity: item.quantity,
+        metadata: item.metadata,
+      }));
     }
 
     const invoiceRef = await db.collection("invoices").add(invoiceData);
@@ -146,9 +144,150 @@ const updateInvoiceStatus = async (invoiceId, status, additionalData = {}) => {
   }
 };
 
+/**
+ * Change product stock
+ * @param {string} productSku - The product SKU
+ * @param {number} quantityChange - Positive to add, negative to subtract
+ */
+const changeProductStock = async (productSku, quantityChange) => {
+  try {
+    const productQuery = await db
+      .collection("products")
+      .where("shopifyVariantId", "==", productSku)
+      .limit(1)
+      .get();
+
+    if (productQuery.empty) {
+      console.warn(`Product not found with SKU: ${productSku}`);
+      return null;
+    }
+
+    const productDoc = productQuery.docs[0];
+    const currentProduct = productDoc.data();
+    const currentStock = currentProduct.stock || 0;
+    const newStock = Math.max(0, currentStock + quantityChange);
+
+    await productDoc.ref.update({
+      stock: newStock,
+      inStock: newStock > 0,
+      updatedAt: getServerTimestamp(),
+    });
+
+    console.log(
+      `✅ Stock updated for ${productSku}: ${currentStock} → ${newStock} (${
+        quantityChange > 0 ? "+" : ""
+      }${quantityChange})`
+    );
+
+    return {
+      productId: productDoc.id,
+      productName: currentProduct.name,
+      previousStock: currentStock,
+      newStock,
+      quantityChanged: quantityChange,
+    };
+  } catch (error) {
+    console.error(`❌ Error changing stock for product ${productSku}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Process order items for stock changes
+ * @param {Array} orderItems - Array of order items
+ * @param {number} multiplier - 1 to reduce stock, -1 to restore stock
+ */
+const processOrderItemsStock = async (orderItems, multiplier) => {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) {
+    return [];
+  }
+
+  const results = [];
+  console.log(`🔄 Processing stock for ${orderItems.length} items`);
+
+  for (const item of orderItems) {
+    if (!item.productSku || !item.quantity) {
+      console.warn(`⚠️ Missing productSku or quantity:`, item);
+      continue;
+    }
+
+    try {
+      const quantityChange = item.quantity * multiplier * -1;
+      const stockResult = await changeProductStock(
+        item.productSku,
+        quantityChange
+      );
+
+      if (stockResult) {
+        results.push({ ...stockResult, success: true });
+        console.log(
+          `✅ ${item.productName || "Unknown"} (${item.productSku}): ${
+            quantityChange > 0 ? "+" : ""
+          }${quantityChange}`
+        );
+      } else {
+        results.push({
+          productSku: item.productSku,
+          error: "Product not found",
+          success: false,
+        });
+      }
+    } catch (stockError) {
+      results.push({
+        productSku: item.productSku,
+        error: stockError.message,
+        success: false,
+      });
+      console.error(
+        `❌ Failed stock update for ${item.productSku}:`,
+        stockError
+      );
+    }
+  }
+
+  const successful = results.filter((r) => r.success).length;
+  console.log(
+    `📊 Stock processing: ${successful}/${results.length} successful`
+  );
+  return results;
+};
+
+/**
+ * Parse order metadata from invoice
+ * @param {Object} invoice - The Stripe invoice object
+ * @returns {Object|null} Parsed order metadata or null if not available/invalid
+ */
+const parseOrderMetadata = (invoice) => {
+  if (!invoice.metadata?.orderMetadata) {
+    console.warn(`⚠️ No orderMetadata found for invoice ${invoice.id}`);
+    return null;
+  }
+
+  try {
+    const orderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+
+    if (!orderMetadata.orderItems || !Array.isArray(orderMetadata.orderItems)) {
+      console.warn(
+        `⚠️ No valid orderItems found in orderMetadata for invoice ${invoice.id}`
+      );
+      return null;
+    }
+
+    return orderMetadata;
+  } catch (parseError) {
+    console.error(
+      `❌ Failed to parse orderMetadata for invoice ${invoice.id}:`,
+      parseError
+    );
+    return null;
+  }
+};
+
 module.exports = {
   logWebhookEvent,
-  createOrder,
   createInvoiceRecord,
   updateInvoiceStatus,
+  changeProductStock,
+  processOrderItemsStock,
+  parseOrderMetadata,
 };

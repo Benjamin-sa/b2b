@@ -12,7 +12,7 @@ const {
   handlePaymentIntentSucceeded,
   handleInvoiceCreated,
   handleInvoicePaymentSucceeded,
-  handleInvoicePaymentFailed,
+  handleInvoiceVoided,
 } = require("../handlers/webhookHandlers");
 
 // Configure function options based on environment
@@ -91,8 +91,9 @@ const stripeWebhook = onRequest(getFunctionOptions(), async (req, res) => {
         await handleInvoicePaymentSucceeded(event.data.object);
         break;
 
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object);
+      case "invoice.marked_uncollectible":
+      case "invoice.voided":
+        await handleInvoiceVoided(event.data.object);
         break;
 
       default:

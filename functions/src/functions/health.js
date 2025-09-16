@@ -1,9 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
-const {
-  getStripe,
-  testStripeConnection,
-  getConfigStatus,
-} = require("../config/stripe");
+const { testStripeConnection, getConfigStatus } = require("../config/stripe");
 const { db } = require("../config/firebase");
 
 /**

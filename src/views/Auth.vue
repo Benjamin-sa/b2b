@@ -182,9 +182,7 @@ const toggleMode = () => {
 
 const handleLogin = async () => {
     try {
-        console.log('Attempting login...')
         await authStore.login(loginForm.value.email, loginForm.value.password)
-        console.log('Login successful, showing notification')
         await notificationStore.success(t('auth.welcomeBackMessage'), t('auth.loggedInMessage'))
         router.push('/')
         // Reset form

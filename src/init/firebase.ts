@@ -27,7 +27,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Firestore emulator
   try {
-   await connectFirestoreEmulator(db, '192.168.129.22', 8086);
+    connectFirestoreEmulator(db, 'localhost', 8086);
     console.log('✅ Connected to Firestore emulator');
   } catch (error) {
     console.warn('⚠️ Firestore emulator connection failed (might already be connected):', error);
@@ -35,7 +35,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Auth emulator (if you plan to use it)
   try {
-  connectAuthEmulator(auth, 'http://192.168.129.22:9099');
+    connectAuthEmulator(auth, 'http://localhost:9099');
     console.log('✅ Connected to Auth emulator');
   } catch (error) {
     console.warn('⚠️ Auth emulator connection failed (might already be connected):', error);
@@ -43,7 +43,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Storage emulator (if you plan to use it)
   try {
-  connectStorageEmulator(storage, '192.168.129.22', 5001);
+    connectStorageEmulator(storage, 'localhost', 9199);
     console.log('✅ Connected to Storage emulator');
   } catch (error) {
     console.warn('⚠️ Storage emulator connection failed (might already be connected):', error);
@@ -51,7 +51,7 @@ if (import.meta.env.DEV) {
   
   // Connect to Functions emulator
   try {
-  connectFunctionsEmulator(functions, '192.168.129.22', 5001);
+    connectFunctionsEmulator(functions, 'localhost', 5001);
     console.log('✅ Connected to Functions emulator');
   } catch (error) {
     console.warn('⚠️ Functions emulator connection failed (might already be connected):', error);

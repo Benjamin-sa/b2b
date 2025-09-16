@@ -92,108 +92,83 @@ const formatCurrency = (amount, currency = "EUR") => {
 };
 
 /**
- * Send payment success notification to Telegram with enriched data
+ * Send invoice created notification to Telegram
  */
-const notifyPaymentSuccess = async (paymentIntent, enrichedData = null) => {
-  try {
-    const amount = formatCurrency(paymentIntent.amount, paymentIntent.currency);
-    const orderId = paymentIntent.metadata?.orderId || paymentIntent.id;
-
-    // Use enriched customer data if available, otherwise fallback to metadata
-    let customerInfo = paymentIntent.metadata?.customerEmail || "Unknown";
-
-    if (enrichedData?.customer) {
-      const customerName =
-        enrichedData.customer.name ||
-        `${enrichedData.customer.metadata?.firstName || ""} ${
-          enrichedData.customer.metadata?.lastName || ""
-        }`.trim();
-
-      if (customerName && customerName !== "") {
-        customerInfo = `${customerName}`;
-        if (enrichedData.customer.email) {
-          customerInfo += ` (${enrichedData.customer.email})`;
-        }
-      } else if (enrichedData.customer.email) {
-        customerInfo = enrichedData.customer.email;
-      }
-    }
-
-    const message = `
-🎉 <b>Payment Successful!</b>
-
-Amount: <b>${amount}</b>
-Customer: <code>${customerInfo}</code>
-Order ID: <code>${orderId}</code>
-Time: ${new Date().toLocaleString("nl-NL")}
-
-Status: <b>✅ PAID</b>
-    `.trim();
-
-    await sendTelegramMessage(message);
-  } catch (error) {
-    console.error("❌ Failed to send payment success notification:", error);
-    // Don't throw - we don't want to fail the webhook because of notification issues
-  }
-};
-
-/**
- * Send invoice created notification to Telegram with enriched data
- */
-const notifyInvoiceCreated = async (invoice, enrichedData = null) => {
+const notifyInvoiceCreated = async (invoice) => {
   try {
     const amount = formatCurrency(invoice.amount_due, invoice.currency);
     const dueDate = invoice.due_date
       ? new Date(invoice.due_date * 1000).toLocaleDateString("nl-NL")
       : "No due date";
 
-    // Use enriched customer data if available, otherwise fallback to webhook data
-    let customerInfo = invoice.customer_email || "Unknown";
+    // Use webhook data directly
+    let customerInfo =
+      invoice.customer_name || invoice.customer_email || "Unknown";
     let itemsInfo = "";
+    let orderDetailsInfo = "";
 
-    if (enrichedData) {
-      // Format customer information
-      if (enrichedData.customer) {
-        const customerName =
-          enrichedData.customer.name ||
-          `${enrichedData.customer.metadata?.firstName || ""} ${
-            enrichedData.customer.metadata?.lastName || ""
-          }`.trim();
+    // Parse order metadata if available
+    if (invoice.metadata?.orderMetadata) {
+      try {
+        const orderMetadata = JSON.parse(invoice.metadata.orderMetadata);
 
-        if (customerName && customerName !== "") {
-          customerInfo = `${customerName}`;
-          if (enrichedData.customer.email) {
-            customerInfo += ` (${enrichedData.customer.email})`;
+        // Use customer info from order metadata
+        if (orderMetadata.userInfo) {
+          const { companyName, contactPerson, email, btwNumber } =
+            orderMetadata.userInfo;
+          customerInfo = `${contactPerson || companyName || email}`;
+          if (companyName && contactPerson) {
+            customerInfo = `${contactPerson} (${companyName})`;
           }
-        } else if (enrichedData.customer.email) {
-          customerInfo = enrichedData.customer.email;
         }
+
+        // Format order items
+        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
+          const items = orderMetadata.orderItems
+            .slice(0, 3)
+            .map((item) => {
+              return `• ${item.productName} (${item.quantity}x) - €${item.unitPrice}`;
+            })
+            .join("\n");
+
+          itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+
+          if (orderMetadata.orderItems.length > 3) {
+            itemsInfo += `\n... and ${
+              orderMetadata.orderItems.length - 3
+            } more items`;
+          }
+        }
+
+        // Add shipping info if available
+        if (orderMetadata.shippingAddress) {
+          const addr = orderMetadata.shippingAddress;
+          orderDetailsInfo = `\n\n🚚 <b>Shipping:</b>\n${
+            addr.company || addr.contactPerson
+          }\n${addr.street}, ${addr.zipCode} ${addr.city}`;
+        }
+      } catch (parseError) {
+        console.warn(
+          "Failed to parse order metadata for notification:",
+          parseError
+        );
       }
+    }
 
-      // Format line items
-      if (
-        enrichedData.lines &&
-        enrichedData.lines.data &&
-        enrichedData.lines.data.length > 0
-      ) {
-        const items = enrichedData.lines.data
-          .slice(0, 3)
-          .map((item) => {
-            const productName =
-              item.price?.product?.name || item.description || "Item";
-            const quantity = item.quantity || 1;
-            const itemAmount = (item.amount / 100).toFixed(2);
-            return `• ${productName} (${quantity}x) - €${itemAmount}`;
-          })
-          .join("\n");
+    // Fallback to line items from webhook if no order metadata
+    if (!itemsInfo && invoice.lines?.data && invoice.lines.data.length > 0) {
+      const items = invoice.lines.data
+        .slice(0, 3)
+        .map((item) => {
+          const itemAmount = (item.amount / 100).toFixed(2);
+          return `• ${item.description} (${item.quantity}x) - €${itemAmount}`;
+        })
+        .join("\n");
 
-        itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+      itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
 
-        if (enrichedData.lines.data.length > 3) {
-          itemsInfo += `\n... and ${
-            enrichedData.lines.data.length - 3
-          } more items`;
-        }
+      if (invoice.lines.data.length > 3) {
+        itemsInfo += `\n... and ${invoice.lines.data.length - 3} more items`;
       }
     }
 
@@ -202,9 +177,9 @@ const notifyInvoiceCreated = async (invoice, enrichedData = null) => {
 
 Amount: <b>${amount}</b>
 Customer: <code>${customerInfo}</code>
-Invoice ID: <code>${invoice.id}</code>
+Invoice #: <code>${invoice.number || invoice.id}</code>
 Due Date: ${dueDate}
-Created: ${new Date().toLocaleString("nl-NL")}${itemsInfo}
+Created: ${new Date().toLocaleString("nl-NL")}${itemsInfo}${orderDetailsInfo}
 
 Status: <b>⏳ PENDING</b>
     `.trim();
@@ -217,9 +192,9 @@ Status: <b>⏳ PENDING</b>
 };
 
 /**
- * Send invoice payment success notification to Telegram with enriched data
+ * Send invoice payment success notification to Telegram
  */
-const notifyInvoicePaymentSucceeded = async (invoice, enrichedData = null) => {
+const notifyInvoicePaymentSucceeded = async (invoice) => {
   try {
     const amount = formatCurrency(
       invoice.amount_paid || invoice.amount_due,
@@ -231,52 +206,63 @@ const notifyInvoicePaymentSucceeded = async (invoice, enrichedData = null) => {
         )
       : new Date().toLocaleString("nl-NL");
 
-    // Use enriched customer data if available, otherwise fallback to webhook data
-    let customerInfo = invoice.customer_email || "Unknown";
+    // Use webhook data directly
+    let customerInfo =
+      invoice.customer_name || invoice.customer_email || "Unknown";
     let itemsInfo = "";
 
-    if (enrichedData) {
-      // Format customer information
-      if (enrichedData.customer) {
-        const customerName =
-          enrichedData.customer.name ||
-          `${enrichedData.customer.metadata?.firstName || ""} ${
-            enrichedData.customer.metadata?.lastName || ""
-          }`.trim();
+    // Parse order metadata if available
+    if (invoice.metadata?.orderMetadata) {
+      try {
+        const orderMetadata = JSON.parse(invoice.metadata.orderMetadata);
 
-        if (customerName && customerName !== "") {
-          customerInfo = `${customerName}`;
-          if (enrichedData.customer.email) {
-            customerInfo += ` (${enrichedData.customer.email})`;
+        // Use customer info from order metadata
+        if (orderMetadata.userInfo) {
+          const { companyName, contactPerson, email } = orderMetadata.userInfo;
+          customerInfo = `${contactPerson || companyName || email}`;
+          if (companyName && contactPerson) {
+            customerInfo = `${contactPerson} (${companyName})`;
           }
-        } else if (enrichedData.customer.email) {
-          customerInfo = enrichedData.customer.email;
         }
+
+        // Format order items (show fewer items for payment notifications)
+        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
+          const items = orderMetadata.orderItems
+            .slice(0, 2)
+            .map((item) => {
+              return `• ${item.productName} (${item.quantity}x)`;
+            })
+            .join("\n");
+
+          itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+
+          if (orderMetadata.orderItems.length > 2) {
+            itemsInfo += `\n... and ${
+              orderMetadata.orderItems.length - 2
+            } more items`;
+          }
+        }
+      } catch (parseError) {
+        console.warn(
+          "Failed to parse order metadata for payment notification:",
+          parseError
+        );
       }
+    }
 
-      // Format line items (show fewer items for payment notifications)
-      if (
-        enrichedData.lines &&
-        enrichedData.lines.data &&
-        enrichedData.lines.data.length > 0
-      ) {
-        const items = enrichedData.lines.data
-          .slice(0, 2)
-          .map((item) => {
-            const productName =
-              item.price?.product?.name || item.description || "Item";
-            const quantity = item.quantity || 1;
-            return `• ${productName} (${quantity}x)`;
-          })
-          .join("\n");
+    // Fallback to line items from webhook if no order metadata
+    if (!itemsInfo && invoice.lines?.data && invoice.lines.data.length > 0) {
+      const items = invoice.lines.data
+        .slice(0, 2)
+        .map((item) => {
+          return `• ${item.description} (${item.quantity}x)`;
+        })
+        .join("\n");
 
-        itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+      itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
 
-        if (enrichedData.lines.data.length > 2) {
-          itemsInfo += `\n... and ${
-            enrichedData.lines.data.length - 2
-          } more items`;
-        }
+      if (invoice.lines.data.length > 2) {
+        itemsInfo += `\n... and ${invoice.lines.data.length - 2} more items`;
       }
     }
 
@@ -285,7 +271,7 @@ const notifyInvoicePaymentSucceeded = async (invoice, enrichedData = null) => {
 
 Amount: <b>${amount}</b>
 Customer: <code>${customerInfo}</code>
-Invoice ID: <code>${invoice.id}</code>
+Invoice #: <code>${invoice.number || invoice.id}</code>
 Paid At: ${paidAt}${itemsInfo}
 
 Status: <b>✅ PAID</b>
@@ -356,7 +342,6 @@ module.exports = {
   telegramBotToken,
   telegramChatId,
   sendTelegramMessage,
-  notifyPaymentSuccess,
   notifyInvoiceCreated,
   notifyInvoicePaymentSucceeded,
   notifyNewUserRegistration,

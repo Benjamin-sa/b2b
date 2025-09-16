@@ -26,6 +26,7 @@ export interface Product {
   }
   // Inventory service integration
   shopifyProductId?: string
+  // is ID to sync stock changes 
   shopifyVariantId?: string
   // Stripe integration
   stripeProductId?: string
