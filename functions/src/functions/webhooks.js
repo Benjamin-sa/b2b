@@ -7,6 +7,7 @@ const {
   isEmulator,
 } = require("../config/stripe");
 const { telegramBotToken, telegramChatId } = require("../config/telegram");
+const { inventoryWorkerToken } = require("../services/inventoryWorker");
 const { logWebhookEvent } = require("../utils/database");
 const {
   handlePaymentIntentSucceeded,
@@ -33,7 +34,7 @@ const getFunctionOptions = () => {
       stripeWebhookSecret,
       telegramBotToken,
       telegramChatId,
-      "INVENTORY_WORKER_TOKEN",
+      inventoryWorkerToken,
     ];
   }
 

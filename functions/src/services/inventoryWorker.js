@@ -1,10 +1,37 @@
 /**
  * Service to communicate with the Cloudflare Inventory Worker
  */
+const { defineSecret } = require("firebase-functions/params");
+
+// Define secret using Firebase Functions v2 approach (for production)
+const inventoryWorkerToken = defineSecret("INVENTORY_WORKER_TOKEN");
+
+// Detect if we're running in emulator
+const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
 
 const INVENTORY_WORKER_URL =
   process.env.INVENTORY_WORKER_URL ||
   "https://inventory-service.benkee-sauter.workers.dev";
+
+/**
+ * Get inventory worker token - uses .env in emulator, secrets in production
+ */
+const getInventoryWorkerToken = () => {
+  if (isEmulator) {
+    // In emulator, use environment variable from .env with _LOCAL suffix
+    const token = process.env.INVENTORY_WORKER_TOKEN_LOCAL;
+    if (!token) {
+      console.warn(
+        "INVENTORY_WORKER_TOKEN_LOCAL not found in .env file for emulator"
+      );
+      return ""; // Return empty string instead of throwing
+    }
+    return token;
+  } else {
+    // In production, use Firebase Functions v2 secrets
+    return inventoryWorkerToken.value();
+  }
+};
 
 /**
  * Send stock update to Cloudflare Worker
@@ -41,7 +68,7 @@ const sendStockUpdate = async (orderItems, operation, metadata = {}) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.INVENTORY_WORKER_TOKEN || ""}`,
+          Authorization: `Bearer ${getInventoryWorkerToken()}`,
         },
         body: JSON.stringify(payload),
       }
@@ -82,6 +109,7 @@ const notifyStockRestoration = async (orderItems, metadata = {}) => {
 };
 
 module.exports = {
+  inventoryWorkerToken, // Export secret for use in function definitions
   sendStockUpdate,
   notifyStockReduction,
   notifyStockRestoration,

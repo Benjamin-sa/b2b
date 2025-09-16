@@ -65,7 +65,7 @@
             </div>
 
             <!-- Actions -->
-            <div class="flex flex-col space-y-2 mt-auto">
+            <div class="flex flex-col space-y-2 mt-auto" @click.stop>
                 <!-- Quantity Selector -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
@@ -75,9 +75,9 @@
                             -
                         </button>
                         <input v-model.number="quantity" type="number" :min="product.minOrderQuantity || 1"
-                            :max="product.maxOrderQuantity || 999"
+                            :max="effectiveMaxQuantity"
                             class="w-16 px-2 py-1 text-center border-0 focus:ring-0" @blur="validateQuantity" />
-                        <button @click="increaseQuantity" :disabled="quantity >= (product.maxOrderQuantity || 999)"
+                        <button @click="increaseQuantity" :disabled="quantity >= effectiveMaxQuantity"
                             class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                             +
                         </button>
@@ -85,8 +85,8 @@
                 </div>
 
                 <!-- Add to Cart Button -->
-                <button @click="addToCart" :disabled="!product.inStock || !canOrder || isLoading" :class="[
-                    !product.inStock
+                <button @click="addToCart" :disabled="!product.inStock || !canOrder || isLoading || quantity > effectiveMaxQuantity" :class="[
+                    !product.inStock || quantity > effectiveMaxQuantity
                         ? 'bg-gray-300 cursor-not-allowed'
                         : !canOrder
                             ? 'bg-yellow-500 hover:bg-yellow-600'
@@ -103,6 +103,7 @@
                     </svg>
                     <span v-if="isLoading">{{ $t('products.card.adding') }}</span>
                     <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                    <span v-else-if="quantity > effectiveMaxQuantity">{{ $t('products.card.insufficientStock') }}</span>
                     <span v-else-if="!canOrder">{{ $t('products.card.accountVerificationRequired') }}</span>
                     <span v-else-if="isInCart">{{ $t('products.card.addedToCart') }}</span>
                     <span v-else>{{ $t('products.card.addToCart') }}</span>
@@ -142,6 +143,13 @@ const onCardClick = () => {
 const quantity = ref(props.product.minOrderQuantity || 1)
 const isLoading = ref(false)
 
+// Calculate effective max quantity based on stock and product limits
+const effectiveMaxQuantity = computed(() => {
+    const stock = props.product.stock ?? 999
+    const maxOrder = props.product.maxOrderQuantity || 999
+    return Math.min(stock, maxOrder)
+})
+
 // Check if product is already in cart
 const isInCart = computed(() => cartStore.isInCart(props.product.id))
 
@@ -151,15 +159,13 @@ const formatPrice = (price: number) => {
 
 const validateQuantity = () => {
     const min = props.product.minOrderQuantity || 1
-    const max = props.product.maxOrderQuantity || 999
-
+    
     if (quantity.value < min) quantity.value = min
-    if (quantity.value > max) quantity.value = max
+    if (quantity.value > effectiveMaxQuantity.value) quantity.value = effectiveMaxQuantity.value
 }
 
 const increaseQuantity = () => {
-    const max = props.product.maxOrderQuantity || 999
-    if (quantity.value < max) {
+    if (quantity.value < effectiveMaxQuantity.value) {
         quantity.value++
     }
 }
