@@ -193,66 +193,6 @@ const changeProductStock = async (productSku, quantityChange) => {
 };
 
 /**
- * Process order items for stock changes
- * @param {Array} orderItems - Array of order items
- * @param {number} multiplier - 1 to reduce stock, -1 to restore stock
- */
-const processOrderItemsStock = async (orderItems, multiplier) => {
-  if (!Array.isArray(orderItems) || orderItems.length === 0) {
-    return [];
-  }
-
-  const results = [];
-  console.log(`🔄 Processing stock for ${orderItems.length} items`);
-
-  for (const item of orderItems) {
-    if (!item.productSku || !item.quantity) {
-      console.warn(`⚠️ Missing productSku or quantity:`, item);
-      continue;
-    }
-
-    try {
-      const quantityChange = item.quantity * multiplier * -1;
-      const stockResult = await changeProductStock(
-        item.productSku,
-        quantityChange
-      );
-
-      if (stockResult) {
-        results.push({ ...stockResult, success: true });
-        console.log(
-          `✅ ${item.productName || "Unknown"} (${item.productSku}): ${
-            quantityChange > 0 ? "+" : ""
-          }${quantityChange}`
-        );
-      } else {
-        results.push({
-          productSku: item.productSku,
-          error: "Product not found",
-          success: false,
-        });
-      }
-    } catch (stockError) {
-      results.push({
-        productSku: item.productSku,
-        error: stockError.message,
-        success: false,
-      });
-      console.error(
-        `❌ Failed stock update for ${item.productSku}:`,
-        stockError
-      );
-    }
-  }
-
-  const successful = results.filter((r) => r.success).length;
-  console.log(
-    `📊 Stock processing: ${successful}/${results.length} successful`
-  );
-  return results;
-};
-
-/**
  * Parse order metadata from invoice
  * @param {Object} invoice - The Stripe invoice object
  * @returns {Object|null} Parsed order metadata or null if not available/invalid
@@ -283,11 +223,56 @@ const parseOrderMetadata = (invoice) => {
   }
 };
 
+/**
+ * Reduce local stock for multiple items (simplified version)
+ * @param {Array} stockItems - Array of {shopifyVariantId, quantity, productName}
+ */
+const reduceLocalStock = async (stockItems) => {
+  console.log(`🔽 Reducing stock for ${stockItems.length} items`);
+
+  for (const item of stockItems) {
+    try {
+      await changeProductStock(item.shopifyVariantId, -item.quantity);
+      console.log(
+        `✅ Reduced stock: ${item.productName} (${item.shopifyVariantId}) -${item.quantity}`
+      );
+    } catch (error) {
+      console.error(
+        `❌ Failed to reduce stock for ${item.shopifyVariantId}:`,
+        error
+      );
+    }
+  }
+};
+
+/**
+ * Restore local stock for multiple items (simplified version)
+ * @param {Array} stockItems - Array of {shopifyVariantId, quantity, productName}
+ */
+const restoreLocalStock = async (stockItems) => {
+  console.log(`🔼 Restoring stock for ${stockItems.length} items`);
+
+  for (const item of stockItems) {
+    try {
+      await changeProductStock(item.shopifyVariantId, item.quantity);
+      console.log(
+        `✅ Restored stock: ${item.productName} (${item.shopifyVariantId}) +${item.quantity}`
+      );
+    } catch (error) {
+      console.error(
+        `❌ Failed to restore stock for ${item.shopifyVariantId}:`,
+        error
+      );
+    }
+  }
+};
+
 module.exports = {
   logWebhookEvent,
   createInvoiceRecord,
   updateInvoiceStatus,
   changeProductStock,
-  processOrderItemsStock,
   parseOrderMetadata,
+  reduceLocalStock,
+  restoreLocalStock,
 };

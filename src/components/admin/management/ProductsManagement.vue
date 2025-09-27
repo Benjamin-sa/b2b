@@ -101,7 +101,8 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
-                                        <div class="text-sm text-gray-500">{{ truncateText(product.description, 60) }}
+                                        <div class="text-sm text-gray-500 html-content"
+                                            v-html="truncateHtml(product.description, 60)">
                                         </div>
                                     </div>
                                 </div>
@@ -176,6 +177,7 @@ import { useProductStore } from '../../../stores/products'
 import type { Product } from '../../../types'
 import ProductForm from '../ProductForm.vue'
 import { useI18n } from 'vue-i18n'
+import { truncateHtml } from '../../../utils/htmlUtils'
 
 const { t } = useI18n()
 const productStore = useProductStore()
@@ -226,10 +228,7 @@ const deleteProduct = async () => {
 }
 
 const searchProducts = () => {
-    if (searchTerm.value.trim()) {
-    } else {
-        filterProducts()
-    }
+    filterProducts() // Just call filterProducts which handles both search and filters
 }
 
 const filterProducts = () => {
@@ -247,14 +246,7 @@ const filterProducts = () => {
         filters.searchTerm = searchTerm.value
     }
 
-    if (Object.keys(filters).length > 0) {
-    } else {
-        productStore.fetchProducts()
-    }
-}
-
-const truncateText = (text: string, maxLength: number): string => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + '...'
+    // Always call fetchProducts with filters (empty object will fetch all)
+    productStore.fetchProducts(filters)
 }
 </script>

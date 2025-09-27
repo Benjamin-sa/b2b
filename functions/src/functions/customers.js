@@ -53,8 +53,6 @@ const onUserCreate = onDocumentCreated(
         metadata: {
           firebaseId: userId,
           companyName: userData.companyName || "",
-          btwNumber: userData.btwNumber || "",
-          role: userData.role || "customer",
         },
       };
 
@@ -160,8 +158,6 @@ const onUserUpdate = onDocumentUpdated(
           metadata: {
             firebaseId: userId,
             companyName: newData.companyName || "",
-            btwNumber: newData.btwNumber || "",
-            role: newData.role || "customer",
           },
         };
 

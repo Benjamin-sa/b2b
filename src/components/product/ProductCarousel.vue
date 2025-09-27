@@ -57,17 +57,6 @@
                 class="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10">
             </div>
         </div>
-
-        <!-- View All Link -->
-        <div class="text-center mt-6" v-if="products.length > 0">
-            <router-link :to="viewAllLink"
-                class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors">
-                {{ $t('productCarousel.viewAll', { title: title }) }}
-                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </router-link>
-        </div>
     </div>
 </template>
 

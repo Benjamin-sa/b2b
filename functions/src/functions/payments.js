@@ -31,7 +31,6 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
   }
 
   try {
-    // Initialize Stripe with error handling
     const stripe = getStripe();
 
     // Validate required fields
@@ -50,6 +49,14 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
           "Each item must have a valid stripePriceId and quantity"
         );
       }
+
+      // Ensure metadata exists and has shopifyVariantId
+      if (!item.metadata || !item.metadata.shopifyVariantId) {
+        throw new HttpsError(
+          "invalid-argument",
+          "Each item must have metadata with shopifyVariantId"
+        );
+      }
     }
 
     // Get user's Stripe customer ID
@@ -66,29 +73,34 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
       );
     }
 
-    // Create invoice in Stripe
+    // Create invoice in Stripe with minimal metadata
     const invoice = await stripe.invoices.create({
       customer: userData.stripeCustomerId,
       collection_method: "send_invoice",
-      days_until_due: 30,
+      days_until_due: 10,
       description: data.metadata?.notes || "Bestelling via 4Tparts B2B",
       metadata: {
         userId: request.auth.uid,
-        orderMetadata: JSON.stringify(data.metadata || {}),
+        source: "b2b_order",
       },
     });
 
-    // Add invoice items
+    // Add invoice items with individual metadata
     for (const item of data.items) {
       await stripe.invoiceItems.create({
         customer: userData.stripeCustomerId,
         invoice: invoice.id,
         price: item.stripePriceId,
         quantity: item.quantity,
+        metadata: {
+          shopifyVariantId: item.metadata.shopifyVariantId,
+          productName: item.metadata.productName || "",
+          productId: item.metadata.productId || "",
+        },
       });
     }
 
-    // Add Shipping as a line item
+    // Add shipping as a line item if specified
     if (data.shippingCost && data.shippingCost > 0) {
       const shippingRate = await stripe.shippingRates.create({
         display_name: "Standaard verzending",
@@ -107,7 +119,6 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
         description: "Verzendkosten",
         metadata: {
           type: "shipping",
-          shipping_rate_id: shippingRate.id,
         },
       });
     }
@@ -116,12 +127,17 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
     await stripe.invoices.sendInvoice(invoice.id);
 
-    // Log invoice creation
+    // Store order details in Firestore for easier retrieval
     await db.collection("invoices").add({
       invoiceId: invoice.id,
       userId: request.auth.uid,
       customerId: userData.stripeCustomerId,
-      items: data.items,
+      items: data.items.map((item) => ({
+        stripePriceId: item.stripePriceId,
+        quantity: item.quantity,
+        metadata: item.metadata,
+      })),
+      metadata: data.metadata || {},
       amount: finalizedInvoice.amount_due,
       currency: finalizedInvoice.currency,
       status: finalizedInvoice.status,
@@ -195,14 +211,22 @@ const getUserInvoices = onCall(getFunctionOptions(), async (request) => {
           console.warn("Failed to parse order metadata:", e);
         }
 
-        // Get invoice items (line items)
+        // Get invoice items (line items) with metadata
         const lineItems = stripeInvoice.lines.data.map((item) => ({
           stripePriceId: item.price.id,
           productName:
-            item.description || item.price.nickname || "Unknown Product",
+            item.metadata?.productName ||
+            item.description ||
+            item.price.nickname ||
+            "Unknown Product",
           quantity: item.quantity,
           unitPrice: item.price.unit_amount,
           totalPrice: item.amount,
+          metadata: {
+            shopifyVariantId: item.metadata?.shopifyVariantId || "",
+            productName: item.metadata?.productName || "",
+            productId: item.metadata?.productId || "",
+          },
         }));
 
         invoices.push({

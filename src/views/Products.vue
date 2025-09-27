@@ -44,7 +44,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
-                            }}</label>
+                        }}</label>
                         <select v-model="filters.category"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
@@ -63,7 +63,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
-                            }}</label>
+                        }}</label>
                         <select
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.anyPrice') }}</option>
@@ -124,7 +124,8 @@
                                 class="w-24 h-24 object-cover rounded-lg">
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ product.name }}</h3>
-                                <p class="text-gray-600 mt-1">{{ product.description }}</p>
+                                <div class="text-gray-600 mt-1 html-content"
+                                    v-html="truncateHtml(product.description, 150)"></div>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
                                     <button v-if="authStore.isVerified || authStore.isAdmin"
@@ -157,6 +158,7 @@ import { useCategoryStore } from '../stores/categories';
 import { useAuthStore } from '../stores/auth';
 import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
+import { truncateHtml } from '../utils/htmlUtils';
 import type { ProductFilter } from '../types';
 
 const productStore = useProductStore();

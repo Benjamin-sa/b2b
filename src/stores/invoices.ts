@@ -5,6 +5,19 @@ import { functions } from '../init/firebase'
 import { useAuthStore } from './auth'
 import { appCache } from '../services/cache'
 
+interface InvoiceItem {
+  stripePriceId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  metadata: {
+    shopifyVariantId: string
+    productName: string
+    productId: string
+  }
+}
+
 interface Invoice {
   id: string
   invoiceId: string
@@ -20,7 +33,7 @@ interface Invoice {
   invoicePdf?: string
   number?: string
   orderMetadata?: any
-  items?: any[]
+  items?: InvoiceItem[]
   error?: string
 }
 

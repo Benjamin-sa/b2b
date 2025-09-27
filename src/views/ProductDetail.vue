@@ -36,7 +36,7 @@
                 <ol class="flex items-center space-x-2">
                     <li>
                         <router-link to="/" class="text-gray-500 hover:text-gray-700">{{ $t('navigation.home')
-                        }}</router-link>
+                            }}</router-link>
                     </li>
                     <li>
                         <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -80,10 +80,12 @@
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
                                     <span v-if="product.shopifyVariantId">{{ $t('productDetail.sku', {
                                         sku:
-                                        product.shopifyVariantId }) }}</span>
+                                            product.shopifyVariantId
+                                    }) }}</span>
                                     <span v-if="product.partNumber">{{ $t('productDetail.partNumber', {
                                         partNumber:
-                                        product.partNumber }) }}</span>
+                                            product.partNumber
+                                    }) }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center ml-4">
@@ -120,7 +122,8 @@
                             </div>
                             <p class="text-sm text-gray-600 mt-1">{{ $t('productDetail.per', {
                                 unit: product.unit ||
-                                $t('productDetail.piece') }) }}</p>
+                                    $t('productDetail.piece')
+                            }) }}</p>
                         </div>
 
                         <!-- Tags -->
@@ -137,7 +140,8 @@
                         <div class="mb-8">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}
                             </h3>
-                            <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
+                            <div class="text-gray-700 leading-relaxed html-content"
+                                v-html="sanitizeHtml(product.description)"></div>
                         </div>
                     </div>
 
@@ -149,7 +153,7 @@
                         <!-- Quantity Selector -->
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('productDetail.quantity')
-                                }}</label>
+                            }}</label>
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
@@ -178,7 +182,7 @@
                                     </div>
                                     <div v-if="effectiveMaxQuantity < (product.maxOrderQuantity || 999)">
                                         {{ $t('productDetail.max') }} {{ effectiveMaxQuantity }} {{ product.unit ||
-                                        $t('productDetail.pieces') }}
+                                            $t('productDetail.pieces') }}
                                         <span class="text-red-600">{{ $t('productDetail.limitedByStock') }}</span>
                                     </div>
                                     <div v-else-if="product.maxOrderQuantity">{{ $t('productDetail.max') }} {{
@@ -208,9 +212,9 @@
                         <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-medium text-gray-900">{{ $t('productDetail.totalPrice')
-                                    }}</span>
+                                }}</span>
                                 <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
 
@@ -293,6 +297,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductStore } from '../stores/products'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import { sanitizeHtml } from '../utils/htmlUtils'
 import ImageGallery from '../components/ImageGallery.vue'
 import ProductInfoCard from '../components/product/ProductInfoCard.vue'
 import type { Product } from '../types/product'

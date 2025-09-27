@@ -10,8 +10,7 @@ const { telegramBotToken, telegramChatId } = require("../config/telegram");
 const { inventoryWorkerToken } = require("../services/inventoryWorker");
 const { logWebhookEvent } = require("../utils/database");
 const {
-  handlePaymentIntentSucceeded,
-  handleInvoiceCreated,
+  handleInvoiceSent,
   handleInvoicePaymentSucceeded,
   handleInvoiceVoided,
 } = require("../handlers/webhookHandlers");
@@ -85,8 +84,8 @@ const stripeWebhook = onRequest(getFunctionOptions(), async (req, res) => {
       case "payment_intent.succeeded":
         break;
 
-      case "invoice.created":
-        await handleInvoiceCreated(event.data.object);
+      case "invoice.sent":
+        await handleInvoiceSent(event.data.object);
         break;
 
       case "invoice.payment_succeeded":

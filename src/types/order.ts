@@ -48,6 +48,11 @@ export interface OrderItem {
   unitPrice: number
   totalPrice: number
   imageUrl?: string
+  metadata?: {
+    shopifyVariantId?: string
+    productName?: string
+    productId?: string
+  }
 }
 
 export type OrderStatus = 

@@ -17,7 +17,14 @@
             <!-- Shipping (Free for B2B) -->
             <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ $t('cart.shipping') }}</span>
-                <span class="text-green-600 font-medium">{{ $t('cart.free') }}</span>
+                <span :class="shippingCost === 0 ? 'text-green-600 font-medium' : 'text-gray-900'">
+                    <template v-if="shippingCost === 0">
+                        {{ $t('cart.free') }}
+                    </template>
+                    <template v-else>
+                        €{{ formatPrice(shippingCost) }}
+                    </template>
+                </span>
             </div>
 
             <!-- Tax -->
@@ -114,6 +121,7 @@ const isLoading = ref(false)
 // Computed properties from cart store
 const itemCount = computed(() => cartStore.itemCount)
 const subtotal = computed(() => cartStore.subtotal)
+const shippingCost = computed(() => cartStore.shippingCost)
 const tax = computed(() => cartStore.tax)
 const grandTotal = computed(() => cartStore.grandTotal)
 

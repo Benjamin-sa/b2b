@@ -101,7 +101,9 @@ const onProductUpdate = onDocumentUpdated(
         JSON.stringify(newData.images) !== JSON.stringify(oldData.images) ||
         newData.category !== oldData.category ||
         newData.brand !== oldData.brand ||
-        newData.partNumber !== oldData.partNumber;
+        newData.partNumber !== oldData.partNumber ||
+        newData.shopifyProductId !== oldData.shopifyProductId ||
+        newData.shopifyVariantId !== oldData.shopifyVariantId;
 
       if (productChanged) {
         await stripe.products.update(newData.stripeProductId, {
@@ -116,6 +118,8 @@ const onProductUpdate = onDocumentUpdated(
             category: newData.category || "",
             brand: newData.brand || "",
             partNumber: newData.partNumber || "",
+            shopifyProductId: newData.shopifyProductId || "",
+            shopifyVariantId: newData.shopifyVariantId || "",
           },
         });
       }

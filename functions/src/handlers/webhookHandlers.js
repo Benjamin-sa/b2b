@@ -5,8 +5,8 @@ const {
 const {
   createInvoiceRecord,
   updateInvoiceStatus,
-  processOrderItemsStock,
-  parseOrderMetadata,
+  reduceLocalStock,
+  restoreLocalStock,
 } = require("../utils/database");
 const {
   notifyStockReduction,
@@ -14,26 +14,42 @@ const {
 } = require("../services/inventoryWorker");
 
 /**
- * Handle invoice creation
- * This is triggered when a new invoice is created in Stripe
+ * Handle invoice sent
+ * This is triggered when an invoice is sent in Stripe (has more complete data)
  */
-const handleInvoiceCreated = async (invoice) => {
-  console.log(`📄 Processing new invoice: ${invoice.id}`);
+const handleInvoiceSent = async (invoice) => {
+  console.log(`📄 Processing sent invoice: ${invoice.id}`);
 
   try {
     // Create invoice record in database
     const invoiceRecord = await createInvoiceRecord(invoice);
 
-    // Reduce stock for new invoice
-    const orderMetadata = parseOrderMetadata(invoice);
-    if (orderMetadata?.orderItems) {
-      // Update local database stock
-      await processOrderItemsStock(orderMetadata.orderItems, 1);
+    // Extract stock items directly from invoice line items metadata
+    const stockItems = [];
+    if (invoice.lines?.data) {
+      for (const lineItem of invoice.lines.data) {
+        const shopifyVariantId = lineItem.metadata?.shopifyVariantId;
+        if (shopifyVariantId && lineItem.quantity) {
+          stockItems.push({
+            shopifyVariantId,
+            quantity: lineItem.quantity,
+            productName:
+              lineItem.metadata?.productName ||
+              lineItem.description ||
+              "Unknown Product",
+          });
+        }
+      }
+    }
+
+    if (stockItems.length > 0) {
+      // Update local Firebase stock
+      await reduceLocalStock(stockItems);
 
       // Notify Cloudflare worker about stock reduction
       try {
-        await notifyStockReduction(orderMetadata.orderItems, {
-          orderMetadata: orderMetadata,
+        await notifyStockReduction(stockItems, {
+          invoiceId: invoice.id,
           userId: invoice.metadata?.userId,
         });
       } catch (workerError) {
@@ -45,17 +61,14 @@ const handleInvoiceCreated = async (invoice) => {
       }
     }
 
-    // Send Telegram notification with invoice data (metadata contains all needed info)
+    // Send Telegram notification
     await notifyInvoiceCreated(invoice);
 
     console.log(
-      `✅ Invoice processed successfully: ${invoice.id} → Record: ${invoiceRecord.id}`
+      `✅ Invoice sent processed successfully: ${invoice.id} → Record: ${invoiceRecord.id}, Stock items: ${stockItems.length}`
     );
   } catch (error) {
-    console.error(
-      `❌ Error processing invoice creation for ${invoice.id}:`,
-      error
-    );
+    console.error(`❌ Error processing invoice sent for ${invoice.id}:`, error);
     throw error;
   }
 };
@@ -99,16 +112,32 @@ const handleInvoiceVoided = async (invoice) => {
       voidedAt: new Date(),
     });
 
-    // Restore stock for voided invoice
-    const orderMetadata = parseOrderMetadata(invoice);
-    if (orderMetadata?.orderItems) {
-      // Update local database stock
-      await processOrderItemsStock(orderMetadata.orderItems, -1);
+    // Extract stock items directly from invoice line items metadata
+    const stockItems = [];
+    if (invoice.lines?.data) {
+      for (const lineItem of invoice.lines.data) {
+        const shopifyVariantId = lineItem.metadata?.shopifyVariantId;
+        if (shopifyVariantId && lineItem.quantity) {
+          stockItems.push({
+            shopifyVariantId,
+            quantity: lineItem.quantity,
+            productName:
+              lineItem.metadata?.productName ||
+              lineItem.description ||
+              "Unknown Product",
+          });
+        }
+      }
+    }
+
+    if (stockItems.length > 0) {
+      // Restore local Firebase stock
+      await restoreLocalStock(stockItems);
 
       // Notify Cloudflare worker about stock restoration
       try {
-        await notifyStockRestoration(orderMetadata.orderItems, {
-          orderMetadata: orderMetadata,
+        await notifyStockRestoration(stockItems, {
+          invoiceId: invoice.id,
           userId: invoice.metadata?.userId,
         });
       } catch (workerError) {
@@ -120,7 +149,9 @@ const handleInvoiceVoided = async (invoice) => {
       }
     }
 
-    console.log(`✅ Invoice voided processed: ${invoice.id}`);
+    console.log(
+      `✅ Invoice voided processed: ${invoice.id}, Stock items restored: ${stockItems.length}`
+    );
   } catch (error) {
     console.error(
       `❌ Error processing invoice voided for ${invoice.id}:`,
@@ -131,7 +162,7 @@ const handleInvoiceVoided = async (invoice) => {
 };
 
 module.exports = {
-  handleInvoiceCreated,
+  handleInvoiceSent,
   handleInvoicePaymentSucceeded,
   handleInvoiceVoided,
 };

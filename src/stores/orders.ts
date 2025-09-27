@@ -21,7 +21,12 @@ export const useOrderStore = defineStore('orders', () => {
       quantity: item.quantity,
       unitPrice: item.price,
       totalPrice: item.price * item.quantity,
-      imageUrl: item.product.imageUrl
+      imageUrl: item.product.imageUrl,
+      metadata: {
+        shopifyVariantId: item.product.shopifyVariantId,
+        productName: item.product.name,
+        productId: item.productId
+      }
     }))
   }
 
@@ -52,8 +57,19 @@ export const useOrderStore = defineStore('orders', () => {
         throw new Error('Some products are not properly configured for payment. Please contact support.')
       }
 
-      // Prepare metadata with user and order information
-      const orderMetadata = {
+      // Prepare items with individual metadata for each item
+      const itemsWithMetadata = cartItems.map(item => ({
+        stripePriceId: item.product.stripePriceId,
+        quantity: item.quantity,
+        metadata: {
+          shopifyVariantId: item.product.shopifyVariantId,
+          productName: item.product.name,
+          productId: item.productId
+        }
+      }))
+
+      // Prepare general order metadata for the invoice level
+      const generalMetadata = {
         shippingAddress,
         notes: notes || '',
         subtotal,
@@ -63,21 +79,15 @@ export const useOrderStore = defineStore('orders', () => {
           contactPerson: `${authStore.userProfile.firstName} ${authStore.userProfile.lastName}`,
           email: authStore.userProfile.email,
           btwNumber: authStore.userProfile.btwNumber
-        } : {},
-        orderItems: cartItems.map(item => ({
-          productName: item.product.name,
-          productSku: item.product.shopifyVariantId,
-          quantity: item.quantity,
-          unitPrice: item.price
-        }))
+        } : {}
       }
 
       // Create invoice via Firebase function
       const result = await createInvoiceFunction({
-        items: stripeItems,
+        items: itemsWithMetadata,
         shippingCost: Math.round(shippingCost * 100), // Stuur als centen
         taxAmount: Math.round(tax * 100),
-        metadata: orderMetadata
+        metadata: generalMetadata
       })
 
       const invoiceData = result.data as {
