@@ -128,6 +128,21 @@
                             :placeholder="$t('admin.products.pricePlaceholder')" />
                     </div>
 
+                    <!-- Coming Soon Toggle -->
+                    <div class="md:col-span-3">
+                        <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 flex flex-col gap-2">
+                            <label class="flex items-center">
+                                <input v-model="form.comingSoon" type="checkbox"
+                                    class="mr-2 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded" />
+                                <span class="text-sm font-medium text-gray-800">{{ $t('admin.products.comingSoon')
+                                    }}</span>
+                            </label>
+                            <p class="text-xs text-gray-600">
+                                {{ $t('admin.products.comingSoonHint') }}
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Inventory Product Linking (Optional) -->
                     <div class="md:col-span-3">
                         <div :class="[
@@ -290,14 +305,17 @@
                                 </div>
                                 <div class="flex items-center">
                                     <label class="flex items-center">
-                                        <input v-model="form.inStock" type="checkbox"
-                                            class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                                        <input v-model="form.inStock" type="checkbox" :disabled="form.comingSoon"
+                                            class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed" />
                                         <span class="text-sm font-medium text-gray-700">Product is in stock</span>
                                     </label>
                                 </div>
                             </div>
                             <p class="text-xs text-gray-600 mt-2">
                                 💡 Without inventory linking, you'll need to manually manage stock levels.
+                                <span v-if="form.comingSoon" class="block text-yellow-700 mt-1">
+                                    {{ $t('admin.products.comingSoonManualHint') }}
+                                </span>
                             </p>
                         </div>
                     </div>
@@ -492,6 +510,7 @@ const form = reactive<Product>({
     categoryId: '', // Use categoryId instead of category
     category: '', // Keep for backward compatibility
     inStock: false,
+    comingSoon: false,
     stock: 0,
     brand: '',
     partNumber: '',
@@ -535,6 +554,7 @@ onMounted(async () => {
             categoryId: props.product.categoryId || '',
             category: props.product.category || '',
             inStock: props.product.inStock,
+            comingSoon: props.product.comingSoon ?? false,
             stock: props.product.stock || 0, // B2B stock amount
             brand: props.product.brand || '',
             partNumber: props.product.partNumber || '',
@@ -727,18 +747,19 @@ const submitForm = async () => {
             tags: cleanedTags,
             // Convert to proper format for the store
             imageUrl: form.images![0] || '',
-            images: form.images
+            images: form.images,
+            comingSoon: form.comingSoon
         }
 
         // Stock and inventory fields depend on whether inventory linking is enabled
         if (enableInventoryLinking.value) {
-            productData.inStock = (form.stock || 0) > 0 // Calculate based on B2B stock
+            productData.inStock = !form.comingSoon && (form.stock || 0) > 0 // Calculate based on B2B stock
             productData.stock = form.stock || 0 // B2B stock amount
             productData.shopifyProductId = form.shopifyProductId
             productData.shopifyVariantId = form.shopifyVariantId
         } else {
             // For standalone products, use manual stock input and generate random SKU
-            productData.inStock = form.inStock
+            productData.inStock = !form.comingSoon && form.inStock
             productData.stock = form.stock || 0
             // Generate random SKU/variant ID for standalone products
             if (!props.product) {

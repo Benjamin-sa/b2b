@@ -15,6 +15,30 @@ const {
   handleInvoiceVoided,
 } = require("../handlers/webhookHandlers");
 
+const EXPANDED_INVOICE_FIELDS = [
+  "lines.data.price",
+  "total_tax_amounts.tax_rate",
+];
+
+const getExpandedInvoice = async (stripe, invoice) => {
+  if (!invoice?.id) {
+    return invoice;
+  }
+
+  try {
+    const expandedInvoice = await stripe.invoices.retrieve(invoice.id, {
+      expand: EXPANDED_INVOICE_FIELDS,
+    });
+    return expandedInvoice;
+  } catch (error) {
+    console.error(
+      `⚠️ Failed to retrieve expanded invoice ${invoice.id}, falling back to webhook payload:`,
+      error
+    );
+    return invoice;
+  }
+};
+
 // Configure function options based on environment
 const getFunctionOptions = () => {
   const baseOptions = {
@@ -67,9 +91,9 @@ const stripeWebhook = onRequest(getFunctionOptions(), async (req, res) => {
     return;
   }
 
+  const stripe = getStripe();
   let event;
   try {
-    const stripe = getStripe();
     event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
     console.log(`🔔 Webhook received: ${event.type} (ID: ${event.id})`);
   } catch (err) {
@@ -84,18 +108,24 @@ const stripeWebhook = onRequest(getFunctionOptions(), async (req, res) => {
       case "payment_intent.succeeded":
         break;
 
-      case "invoice.sent":
-        await handleInvoiceSent(event.data.object);
+      case "invoice.sent": {
+        const invoice = await getExpandedInvoice(stripe, event.data.object);
+        await handleInvoiceSent(invoice);
         break;
+      }
 
-      case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(event.data.object);
+      case "invoice.payment_succeeded": {
+        const invoice = await getExpandedInvoice(stripe, event.data.object);
+        await handleInvoicePaymentSucceeded(invoice);
         break;
+      }
 
       case "invoice.marked_uncollectible":
-      case "invoice.voided":
-        await handleInvoiceVoided(event.data.object);
+      case "invoice.voided": {
+        const invoice = await getExpandedInvoice(stripe, event.data.object);
+        await handleInvoiceVoided(invoice);
         break;
+      }
 
       default:
         console.log(`ℹ️  Unhandled event type: ${event.type}`);

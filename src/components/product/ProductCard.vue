@@ -23,7 +23,11 @@
                     <h3 class="text-lg font-semibold text-secondary-900 line-clamp-2 flex-shrink-0">
                         {{ product.name }}
                     </h3>
-                    <span v-if="!product.inStock"
+                    <span v-if="product.comingSoon"
+                        class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
+                        {{ $t('products.card.comingSoon') }}
+                    </span>
+                    <span v-else-if="!product.inStock"
                         class="bg-danger-100 text-danger-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
                         {{ $t('products.card.outOfStock') }}
                     </span>
@@ -74,14 +78,15 @@
             <div class="flex items-center space-x-2">
                 <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
                 <div class="flex items-center border rounded-md">
-                    <button @click="decreaseQuantity" :disabled="quantity <= (product.minOrderQuantity || 1)"
+                    <button @click="decreaseQuantity"
+                        :disabled="quantity <= minSelectableQuantity || product.comingSoon"
                         class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                         -
                     </button>
-                    <input v-model.number="quantity" type="number" :min="product.minOrderQuantity || 1"
-                        :max="product.maxOrderQuantity || 999" class="w-16 px-2 py-1 text-center border-0 focus:ring-0"
-                        @blur="validateQuantity" />
-                    <button @click="increaseQuantity" :disabled="quantity >= (product.maxOrderQuantity || 999)"
+                    <input v-model.number="quantity" type="number" :min="minInputValue" :max="maxInputValue"
+                        :disabled="maxAddableQuantity <= 0 || product.comingSoon"
+                        class="w-16 px-2 py-1 text-center border-0 focus:ring-0" @blur="validateQuantity" />
+                    <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.comingSoon"
                         class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                         +
                     </button>
@@ -89,14 +94,16 @@
             </div>
 
             <!-- Add to Cart Button -->
-            <button @click="addToCart" :disabled="!product.inStock || !canOrder || isLoading" :class="[
-                !product.inStock
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : !canOrder
-                        ? 'bg-yellow-500 hover:bg-yellow-600'
-                        : 'bg-blue-600 hover:bg-blue-700',
-                'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
-            ]">
+            <button @click="addToCart"
+                :disabled="product.comingSoon || !product.inStock || !canOrder || isLoading || maxAddableQuantity <= 0"
+                :class="[
+                    product.comingSoon || !product.inStock || maxAddableQuantity <= 0
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : !canOrder
+                            ? 'bg-yellow-500 hover:bg-yellow-600'
+                            : 'bg-blue-600 hover:bg-blue-700',
+                    'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
+                ]">
                 <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
                     viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -106,8 +113,10 @@
                     </path>
                 </svg>
                 <span v-if="isLoading">{{ $t('products.card.adding') }}</span>
+                <span v-else-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
                 <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
                 <span v-else-if="!canOrder">{{ $t('products.card.accountVerificationRequired') }}</span>
+                <span v-else-if="maxAddableQuantity <= 0">{{ $t('products.card.outOfStock') }}</span>
                 <span v-else-if="isInCart">{{ $t('products.card.addedToCart') }}</span>
                 <span v-else>{{ $t('products.card.addToCart') }}</span>
             </button>
@@ -116,8 +125,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCartStore } from '../../stores/cart'
+import { useNotificationStore } from '../../stores/notifications'
 import { truncateHtml } from '../../utils/htmlUtils'
 import type { Product, CartItem } from '../../types'
 
@@ -135,8 +146,38 @@ const emit = defineEmits<{
 }>()
 
 const cartStore = useCartStore()
+const notificationStore = useNotificationStore()
+const { t } = useI18n()
 
-const quantity = ref(props.product.minOrderQuantity || 1)
+const minOrder = computed(() => props.product.minOrderQuantity || 1)
+
+const remainingCapacity = computed(() => cartStore.getRemainingQuantity(props.product))
+
+const maxAddableQuantity = computed(() => {
+    const remaining = remainingCapacity.value
+    if (!Number.isFinite(remaining)) {
+        return props.product.maxOrderQuantity || 999
+    }
+    return remaining
+})
+
+const minSelectableQuantity = computed(() => {
+    const max = maxAddableQuantity.value
+    if (max <= 0) return 0
+    return Math.min(minOrder.value, max)
+})
+
+const maxInputValue = computed(() => {
+    const max = maxAddableQuantity.value
+    return Number.isFinite(max) ? max : props.product.maxOrderQuantity || 999
+})
+
+const minInputValue = computed(() => {
+    if (maxAddableQuantity.value <= 0) return 0
+    return minSelectableQuantity.value
+})
+
+const quantity = ref(0)
 const isLoading = ref(false)
 
 // Check if product is already in cart
@@ -147,29 +188,34 @@ const formatPrice = (price: number) => {
 }
 
 const validateQuantity = () => {
-    const min = props.product.minOrderQuantity || 1
-    const max = props.product.maxOrderQuantity || 999
+    const max = maxAddableQuantity.value
+    if (max <= 0) {
+        quantity.value = 0
+        return
+    }
 
-    if (quantity.value < min) quantity.value = min
-    if (quantity.value > max) quantity.value = max
+    const min = minSelectableQuantity.value
+    const clamped = Math.min(Math.max(quantity.value, min), max)
+    quantity.value = clamped
 }
 
 const increaseQuantity = () => {
-    const max = props.product.maxOrderQuantity || 999
+    const max = maxAddableQuantity.value
+    if (max <= 0) return
     if (quantity.value < max) {
         quantity.value++
     }
 }
 
 const decreaseQuantity = () => {
-    const min = props.product.minOrderQuantity || 1
+    const min = minSelectableQuantity.value
     if (quantity.value > min) {
         quantity.value--
     }
 }
 
 const addToCart = async () => {
-    if (!props.product.inStock || !props.canOrder) return
+    if (!props.product.inStock || props.product.comingSoon || !props.canOrder || maxAddableQuantity.value <= 0) return
 
     isLoading.value = true
     try {
@@ -181,14 +227,38 @@ const addToCart = async () => {
             addedAt: new Date()
         }
 
-        await cartStore.addItem(cartItem)
+        const result = await cartStore.addItem(cartItem)
+
+        if (result.status === 'unavailable') {
+            await notificationStore.warning(
+                t('productDetail.outOfStock'),
+                t('productDetail.onlyItemsAvailable', { count: 0 })
+            )
+            return
+        }
+
+        if (result.status === 'partial' || result.status === 'adjusted') {
+            await notificationStore.warning(
+                t('productDetail.limitedByStock'),
+                t('productDetail.onlyItemsAvailable', { count: result.appliedQuantity })
+            )
+        } else {
+            await notificationStore.success(
+                t('productDetail.addedToCart'),
+                t('cart.items', { count: cartStore.itemCount })
+            )
+        }
 
         // Emit for backwards compatibility with parent components that might listen
-        emit('addToCart', props.product.id, quantity.value)
+        emit('addToCart', props.product.id, result.appliedQuantity)
 
         // Reset quantity to minimum after a short delay
         setTimeout(() => {
-            quantity.value = props.product.minOrderQuantity || 1
+            if (maxAddableQuantity.value <= 0) {
+                quantity.value = 0
+            } else {
+                quantity.value = minSelectableQuantity.value
+            }
         }, 500)
     } catch (error) {
         console.error('Error adding to cart:', error)
@@ -201,6 +271,24 @@ const handleImageError = (event: Event) => {
     const target = event.target as HTMLImageElement
     target.style.display = 'none'
 }
+
+watch(
+    () => [props.product, minSelectableQuantity.value, maxAddableQuantity.value],
+    () => {
+        if (maxAddableQuantity.value <= 0) {
+            quantity.value = 0
+            return
+        }
+
+        if (quantity.value === 0) {
+            quantity.value = minSelectableQuantity.value
+            return
+        }
+
+        validateQuantity()
+    },
+    { immediate: true }
+)
 </script>
 
 <style scoped>

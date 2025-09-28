@@ -7,6 +7,7 @@ const {
   updateInvoiceStatus,
   reduceLocalStock,
   restoreLocalStock,
+  updateOrderFromInvoice,
 } = require("../utils/database");
 const {
   notifyStockReduction,
@@ -23,6 +24,11 @@ const handleInvoiceSent = async (invoice) => {
   try {
     // Create invoice record in database
     const invoiceRecord = await createInvoiceRecord(invoice);
+
+    await updateOrderFromInvoice(invoice, {
+      status: "pending",
+      sentAt: new Date(),
+    });
 
     // Extract stock items directly from invoice line items metadata
     const stockItems = [];
@@ -86,6 +92,14 @@ const handleInvoicePaymentSucceeded = async (invoice) => {
       paidAt: new Date(invoice.status_transitions.paid_at * 1000),
     });
 
+    await updateOrderFromInvoice(invoice, {
+      status: "confirmed",
+      paymentIntentId:
+        typeof invoice.payment_intent === "string"
+          ? invoice.payment_intent
+          : invoice.payment_intent?.id || null,
+    });
+
     // Send Telegram notification with invoice data (metadata contains all needed info)
     await notifyInvoicePaymentSucceeded(invoice);
 
@@ -110,6 +124,11 @@ const handleInvoiceVoided = async (invoice) => {
     // Update invoice status in database
     await updateInvoiceStatus(invoice.id, "voided", {
       voidedAt: new Date(),
+    });
+
+    await updateOrderFromInvoice(invoice, {
+      status: "cancelled",
+      cancelledAt: new Date(),
     });
 
     // Extract stock items directly from invoice line items metadata

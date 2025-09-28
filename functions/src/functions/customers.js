@@ -4,6 +4,11 @@ const {
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
 const { stripeSecretKey, getStripe } = require("../config/stripe");
+const {
+  createStripeCustomer,
+  updateStripeCustomer,
+  archiveStripeCustomer,
+} = require("../services/stripeServices");
 const { db, getServerTimestamp } = require("../config/firebase");
 
 // Note: Welcome email is now handled by the separate welcomeEmail function
@@ -89,7 +94,7 @@ const onUserCreate = onDocumentCreated(
         ];
       }
 
-      const stripeCustomer = await stripe.customers.create(customerData);
+      const stripeCustomer = await createStripeCustomer(stripe, customerData);
 
       await snap.ref.update({
         stripeCustomerId: stripeCustomer.id,
@@ -191,7 +196,11 @@ const onUserUpdate = onDocumentUpdated(
           };
         }
 
-        await stripe.customers.update(newData.stripeCustomerId, updateData);
+        await updateStripeCustomer(
+          stripe,
+          newData.stripeCustomerId,
+          updateData
+        );
 
         console.log(
           `✅ Updated Stripe customer ${newData.stripeCustomerId} for user ${userId}`
@@ -239,12 +248,8 @@ const onUserDelete = onDocumentDeleted(
     try {
       // Note: Stripe doesn't allow deleting customers with payment history
       // So we'll just mark them as deleted in metadata
-      await stripe.customers.update(userData.stripeCustomerId, {
-        metadata: {
-          firebaseId: userId,
-          deleted: "true",
-          deletedAt: new Date().toISOString(),
-        },
+      await archiveStripeCustomer(stripe, userData.stripeCustomerId, {
+        firebaseId: userId,
       });
 
       console.log(

@@ -1,9 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { httpsCallable } from 'firebase/functions'
-import { functions } from '../init/firebase'
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+  type DocumentData,
+  type QueryDocumentSnapshot,
+  type Unsubscribe
+} from 'firebase/firestore'
+import { db, functions } from '../init/firebase'
 import { useAuthStore } from './auth'
-import type { Order, OrderItem, ShippingAddress, CartItem } from '../types'
+import type { Order, ShippingAddress, CartItem } from '../types'
 
 // Firebase function
 const createInvoiceFunction = httpsCallable(functions, 'createInvoice')
@@ -12,22 +22,125 @@ export const useOrderStore = defineStore('orders', () => {
   const orders = ref<Order[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  let unsubscribeOrders: Unsubscribe | null = null
 
-  const formatOrderItems = (cartItems: CartItem[]): OrderItem[] => {
-    return cartItems.map(item => ({
+  const toDate = (value: any): Date | undefined => {
+    if (!value) return undefined
+    if (typeof value.toDate === 'function') {
+      return value.toDate()
+    }
+    if (value instanceof Date) {
+      return value
+    }
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed
+  }
+
+  const mapOrderDoc = (doc: QueryDocumentSnapshot<DocumentData>): Order => {
+    const data = doc.data()
+    const totals = data.totals || {}
+
+    const items = (data.items || []).map((item: any) => ({
       productId: item.productId,
-      productName: item.product.name,
-      productSku: item.product.shopifyVariantId,
+      productName: item.productName,
+      productSku: item.productSku,
       quantity: item.quantity,
-      unitPrice: item.price,
-      totalPrice: item.price * item.quantity,
-      imageUrl: item.product.imageUrl,
-      metadata: {
-        shopifyVariantId: item.product.shopifyVariantId,
-        productName: item.product.name,
-        productId: item.productId
-      }
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice ?? (item.unitPrice || 0) * (item.quantity || 0),
+      imageUrl: item.imageUrl,
+      stripeInvoiceItemId: item.stripeInvoiceItemId || item.metadata?.stripeInvoiceItemId,
+      taxCents:
+        typeof item.taxCents === 'number'
+          ? item.taxCents
+          : typeof item.metadata?.taxCents === 'number'
+            ? item.metadata.taxCents
+            : null,
+      metadata: item.metadata || {}
     }))
+
+    const subtotal = typeof totals.subtotal === 'number' ? totals.subtotal : data.subtotal || 0
+    const tax = typeof totals.tax === 'number' ? totals.tax : data.tax || 0
+    const shipping = typeof totals.shipping === 'number' ? totals.shipping : data.shipping || 0
+    const grandTotal = typeof totals.grandTotal === 'number' ? totals.grandTotal : subtotal + tax + shipping
+
+    const createdAt = toDate(data.createdAt) || new Date()
+    const updatedAt = toDate(data.updatedAt) || createdAt
+
+    return {
+      id: doc.id,
+      userId: data.userId,
+      items,
+      totalAmount: grandTotal,
+      subtotal,
+      tax,
+      shipping,
+      status: data.status || data.stripeStatus || 'pending',
+      orderDate: createdAt,
+      shippingAddress: data.shippingAddress || null,
+      billingAddress: data.billingAddress || null,
+      paymentMethod: data.paymentMethod || 'invoice',
+      notes: data.notes || '',
+      createdAt,
+      updatedAt,
+      estimatedDelivery: toDate(data.estimatedDelivery),
+  dueDate: toDate(data.dueDate),
+  paidAt: toDate(data.paidAt),
+      trackingNumber: data.trackingNumber,
+      invoiceUrl: data.invoiceUrl,
+      invoicePdf: data.invoicePdf,
+      stripeInvoiceId: data.stripeInvoiceId || doc.id,
+      stripeStatus: data.stripeStatus,
+      invoiceNumber: data.stripeNumber,
+      shippingCostCents: totals.shippingCents,
+      stripeShippingInvoiceItemId: data.stripeShippingInvoiceItemId,
+      metadata: data.metadata || {}
+    } as Order
+  }
+
+  const subscribeToOrders = () => {
+    const authStore = useAuthStore()
+    if (!authStore.user) {
+      error.value = 'User not authenticated'
+      return
+    }
+
+    if (unsubscribeOrders) {
+      return
+    }
+
+    isLoading.value = true
+
+    const ordersRef = collection(db, 'orders')
+    const ordersQuery = query(
+      ordersRef,
+      where('userId', '==', authStore.user.uid),
+      orderBy('createdAt', 'desc')
+    )
+
+    unsubscribeOrders = onSnapshot(
+      ordersQuery,
+      snapshot => {
+        orders.value = snapshot.docs.map(mapOrderDoc)
+        isLoading.value = false
+      },
+      err => {
+        console.error('Error fetching orders:', err)
+        error.value = err.message || 'Failed to fetch orders'
+        isLoading.value = false
+      }
+    )
+  }
+
+  const stopOrdersSubscription = () => {
+    if (unsubscribeOrders) {
+      unsubscribeOrders()
+      unsubscribeOrders = null
+    }
+  }
+
+  const refreshOrders = () => {
+    stopOrdersSubscription()
+    subscribeToOrders()
   }
 
   const createOrder = async (
@@ -97,34 +210,13 @@ export const useOrderStore = defineStore('orders', () => {
         currency: string
       }
 
-      // Create order record locally
-      const order: Order = {
-        id: invoiceData.invoiceId,
-        userId: authStore.user?.uid || '',
-        items: formatOrderItems(cartItems),
-        totalAmount: invoiceData.amount / 100, // Stripe amounts are in cents
-        subtotal,
-        tax,
-        shipping: 0, // Free shipping for B2B
-        status: 'pending',
-        orderDate: new Date(),
-        shippingAddress,
-        paymentMethod: 'invoice',
-        notes,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-
-      // Add to local orders
-      orders.value.unshift(order)
-
       // Clear invoice cache so new invoice appears immediately
       try {
         const { useInvoiceStore } = await import('./invoices')
         const invoiceStore = useInvoiceStore()
-        invoiceStore.clearCache()
+        await invoiceStore.refreshInvoices()
       } catch (err) {
-        console.warn('Could not clear invoice cache:', err)
+        console.warn('Could not refresh invoices:', err)
       }
 
       return {
@@ -158,6 +250,9 @@ export const useOrderStore = defineStore('orders', () => {
     orders,
     isLoading,
     error,
+    subscribeToOrders,
+    stopOrdersSubscription,
+    refreshOrders,
     createOrder,
     getOrderById,
     clearError

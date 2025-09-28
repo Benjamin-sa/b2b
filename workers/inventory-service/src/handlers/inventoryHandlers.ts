@@ -183,7 +183,7 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
       const { shopify_variant_id, amount } = body;
 
       // Validate request
-      if (!shopify_variant_id || !amount) {
+      if (!shopify_variant_id || amount === undefined || amount === null) {
         const response: ApiResponse = {
           success: false,
           error: 'Missing required fields: shopify_variant_id and amount'
@@ -191,10 +191,10 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
         return c.json(response, 400);
       }
 
-      if (typeof amount !== 'number' || amount <= 0) {
+      if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0) {
         const response: ApiResponse = {
           success: false,
-          error: 'Amount must be a positive number'
+          error: 'Amount must be a non-negative number'
         };
         return c.json(response, 400);
       }
@@ -215,6 +215,7 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
 
       // Perform the transfer (this will update both local DB and Shopify)
       const updatedItem = await inventoryService.transferB2CToB2B(shopify_variant_id, amount);
+      const stockDelta = amount - currentItem.b2b_stock;
       
       const transferResponse: B2BTransferResponse = {
         shopify_product_id: updatedItem.shopify_product_id,
@@ -225,13 +226,13 @@ export function createInventoryRoutes(app: Hono<{ Bindings: Env }>) {
         new_b2c_stock: updatedItem.b2c_stock,
         new_b2b_stock: updatedItem.b2b_stock,
         total_stock: updatedItem.total_stock,
-        transferred_amount: amount
+        transferred_amount: stockDelta
       };
 
       const response: ApiResponse = {
         success: true,
         data: transferResponse,
-        message: `Successfully transferred ${amount} units from B2C to B2B for product variant: ${updatedItem.title}. Shopify inventory has been updated to reflect the new B2C stock level.`
+        message: `Successfully updated B2B stock to ${amount} units (Δ ${stockDelta >= 0 ? '+' : ''}${stockDelta}) for product variant: ${updatedItem.title}. Shopify inventory has been updated to reflect the new B2C stock level.`
       };
       
       return c.json(response);

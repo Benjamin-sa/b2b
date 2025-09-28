@@ -10,6 +10,7 @@ export interface Product {
   categoryId?: string // Reference to category ID instead of string
   category?: string // Keep for backward compatibility, will be deprecated
   inStock: boolean
+  comingSoon?: boolean
   stock?: number // B2B stock amount (synced from inventory transfers)
   brand?: string
   partNumber?: string

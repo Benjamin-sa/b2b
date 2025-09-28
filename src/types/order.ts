@@ -38,6 +38,16 @@ export interface Order {
   trackingNumber?: string
   createdAt: Date
   updatedAt: Date
+  invoiceUrl?: string
+  invoicePdf?: string
+  invoiceNumber?: string
+  stripeInvoiceId?: string
+  stripeStatus?: string
+  metadata?: Record<string, any>
+  shippingCostCents?: number
+  dueDate?: Date
+  paidAt?: Date
+  stripeShippingInvoiceItemId?: string | null
 }
 
 export interface OrderItem {
@@ -48,10 +58,19 @@ export interface OrderItem {
   unitPrice: number
   totalPrice: number
   imageUrl?: string
+  stripeInvoiceItemId?: string | null
+  taxCents?: number | null
   metadata?: {
     shopifyVariantId?: string
     productName?: string
     productId?: string
+    brand?: string | null
+    unit?: string | null
+    weight?: number | null
+    stripePriceId?: string
+    stripeInvoiceItemId?: string | null
+    taxCents?: number | null
+    taxAmounts?: Array<{ taxRateId?: string | null; amount: number }>
   }
 }
 

@@ -153,21 +153,37 @@ export class InventoryService {
       throw new Error(`Shopify Variant ID ${shopifyVariantId} not found`);
     }
 
-    if (amount <= 0) {
-      throw new Error(`Transfer amount must be greater than 0. Requested: ${amount}`);
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new Error(`Transfer amount must be a non-negative number. Requested: ${amount}`);
     }
 
-    const newB2cStock = item.b2c_stock - amount;
-    const newB2bStock = item.b2b_stock + amount;
-    
+    const currentB2bStock = item.b2b_stock || 0;
+    const currentB2cStock = item.b2c_stock || 0;
+    const totalStock =
+      typeof item.total_stock === 'number'
+        ? item.total_stock
+        : currentB2cStock + currentB2bStock;
+
+    if (amount > totalStock) {
+      throw new Error(
+        `Transfer amount exceeds total stock. Total stock: ${totalStock}, Requested B2B stock: ${amount}`
+      );
+    }
+
+    const newB2bStock = amount;
+    const stockDelta = currentB2bStock - newB2bStock; // positive when moving back to B2C
+    const newB2cStock = currentB2cStock + stockDelta;
+
     if (newB2cStock < 0) {
-      throw new Error(`Insufficient B2C stock for transfer. Current B2C stock: ${item.b2c_stock}, Requested transfer: ${amount}`);
+      throw new Error(
+        `Insufficient B2C stock after transfer. Current B2C stock: ${currentB2cStock}, Requested B2B stock: ${amount}`
+      );
     }
 
     // Update local database first using variant ID for precision
     await this.db
-      .prepare('UPDATE inventory SET b2c_stock = ?, b2b_stock = ? WHERE shopify_variant_id = ?')
-      .bind(newB2cStock, newB2bStock, shopifyVariantId)
+      .prepare('UPDATE inventory SET b2c_stock = ?, b2b_stock = ?, total_stock = ? WHERE shopify_variant_id = ?')
+      .bind(newB2cStock, newB2bStock, totalStock, shopifyVariantId)
       .run();
 
     // CRITICAL: Update Shopify with the new B2C stock level
@@ -186,8 +202,8 @@ export class InventoryService {
         
         try {
           await this.db
-            .prepare('UPDATE inventory SET b2c_stock = ?, b2b_stock = ? WHERE shopify_variant_id = ?')
-            .bind(item.b2c_stock, item.b2b_stock, shopifyVariantId)
+            .prepare('UPDATE inventory SET b2c_stock = ?, b2b_stock = ?, total_stock = ? WHERE shopify_variant_id = ?')
+            .bind(currentB2cStock, currentB2bStock, totalStock, shopifyVariantId)
             .run();
           
           rollbackSuccessful = true;

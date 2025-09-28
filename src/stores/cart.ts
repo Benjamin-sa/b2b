@@ -1,9 +1,61 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { CartItem } from '../types'
+import type { CartItem, Product } from '../types'
+
+type CartMutationStatus = 'added' | 'partial' | 'unavailable' | 'adjusted' | 'updated' | 'removed'
+
+export interface CartMutationResult {
+  status: CartMutationStatus
+  requestedQuantity: number
+  appliedQuantity: number
+  totalQuantity: number
+  remainingQuantity: number
+  limit: number
+}
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
+
+  const getItemQuantity = (productId: string): number => {
+    const item = items.value.find(i => i.productId === productId)
+    return item?.quantity || 0
+  }
+
+  const calculateLimit = (product: Product): number => {
+    if (product.comingSoon) {
+      return 0
+    }
+    const stock = typeof product.stock === 'number' && product.stock >= 0 ? product.stock : Infinity
+    const maxOrder = typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0
+      ? product.maxOrderQuantity
+      : Infinity
+
+    return Math.min(stock, maxOrder)
+  }
+
+  const getRemainingQuantity = (product: Product): number => {
+    const limit = calculateLimit(product)
+    if (limit === Infinity) return Infinity
+
+    const existing = getItemQuantity(product.id)
+    return Math.max(0, limit - existing)
+  }
+
+  const enforceLimitOnExisting = (existingItem: CartItem | undefined, limit: number): {
+    existingQuantity: number
+    adjusted: boolean
+  } => {
+    if (!existingItem) {
+      return { existingQuantity: 0, adjusted: false }
+    }
+
+    if (existingItem.quantity <= limit || limit === Infinity) {
+      return { existingQuantity: existingItem.quantity, adjusted: false }
+    }
+
+    existingItem.quantity = limit
+    return { existingQuantity: limit, adjusted: true }
+  }
 
   const itemCount = computed(() => {
     return items.value.reduce((total, item) => total + item.quantity, 0)
@@ -35,16 +87,59 @@ export const useCartStore = defineStore('cart', () => {
   
   const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 
-  const addItem = async (item: CartItem) => {
+  const addItem = async (item: CartItem): Promise<CartMutationResult> => {
+    if (!item.product.inStock || item.product.comingSoon) {
+      return {
+        status: 'unavailable',
+        requestedQuantity: item.quantity,
+        appliedQuantity: 0,
+        totalQuantity: getItemQuantity(item.productId),
+        remainingQuantity: 0,
+        limit: 0
+      }
+    }
+
     const existingItem = items.value.find(i => i.productId === item.productId)
-    
+
+    const limit = calculateLimit(item.product)
+    const { existingQuantity, adjusted } = enforceLimitOnExisting(existingItem, limit)
+
+    const desiredTotal = existingQuantity + item.quantity
+    const clampedTotal = Math.min(desiredTotal, limit)
+    const appliedQuantity = Math.max(0, clampedTotal - existingQuantity)
+
     if (existingItem) {
-      existingItem.quantity += item.quantity
-    } else {
+      existingItem.quantity = clampedTotal
+    } else if (appliedQuantity > 0) {
       items.value.push({
         ...item,
+        quantity: appliedQuantity,
         addedAt: new Date()
       })
+    }
+
+    const totalQuantity = existingItem
+      ? existingItem.quantity
+      : appliedQuantity > 0
+        ? appliedQuantity
+        : 0
+
+    const remainingQuantity = limit === Infinity ? Infinity : Math.max(0, limit - totalQuantity)
+
+    let status: CartMutationStatus = 'added'
+    if (appliedQuantity === 0) {
+      status = adjusted ? 'adjusted' : 'unavailable'
+    } else if (appliedQuantity < item.quantity) {
+      status = 'partial'
+    }
+
+    return {
+      status,
+      requestedQuantity: item.quantity,
+      appliedQuantity,
+      totalQuantity,
+      remainingQuantity,
+      limit: limit === Infinity ? Infinity : limit
     }
   }
 
@@ -55,24 +150,61 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number): CartMutationResult => {
     const item = items.value.find(i => i.productId === productId)
-    if (item) {
-      if (quantity <= 0) {
-        removeItem(productId)
-      } else {
-        item.quantity = quantity
+
+    if (!item) {
+      return {
+        status: 'unavailable',
+        requestedQuantity: quantity,
+        appliedQuantity: 0,
+        totalQuantity: 0,
+        remainingQuantity: 0,
+        limit: 0
       }
+    }
+
+    const limit = calculateLimit(item.product)
+
+    if (quantity <= 0) {
+      removeItem(productId)
+
+      return {
+        status: 'removed',
+        requestedQuantity: quantity,
+        appliedQuantity: 0,
+        totalQuantity: 0,
+        remainingQuantity: limit === Infinity ? Infinity : limit,
+        limit: limit === Infinity ? Infinity : limit
+      }
+    }
+
+    const minOrder = typeof item.product.minOrderQuantity === 'number' && item.product.minOrderQuantity > 0
+      ? item.product.minOrderQuantity
+      : 1
+
+    const clampedQuantity = Math.min(Math.max(quantity, minOrder), limit)
+    item.quantity = clampedQuantity
+
+    const remainingQuantity = limit === Infinity ? Infinity : Math.max(0, limit - clampedQuantity)
+
+    let status: CartMutationStatus = 'updated'
+    if (clampedQuantity < quantity) {
+      status = 'partial'
+    }
+
+    return {
+      status,
+      requestedQuantity: quantity,
+      appliedQuantity: clampedQuantity,
+      totalQuantity: clampedQuantity,
+      remainingQuantity,
+      limit: limit === Infinity ? Infinity : limit
     }
   }
 
   const clearCart = () => {
     items.value = []
-  }
-
-  const getItemQuantity = (productId: string): number => {
-    const item = items.value.find(i => i.productId === productId)
-    return item?.quantity || 0
   }
 
   const isInCart = (productId: string): boolean => {
@@ -93,6 +225,7 @@ export const useCartStore = defineStore('cart', () => {
     updateQuantity,
     clearCart,
     getItemQuantity,
+    getRemainingQuantity,
     isInCart
   }
 })

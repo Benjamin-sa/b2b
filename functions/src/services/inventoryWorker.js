@@ -34,6 +34,71 @@ const getInventoryWorkerToken = () => {
 };
 
 /**
+ * Transfer stock from B2C to B2B for a specific Shopify variant
+ * @param {string} shopifyVariantId
+ * @param {number} amount
+ * @returns {Promise<Object|null>}
+ */
+const transferStock = async (shopifyVariantId, amount) => {
+  if (
+    !shopifyVariantId ||
+    typeof amount !== "number" ||
+    !Number.isFinite(amount)
+  ) {
+    throw new Error(
+      "transferStock requires a shopifyVariantId and numeric amount"
+    );
+  }
+
+  const payload = {
+    shopify_variant_id: shopifyVariantId,
+    amount,
+  };
+
+  try {
+    console.log(
+      `📡 Requesting B2B stock transfer: variant=${shopifyVariantId}, amount=${amount}`
+    );
+
+    const response = await fetch(
+      `${INVENTORY_WORKER_URL}/api/inventory/transfer-b2b`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getInventoryWorkerToken()}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const rawBody = await response.text();
+    let parsedBody = JSON.parse(rawBody);
+
+    if (!response.ok) {
+      const errorMessage =
+        (parsedBody && (parsedBody.error || parsedBody.message)) || rawBody;
+      throw new Error(
+        `Inventory worker responded with status ${response.status}: ${
+          errorMessage || response.statusText
+        }`
+      );
+    }
+
+    console.log(
+      `✅ Stock transfer requested successfully for variant ${shopifyVariantId}`
+    );
+
+    return parsedBody;
+  } catch (error) {
+    console.error(`❌ Failed to request stock transfer:`, error);
+    throw new Error(
+      `Stock transfer failed for variant ${shopifyVariantId}: ${error.message}`
+    );
+  }
+};
+
+/**
  * Send stock update to Cloudflare Worker
  * @param {Array} orderItems - Array of order items with productSku and quantity
  * @param {string} operation - 'reduce' or 'increase'
@@ -110,6 +175,7 @@ const notifyStockRestoration = async (orderItems, metadata = {}) => {
 
 module.exports = {
   inventoryWorkerToken, // Export secret for use in function definitions
+  transferStock,
   sendStockUpdate,
   notifyStockReduction,
   notifyStockRestoration,
