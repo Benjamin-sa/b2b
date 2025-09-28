@@ -34,7 +34,8 @@
         <ProductsHeader :search-term="filters.searchTerm" :active-category="filters.category"
             :in-stock-only="filters.inStock" :sort-by="filters.sortBy" :is-loading="productStore.isLoading"
             :product-count="productStore.products.length" :total-count="productStore.products.length"
-            :view-mode="viewMode" @search="handleSearch" @category-change="handleCategoryChange"
+            :view-mode="viewMode" :price-range="priceRange" :has-advanced-filters="showAdvancedFilters"
+            @search="handleSearch" @category-change="handleCategoryChange"
             @stock-filter-change="handleStockFilterChange" @sort-change="handleSortChange" @clear-filters="clearFilters"
             @view-mode-change="handleViewModeChange" @toggle-filters="toggleAdvancedFilters" />
 
@@ -44,7 +45,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
-                        }}</label>
+                            }}</label>
                         <select v-model="filters.category"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
@@ -63,9 +64,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
-                        }}</label>
-                        <select
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            }}</label>
+                        <select v-model="priceRange"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            @change="handlePriceRangeChange">
                             <option value="">{{ $t('products.filters.anyPrice') }}</option>
                             <option value="0-50">€0 - €50</option>
                             <option value="50-100">€50 - €100</option>
@@ -73,7 +75,11 @@
                             <option value="500+">€500+</option>
                         </select>
                     </div>
-                    <div class="flex items-end">
+                    <div class="flex flex-col space-y-2">
+                        <button @click="clearFilters"
+                            class="w-full px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-300 rounded-md font-medium">
+                            {{ $t('products.filters.clear') }}
+                        </button>
                         <button @click="toggleAdvancedFilters"
                             class="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-md font-medium">
                             {{ $t('products.filters.hideFilters') }}
@@ -169,6 +175,7 @@ const route = useRoute();
 // Local state
 const viewMode = ref<'grid' | 'list'>('grid');
 const showAdvancedFilters = ref(false);
+const priceRange = ref('');
 
 // Simple debounce implementation
 const debounce = (func: Function, wait: number) => {
@@ -237,6 +244,25 @@ const handleViewModeChange = (mode: 'grid' | 'list') => {
     viewMode.value = mode;
 };
 
+const handlePriceRangeChange = () => {
+    if (priceRange.value === '') {
+        filters.minPrice = undefined;
+        filters.maxPrice = undefined;
+    } else if (priceRange.value === '0-50') {
+        filters.minPrice = 0;
+        filters.maxPrice = 50;
+    } else if (priceRange.value === '50-100') {
+        filters.minPrice = 50;
+        filters.maxPrice = 100;
+    } else if (priceRange.value === '100-500') {
+        filters.minPrice = 100;
+        filters.maxPrice = 500;
+    } else if (priceRange.value === '500+') {
+        filters.minPrice = 500;
+        filters.maxPrice = undefined;
+    }
+};
+
 const toggleAdvancedFilters = () => {
     showAdvancedFilters.value = !showAdvancedFilters.value;
 };
@@ -245,7 +271,13 @@ const toggleAdvancedFilters = () => {
 
 // The single, unified function to fetch data based on current filters
 const applyFiltersAndFetch = (loadMore = false) => {
-    console.log('Applying filters and fetching products with:', filters, 'Load more:', loadMore);
+    console.log('🔍 Applying filters and fetching products with:');
+    console.log('  - Search term:', filters.searchTerm);
+    console.log('  - Category:', filters.category);
+    console.log('  - In stock:', filters.inStock);
+    console.log('  - Price range:', filters.minPrice, 'to', filters.maxPrice);
+    console.log('  - Sort by:', filters.sortBy);
+    console.log('  - Load more:', loadMore);
     productStore.fetchProducts(filters, loadMore);
 };
 
@@ -266,7 +298,10 @@ const clearFilters = () => {
     filters.category = '';
     filters.categoryId = categoryIdFromRoute.value || ''; // Keep category from route
     filters.inStock = undefined;
+    filters.minPrice = undefined;
+    filters.maxPrice = undefined;
     filters.sortBy = 'name';
+    priceRange.value = '';
     showAdvancedFilters.value = false;
     // The watch effect will automatically trigger a re-fetch
 };

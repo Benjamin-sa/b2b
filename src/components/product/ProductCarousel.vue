@@ -71,10 +71,12 @@ interface Props {
     filters?: ProductFilter
     viewAllLink: string
     canOrder?: boolean
+    comingSoonOnly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    canOrder: false
+    canOrder: false,
+    comingSoonOnly: false
 })
 
 const productStore = useProductStore()
@@ -99,6 +101,11 @@ const loadProducts = async () => {
             limit: 8, // Show 8 products in carousel
             sortBy: 'createdAt', // Sort by newest first
             sortOrder: 'desc'
+        }
+
+        // Add comingSoon filter if specified
+        if (props.comingSoonOnly) {
+            filters.comingSoon = true
         }
 
         await productStore.fetchProducts(filters)

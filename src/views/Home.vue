@@ -78,12 +78,12 @@
             </div>
         </div>
 
-        <!-- Newest Products Carousel -->
+        <!-- Coming Soon Products Carousel -->
         <div class="mb-8">
-            <ProductCarousel :title="$t('home.carousel.newestProducts')"
-                :filters="{ sortBy: 'createdAt', sortOrder: 'desc', inStock: true }"
-                view-all-link="/products?sort=newest" :can-order="authStore.canAccess" />
+            <ProductCarousel :title="$t('home.carousel.comingSoon')" :coming-soon-only="true"
+                view-all-link="/products?comingSoon=true" :can-order="false" />
         </div>
+
 
 
         <!-- Recent Activity or Quick Actions -->
@@ -133,7 +133,7 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
                         <span style="color: var(--color-text-secondary)">{{ $t('home.accountStatus.accountType')
-                            }}</span>
+                        }}</span>
                         <span class="font-medium" style="color: var(--color-text-primary)">
                             {{ authStore.isAdmin ? $t('home.accountStatus.administrator') :
                                 $t('home.accountStatus.businessCustomer') }}
@@ -141,7 +141,7 @@
                     </div>
                     <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
                         <span style="color: var(--color-text-secondary)">{{ $t('home.accountStatus.verificationStatus')
-                            }}</span>
+                        }}</span>
                         <span class="flex items-center">
                             <div :class="[
                                 'w-2 h-2 rounded-full mr-2',
@@ -155,7 +155,7 @@
                     </div>
                     <div class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
                         <span style="color: var(--color-text-secondary)">{{ $t('home.accountStatus.orderingCapability')
-                            }}</span>
+                        }}</span>
                         <span class="font-medium" style="color: var(--color-text-primary)">
                             {{ authStore.isVerified || authStore.isAdmin ? $t('home.accountStatus.enabled') :
                                 $t('home.accountStatus.disabled') }}

@@ -45,6 +45,7 @@ export const useProductStore = defineStore('products', () => {
       if (filters.categoryId) q = query(q, where('categoryId', '==', filters.categoryId));
       if (filters.category) q = query(q, where('category', '==', filters.category)); // Backward compatibility
       if (filters.inStock !== undefined) q = query(q, where('inStock', '==', filters.inStock));
+      if (filters.comingSoon !== undefined) q = query(q, where('comingSoon', '==', filters.comingSoon));
       if (filters.brand) q = query(q, where('brand', '==', filters.brand));
       if (filters.tags && filters.tags.length > 0) {
         q = query(q, where('tags', 'array-contains-any', filters.tags));
@@ -70,8 +71,8 @@ export const useProductStore = defineStore('products', () => {
 
       // 4. Client-side Filtering (for full-text search)
       // TODO: Replace with proper search service (Algolia/ElasticSearch) for better performance
-      if (filters.searchTerm) {
-        const term = filters.searchTerm.toLowerCase();
+      if (filters.searchTerm && filters.searchTerm.trim()) {
+        const term = filters.searchTerm.toLowerCase().trim();
         fetchedProducts = fetchedProducts.filter(p => 
           p.name.toLowerCase().includes(term) ||
           p.description?.toLowerCase().includes(term) ||

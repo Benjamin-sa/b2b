@@ -23,8 +23,8 @@ const { locale } = useI18n();
 const isOpen = ref(false);
 
 const languages = [
-    { code: 'en', name: 'English' },
     { code: 'nl', name: 'Nederlands' },
+    { code: 'en', name: 'English' },
     { code: 'fr', name: 'Français' },
     { code: 'de', name: 'Deutsch' },
 ];

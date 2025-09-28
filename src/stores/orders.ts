@@ -76,21 +76,21 @@ export const useOrderStore = defineStore('orders', () => {
       shipping,
       status: data.status || data.stripeStatus || 'pending',
       orderDate: createdAt,
-      shippingAddress: data.shippingAddress || null,
-      billingAddress: data.billingAddress || null,
+      shippingAddress: data.shippingAddress || data.metadata?.shippingAddress || null,
+      billingAddress: data.billingAddress || data.metadata?.billingAddress || null,
       paymentMethod: data.paymentMethod || 'invoice',
-      notes: data.notes || '',
+      notes: data.notes || data.metadata?.notes || '',
       createdAt,
       updatedAt,
       estimatedDelivery: toDate(data.estimatedDelivery),
-  dueDate: toDate(data.dueDate),
-  paidAt: toDate(data.paidAt),
+      dueDate: toDate(data.dueDate),
+      paidAt: toDate(data.paidAt),
       trackingNumber: data.trackingNumber,
-      invoiceUrl: data.invoiceUrl,
+      invoiceUrl: data.invoiceUrl || data.hostedInvoiceUrl,
       invoicePdf: data.invoicePdf,
-      stripeInvoiceId: data.stripeInvoiceId || doc.id,
+      stripeInvoiceId: data.stripeInvoiceId || data.invoiceId || doc.id,
       stripeStatus: data.stripeStatus,
-      invoiceNumber: data.stripeNumber,
+      invoiceNumber: data.stripeNumber || data.invoiceNumber,
       shippingCostCents: totals.shippingCents,
       stripeShippingInvoiceItemId: data.stripeShippingInvoiceItemId,
       metadata: data.metadata || {}
@@ -110,15 +110,15 @@ export const useOrderStore = defineStore('orders', () => {
 
     isLoading.value = true
 
-    const ordersRef = collection(db, 'orders')
-    const ordersQuery = query(
-      ordersRef,
+    const invoicesRef = collection(db, 'invoices')
+    const invoicesQuery = query(
+      invoicesRef,
       where('userId', '==', authStore.user.uid),
       orderBy('createdAt', 'desc')
     )
 
     unsubscribeOrders = onSnapshot(
-      ordersQuery,
+      invoicesQuery,
       snapshot => {
         orders.value = snapshot.docs.map(mapOrderDoc)
         isLoading.value = false
@@ -210,14 +210,8 @@ export const useOrderStore = defineStore('orders', () => {
         currency: string
       }
 
-      // Clear invoice cache so new invoice appears immediately
-      try {
-        const { useInvoiceStore } = await import('./invoices')
-        const invoiceStore = useInvoiceStore()
-        await invoiceStore.refreshInvoices()
-      } catch (err) {
-        console.warn('Could not refresh invoices:', err)
-      }
+      // Refresh orders/invoices cache so new invoice appears immediately
+      refreshOrders()
 
       return {
         success: true,
@@ -242,19 +236,48 @@ export const useOrderStore = defineStore('orders', () => {
     return orders.value.find(order => order.id === orderId)
   }
 
+  // Invoice-specific getters (using the same cached data)
+  const getInvoiceById = (invoiceId: string): Order | undefined => {
+    return orders.value.find(order => 
+      order.id === invoiceId || 
+      order.stripeInvoiceId === invoiceId ||
+      order.invoiceNumber === invoiceId
+    )
+  }
+
+  const getPaidInvoices = (): Order[] => {
+    return orders.value.filter(order => order.status === 'confirmed' || order.paidAt)
+  }
+
+  const getPendingInvoices = (): Order[] => {
+    return orders.value.filter(order => order.status === 'pending' && !order.paidAt)
+  }
+
   const clearError = () => {
     error.value = null
   }
 
   return {
+    // Data
     orders,
     isLoading,
     error,
+    
+    // Subscription management
     subscribeToOrders,
     stopOrdersSubscription,
     refreshOrders,
+    
+    // Order operations
     createOrder,
     getOrderById,
+    
+    // Invoice operations (same data, different views)
+    getInvoiceById,
+    getPaidInvoices,
+    getPendingInvoices,
+    
+    // Utility
     clearError
   }
 })

@@ -6,11 +6,11 @@ import de from './locales/de.json';
 
 const i18n = createI18n({
   legacy: false, // Use Composition API mode
-  locale: localStorage.getItem('language') || 'en', // Default locale
+  locale: localStorage.getItem('language') || 'nl', // Default locale
   fallbackLocale: 'en', // Fallback locale when translation is missing
   messages: {
-    en,
     nl,
+    en,
     fr,
     de
   }

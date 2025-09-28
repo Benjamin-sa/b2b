@@ -42,6 +42,7 @@ export interface ProductFilter {
   minPrice?: number
   maxPrice?: number
   inStock?: boolean
+  comingSoon?: boolean
   searchTerm?: string
   page?: number
   limit?: number

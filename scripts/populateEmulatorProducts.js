@@ -92,6 +92,10 @@ function generateRandomProduct() {
   const inStock = Math.random() > 0.1; // 90% chance in stock
   const stock = inStock ? Math.floor(Math.random() * 100) + 1 : 0;
 
+  // Generate SKU once and reuse it for shopifyVariantId
+  // This ensures payment system has required shopifyVariantId metadata
+  const generatedSKU = generateSKU();
+
   const product = {
     name,
     description: generateProductDescription(name, category),
@@ -101,7 +105,8 @@ function generateRandomProduct() {
     )}`,
     images: generateRandomImages(),
     category,
-    sku: generateSKU(),
+    sku: generatedSKU,
+    shopifyVariantId: generatedSKU, // Required for payment system - must match item metadata
     inStock,
     stock,
     brand,

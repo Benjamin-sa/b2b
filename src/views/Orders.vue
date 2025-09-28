@@ -72,7 +72,7 @@
                             <div>
                                 <h3 class="text-lg font-medium text-gray-900">
                                     {{ $t('orders.invoice') }} {{ order.invoiceNumber || order.stripeInvoiceId ||
-                                    order.id }}
+                                        order.id }}
                                 </h3>
                                 <p class="text-sm text-gray-500">
                                     {{ $t('orders.orderPlacedOn') }} {{ formatDate(order.orderDate) }}
@@ -124,6 +124,36 @@
                                     <div class="text-sm font-medium text-gray-900">
                                         €{{ formatPrice(item.totalPrice) }}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Totals -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">{{ $t('orders.orderSummary') }}</h4>
+                            <div class="space-y-2">
+                                <!-- Subtotal -->
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $t('orders.subtotal') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.subtotal) }}</span>
+                                </div>
+
+                                <!-- Shipping -->
+                                <div v-if="order.shipping > 0" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $t('orders.shipping') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.shipping) }}</span>
+                                </div>
+
+                                <!-- Tax -->
+                                <div v-if="order.tax > 0" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $t('orders.tax') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.tax) }}</span>
+                                </div>
+
+                                <!-- Total -->
+                                <div class="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
+                                    <span class="text-gray-900">{{ $t('orders.total') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.totalAmount) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -181,7 +211,7 @@
                                 <span v-if="order.stripeStatus === 'paid'">{{ $t('orders.paymentReceived') }}</span>
                                 <span v-else-if="order.stripeStatus === 'sent'">{{ $t('orders.invoiceSent') }}</span>
                                 <span v-else-if="order.stripeStatus === 'open'">{{ $t('orders.awaitingPayment')
-                                    }}</span>
+                                }}</span>
                                 <span v-else-if="order.stripeStatus === 'draft'">{{ $t('orders.status.draft') }}</span>
                                 <span v-else>{{ getStatusText(order.stripeStatus || order.status) }}</span>
                             </div>

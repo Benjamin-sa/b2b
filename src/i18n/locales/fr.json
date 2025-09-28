@@ -11,7 +11,10 @@
     "signOut": "Déconnexion",
     "adminPanel": "Panneau d'administration",
     "backToDashboard": "Retour au tableau de bord",
-    "accountSettings": "Paramètres du compte"
+    "accountSettings": "Paramètres du compte",
+    "menu": "Menu",
+    "account": "Compte",
+    "settings": "Paramètres"
   },
   "footer": {
     "company": {
@@ -522,7 +525,8 @@
       "b2bSupportDesc": "Support commercial dédié"
     },
     "carousel": {
-      "newestProducts": "Nouveaux produits"
+      "newestProducts": "Nouveaux produits",
+      "comingSoon": "Bientôt Disponible"
     },
     "quickActions": {
       "title": "Actions rapides",
@@ -656,6 +660,11 @@
     "dueOn": "Date d'échéance",
     "itemsPurchased": "Articles achetés",
     "sku": "SKU",
+    "orderSummary": "Résumé de la commande",
+    "subtotal": "Sous-total",
+    "shipping": "Livraison",
+    "tax": "TVA",
+    "total": "Total",
     "shippingAddress": "Adresse de livraison",
     "orderNotes": "Notes de commande",
     "viewInvoice": "Voir la facture",

@@ -42,10 +42,10 @@ const getProductSnapshot = async (productId, cache) => {
   return productData;
 };
 
-const buildOrderItems = async (items, stripe) => {
+const buildInvoiceItems = async (items, stripe) => {
   const productCache = new Map();
   const priceCache = new Map();
-  const orderItems = [];
+  const invoiceItems = [];
   let subtotalCents = 0;
 
   for (const item of items) {
@@ -62,7 +62,7 @@ const buildOrderItems = async (items, stripe) => {
     const lineTotalCents = unitPriceCents * quantity;
     subtotalCents += lineTotalCents;
 
-    orderItems.push({
+    invoiceItems.push({
       productId,
       productName:
         productData.name ||
@@ -78,32 +78,23 @@ const buildOrderItems = async (items, stripe) => {
       stripeInvoiceItemId: null,
       taxCents: null,
       metadata: {
-        shopifyVariantId:
-          productData.shopifyVariantId || item.metadata.shopifyVariantId || "",
-        productName:
-          productData.name ||
-          item.metadata.productName ||
-          stripePrice.nickname ||
-          "",
-        productId,
         brand: productData.brand || null,
         unit: productData.unit || null,
         weight: productData.weight ?? null,
         stripePriceId: item.stripePriceId,
         stripeInvoiceItemId: null,
-        taxCents: null,
       },
     });
   }
 
-  return { orderItems, subtotalCents };
+  return { invoiceItems, subtotalCents };
 };
 
-const buildOrderRecord = ({
+const buildInvoiceRecord = ({
   uid,
   customerId,
   finalizedInvoice,
-  orderItems,
+  invoiceItems,
   subtotalCents,
   shippingCostCents,
   taxCents,
@@ -112,13 +103,22 @@ const buildOrderRecord = ({
   shippingInvoiceItemId,
 }) => {
   return {
+    // Core invoice data
+    invoiceId: finalizedInvoice.id,
     userId: uid,
     customerId,
+
+    // Stripe invoice details
     stripeInvoiceId: finalizedInvoice.id,
     stripeStatus: finalizedInvoice.status,
     stripeNumber: finalizedInvoice.number || null,
     stripeAmountDueCents: finalizedInvoice.amount_due,
     stripeAmountPaidCents: finalizedInvoice.amount_paid,
+    stripeCustomerEmail: finalizedInvoice.customer_email || null,
+
+    // Financial totals
+    amount: finalizedInvoice.amount_due,
+    currency: finalizedInvoice.currency,
     totals: {
       subtotal: subtotalCents / 100,
       subtotalCents,
@@ -129,80 +129,46 @@ const buildOrderRecord = ({
       grandTotal: grandTotalCents / 100,
       grandTotalCents,
     },
-    items: orderItems,
+
+    // Invoice line items
+    items: invoiceItems,
     shippingAddress: metadata?.shippingAddress || null,
     billingAddress: metadata?.billingAddress || null,
     notes: metadata?.notes || "",
     customerInfo: metadata?.userInfo || null,
+
+    // Invoice URLs and status
     invoiceUrl: finalizedInvoice.hosted_invoice_url,
+    hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url,
     invoicePdf: finalizedInvoice.invoice_pdf || null,
+    invoiceNumber: finalizedInvoice.number || null,
+    status: finalizedInvoice.status === "paid" ? "confirmed" : "pending",
+
+    // Dates
     dueDate: finalizedInvoice.due_date
       ? new Date(finalizedInvoice.due_date * 1000)
       : null,
     paidAt: finalizedInvoice.status_transitions?.paid_at
       ? new Date(finalizedInvoice.status_transitions.paid_at * 1000)
       : null,
+    createdAt: getServerTimestamp(),
+    updatedAt: getServerTimestamp(),
+
+    // Additional data
     paymentIntentId:
       typeof finalizedInvoice.payment_intent === "string"
         ? finalizedInvoice.payment_intent
         : finalizedInvoice.payment_intent?.id || null,
-    status: finalizedInvoice.status === "paid" ? "confirmed" : "pending",
-    stripeCustomerEmail: finalizedInvoice.customer_email || null,
-    createdAt: getServerTimestamp(),
-    updatedAt: getServerTimestamp(),
     stripeShippingInvoiceItemId: shippingInvoiceItemId || null,
+    metadata: metadata || {},
   };
 };
 
-const persistOrderRecords = async ({
-  finalizedInvoice,
-  orderRecord,
-  orderItems,
-  metadata,
-  subtotalCents,
-  taxCents,
-  shippingCostCents,
-  grandTotalCents,
-  shippingInvoiceItemId,
-}) => {
-  await db.collection("orders").doc(finalizedInvoice.id).set(orderRecord);
-
+const persistInvoiceRecord = async (invoiceRecord) => {
   await db
     .collection("invoices")
-    .doc(finalizedInvoice.id)
-    .set(
-      {
-        invoiceId: finalizedInvoice.id,
-        orderId: finalizedInvoice.id,
-        userId: orderRecord.userId,
-        customerId: orderRecord.customerId,
-        items: orderItems,
-        metadata: metadata || {},
-        amount: finalizedInvoice.amount_due,
-        currency: finalizedInvoice.currency,
-        status: finalizedInvoice.status,
-        invoiceNumber: finalizedInvoice.number || null,
-        createdAt: getServerTimestamp(),
-        updatedAt: getServerTimestamp(),
-        dueDate: finalizedInvoice.due_date
-          ? new Date(finalizedInvoice.due_date * 1000)
-          : null,
-        invoiceUrl: finalizedInvoice.hosted_invoice_url,
-        invoicePdf: finalizedInvoice.invoice_pdf || null,
-        totals: {
-          subtotal: subtotalCents / 100,
-          tax: taxCents / 100,
-          shipping: shippingCostCents / 100,
-          grandTotal: grandTotalCents / 100,
-          subtotalCents,
-          taxCents,
-          shippingCents: shippingCostCents,
-          grandTotalCents,
-        },
-        stripeShippingInvoiceItemId: shippingInvoiceItemId || null,
-      },
-      { merge: true }
-    );
+    .doc(invoiceRecord.invoiceId)
+    .set(invoiceRecord, { merge: true });
 };
 
 /**
@@ -262,7 +228,7 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
 
     const stripeCustomerId = userData.stripeCustomerId;
 
-    const { orderItems, subtotalCents } = await buildOrderItems(
+    const { invoiceItems, subtotalCents } = await buildInvoiceItems(
       data.items,
       stripe
     );
@@ -293,8 +259,8 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
       });
 
     if (Array.isArray(productLineItems) && productLineItems.length > 0) {
-      const orderItemsByProductId = new Map(
-        orderItems.map((item) => [
+      const invoiceItemsByProductId = new Map(
+        invoiceItems.map((item) => [
           item.metadata?.productId || item.productId,
           item,
         ])
@@ -304,12 +270,12 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
         const productId = line.metadata?.productId;
         if (!productId) continue;
 
-        const orderItem = orderItemsByProductId.get(productId);
-        if (!orderItem) continue;
+        const invoiceItem = invoiceItemsByProductId.get(productId);
+        if (!invoiceItem) continue;
 
-        orderItem.stripeInvoiceItemId = line.id;
-        orderItem.metadata = {
-          ...orderItem.metadata,
+        invoiceItem.stripeInvoiceItemId = line.id;
+        invoiceItem.metadata = {
+          ...invoiceItem.metadata,
           stripeInvoiceItemId: line.id,
         };
       }
@@ -317,11 +283,11 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
 
     const shippingInvoiceItemId = shippingLineItem ? shippingLineItem.id : null;
 
-    const orderRecord = buildOrderRecord({
+    const invoiceRecord = buildInvoiceRecord({
       uid: request.auth.uid,
       customerId: stripeCustomerId,
       finalizedInvoice,
-      orderItems,
+      invoiceItems,
       subtotalCents,
       shippingCostCents,
       taxCents,
@@ -330,17 +296,11 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
       shippingInvoiceItemId,
     });
 
-    await persistOrderRecords({
-      finalizedInvoice,
-      orderRecord,
-      orderItems,
-      metadata: data.metadata,
-      subtotalCents,
-      taxCents,
-      shippingCostCents,
-      grandTotalCents,
-      shippingInvoiceItemId,
-    });
+    await persistInvoiceRecord(invoiceRecord);
+
+    console.log(
+      `✅ Invoice created successfully: ${finalizedInvoice.id} → Single record stored in invoices collection`
+    );
 
     return {
       invoiceId: finalizedInvoice.id,
@@ -360,7 +320,7 @@ const createInvoice = onCall(getFunctionOptions(), async (request) => {
 });
 
 /**
- * Get user's invoices directly from Stripe using customer ID
+ * Get user's invoices from our Firebase collection
  */
 const getUserInvoices = onCall(getFunctionOptions(), async (request) => {
   if (!request.auth) {
@@ -368,108 +328,40 @@ const getUserInvoices = onCall(getFunctionOptions(), async (request) => {
   }
 
   try {
-    // Initialize Stripe with error handling
-    const stripe = getStripe();
-    // Get user's Stripe customer ID
-    const userDoc = await db.collection("users").doc(request.auth.uid).get();
-    if (!userDoc.exists) {
-      throw new HttpsError("not-found", "User not found");
-    }
-
-    const userData = userDoc.data();
-    if (!userData.stripeCustomerId) {
-      throw new HttpsError(
-        "failed-precondition",
-        "User must have a Stripe customer ID"
-      );
-    }
-
-    // Fetch all invoices for this customer directly from Stripe
-    const stripeInvoices = await stripe.invoices.list({
-      customer: userData.stripeCustomerId,
-      limit: 100, // Adjust as needed
-      expand: ["data.payment_intent"], // Get payment details
-    });
+    // Fetch all invoices for this user from our database
+    const invoicesSnapshot = await db
+      .collection("invoices")
+      .where("userId", "==", request.auth.uid)
+      .orderBy("createdAt", "desc")
+      .limit(100)
+      .get();
 
     const invoices = [];
 
-    for (const stripeInvoice of stripeInvoices.data) {
-      try {
-        // Parse metadata if it exists
-        let orderMetadata = {};
-        try {
-          orderMetadata = JSON.parse(
-            stripeInvoice.metadata.orderMetadata || "{}"
-          );
-        } catch (e) {
-          console.warn("Failed to parse order metadata:", e);
-        }
+    invoicesSnapshot.forEach((doc) => {
+      const invoiceData = doc.data();
 
-        // Get invoice items (line items) with metadata
-        const lineItems = stripeInvoice.lines.data.map((item) => ({
-          stripePriceId: item.price.id,
-          productName:
-            item.metadata?.productName ||
-            item.description ||
-            item.price.nickname ||
-            "Unknown Product",
-          quantity: item.quantity,
-          unitPrice: item.price.unit_amount,
-          totalPrice: item.amount,
-          metadata: {
-            shopifyVariantId: item.metadata?.shopifyVariantId || "",
-            productName: item.metadata?.productName || "",
-            productId: item.metadata?.productId || "",
-          },
-        }));
+      // Convert Firestore timestamps to milliseconds for frontend
+      const invoice = {
+        ...invoiceData,
+        id: doc.id,
+        createdAt: invoiceData.createdAt?.toMillis?.() || invoiceData.createdAt,
+        updatedAt: invoiceData.updatedAt?.toMillis?.() || invoiceData.updatedAt,
+        dueDate: invoiceData.dueDate?.toMillis?.() || invoiceData.dueDate,
+        paidAt: invoiceData.paidAt?.toMillis?.() || invoiceData.paidAt,
+      };
 
-        invoices.push({
-          id: stripeInvoice.id, // Use Stripe invoice ID as primary ID
-          invoiceId: stripeInvoice.id,
-          amount: stripeInvoice.amount_due,
-          amountPaid: stripeInvoice.amount_paid,
-          currency: stripeInvoice.currency,
-          status: stripeInvoice.status,
-          paid: stripeInvoice.paid,
-          createdAt: stripeInvoice.created * 1000, // Convert Unix timestamp
-          dueDate: stripeInvoice.due_date
-            ? stripeInvoice.due_date * 1000
-            : null,
-          paidAt: stripeInvoice.status_transitions?.paid_at
-            ? stripeInvoice.status_transitions.paid_at * 1000
-            : null,
-          invoiceUrl: stripeInvoice.hosted_invoice_url,
-          invoicePdf: stripeInvoice.invoice_pdf,
-          number: stripeInvoice.number,
-          subtotal: stripeInvoice.subtotal,
-          tax: stripeInvoice.tax || 0,
-          total: stripeInvoice.total,
-          // Include order metadata
-          orderMetadata: orderMetadata,
-          // Items from Stripe
-          items: lineItems,
-          // Additional Stripe data
-          attempt_count: stripeInvoice.attempt_count,
-          attempted: stripeInvoice.attempted,
-          auto_advance: stripeInvoice.auto_advance,
-          collection_method: stripeInvoice.collection_method,
-        });
-      } catch (itemError) {
-        throw new HttpsError(
-          "OrderMetadataError",
-          "Failed to process order metadata"
-        );
-      }
-    }
+      invoices.push(invoice);
+    });
 
     return {
       invoices: invoices,
       total: invoices.length,
-      source: "stripe", // Indicate data source
+      source: "firebase", // Indicate data source
     };
   } catch (error) {
-    console.error("Error fetching user invoices from Stripe:", error);
-    throw new HttpsError("internal", "Failed to fetch invoices from Stripe");
+    console.error("Error fetching user invoices from Firebase:", error);
+    throw new HttpsError("internal", "Failed to fetch invoices");
   }
 });
 

@@ -106,7 +106,7 @@ const createStripeProductWithPrice = async (stripe, productData, productId) => {
       productData.images && productData.images.length > 0
         ? [productData.images[0]]
         : [],
-    default_tax_code: "txcd_99999999",
+    tax_code: "txcd_99999999",
     metadata: {
       firebaseId: productId,
       category: productData.category || "",
@@ -134,7 +134,7 @@ const updateStripeProduct = async (stripe, newData, productId) => {
     description: newData.description,
     images:
       newData.images && newData.images.length > 0 ? [newData.images[0]] : [],
-    default_tax_code: "txcd_99999999",
+    tax_code: "txcd_99999999",
     tax_behavior: "exclusive",
     metadata: {
       firebaseId: productId,

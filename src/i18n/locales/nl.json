@@ -11,7 +11,10 @@
     "signOut": "Uitloggen",
     "adminPanel": "Beheerpaneel",
     "backToDashboard": "Terug naar Dashboard",
-    "accountSettings": "Accountinstellingen"
+    "accountSettings": "Accountinstellingen",
+    "menu": "Menu",
+    "account": "Account",
+    "settings": "Instellingen"
   },
   "footer": {
     "company": {
@@ -522,7 +525,8 @@
       "b2bSupportDesc": "Toegewijde zakelijke ondersteuning"
     },
     "carousel": {
-      "newestProducts": "Nieuwste producten"
+      "newestProducts": "Nieuwste producten",
+      "comingSoon": "Binnenkort Beschikbaar"
     },
     "quickActions": {
       "title": "Snelle Acties",
@@ -656,6 +660,11 @@
     "dueOn": "Vervaldatum",
     "itemsPurchased": "Bestelde artikelen",
     "sku": "SKU",
+    "orderSummary": "Bestelsamenvatting",
+    "subtotal": "Subtotaal",
+    "shipping": "Verzendkosten",
+    "tax": "BTW",
+    "total": "Totaal",
     "shippingAddress": "Verzendadres",
     "orderNotes": "Bestelnotities",
     "viewInvoice": "Bekijk Factuur",

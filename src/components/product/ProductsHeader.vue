@@ -15,31 +15,51 @@
                 </div>
 
                 <!-- Search and Quick Actions -->
+                <!-- Search and Quick Actions -->
                 <div class="flex-1 max-w-2xl">
                     <div class="relative">
-                        <div class="relative">
-                            <input v-model="searchTerm" type="text"
-                                :placeholder="$t('products.header.searchPlaceholder')"
-                                class="w-full px-4 py-3 pl-12 pr-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                @keyup.enter="onSearch" />
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <div class="absolute inset-y-0 right-0 flex items-center">
-                                <button @click="toggleAdvancedFilters"
-                                    class="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 border-l border-gray-300 rounded-r-lg hover:bg-gray-50">
-                                    {{ $t('common.actions.filter') }}
-                                    <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor"
+                        <div class="flex">
+                            <div class="relative flex-1">
+                                <input v-model="searchTerm" type="text"
+                                    :placeholder="$t('products.header.searchPlaceholder')"
+                                    class="w-full px-4 py-3 pl-12 pr-10 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    @keyup.enter="onSearch" />
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894l-4-2A1 1 0 018 15.586V11.414a1 1 0 00-.293-.707L1.293 4.293A1 1 0 011 4V4z" />
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <!-- Clear search button -->
+                                <button v-if="searchTerm" @click="clearSearch"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
+                            <button @click="onSearch" :class="[
+                                'px-6 py-3 text-white border transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                                hasUnsearchedText
+                                    ? 'bg-orange-500 border-orange-500 hover:bg-orange-600 animate-pulse'
+                                    : 'bg-blue-600 border-blue-600 hover:bg-blue-700'
+                            ]">
+                                {{ $t('common.actions.search') }}
+                            </button>
+                            <button @click="toggleAdvancedFilters" :class="[
+                                'px-4 py-3 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                                hasAdvancedFilters 
+                                    ? 'text-blue-600 bg-blue-50 border-blue-300 hover:bg-blue-100' 
+                                    : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'
+                            ]">
+                                {{ $t('common.actions.filter') }}
+                                <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894l-4-2A1 1 0 018 15.586V11.414a1 1 0 00-.293-.707L1.293 4.293A1 1 0 011 4V4z" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
@@ -61,6 +81,17 @@
                             {{ $t('products.header.inStockOnly') }}
                             <button @click="clearStockFilter"
                                 class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </span>
+                        <span v-if="priceRange"
+                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {{ getPriceRangeLabel(priceRange) }}
+                            <button @click="clearPriceRange"
+                                class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-purple-400 hover:bg-purple-200 hover:text-purple-500 focus:outline-none">
                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
@@ -147,6 +178,8 @@ interface Props {
     productCount?: number;
     totalCount?: number;
     viewMode?: 'grid' | 'list';
+    priceRange?: string;
+    hasAdvancedFilters?: boolean;
 }
 
 interface Emits {
@@ -167,7 +200,9 @@ const props = withDefaults(defineProps<Props>(), {
     isLoading: false,
     productCount: 0,
     totalCount: 0,
-    viewMode: 'grid'
+    viewMode: 'grid',
+    priceRange: '',
+    hasAdvancedFilters: false
 });
 
 const emit = defineEmits<Emits>();
@@ -177,9 +212,14 @@ const searchTerm = ref(props.searchTerm);
 const sortBy = ref(props.sortBy);
 const viewMode = ref(props.viewMode);
 
+// Track if there's unsearched text
+const hasUnsearchedText = computed(() => {
+    return searchTerm.value !== props.searchTerm && searchTerm.value.length > (props.searchTerm?.length || 0);
+});
+
 // Computed properties
 const hasActiveFilters = computed(() => {
-    return props.activeCategory || props.inStockOnly || searchTerm.value;
+    return props.activeCategory || props.inStockOnly || searchTerm.value || props.priceRange;
 });
 
 // Methods
@@ -228,6 +268,25 @@ const clearStockFilter = () => {
     emit('stock-filter-change', false);
 };
 
+const clearSearch = () => {
+    searchTerm.value = '';
+    emit('search', '');
+};
+
+const getPriceRangeLabel = (range: string) => {
+    switch (range) {
+        case '0-50': return '€0 - €50';
+        case '50-100': return '€50 - €100';
+        case '100-500': return '€100 - €500';
+        case '500+': return '€500+';
+        default: return range;
+    }
+};
+
+const clearPriceRange = () => {
+    emit('clear-filters'); // Let parent handle clearing all filters
+};
+
 const clearAllFilters = () => {
     searchTerm.value = '';
     emit('clear-filters');
@@ -246,14 +305,22 @@ watch(() => props.viewMode, (newVal) => {
     viewMode.value = newVal;
 });
 
-// Watch for local changes
-watch(searchTerm, (newVal) => {
+// Smart search behavior: 
+// - When adding text: manual search only (Enter key or Search button)
+// - When removing/clearing text: automatic search to show more results
+watch(searchTerm, (newVal, oldVal) => {
     if (newVal !== props.searchTerm) {
-        // Debounce the search
-        const timeoutId = setTimeout(() => {
-            emit('search', newVal);
-        }, 300);
-        return () => clearTimeout(timeoutId);
+        // Determine if text was removed (shorter) or added (longer)
+        const isTextRemoved = newVal.length < (oldVal?.length || 0);
+
+        if (isTextRemoved) {
+            // Auto-search when removing text so users see more results immediately
+            const timeoutId = setTimeout(() => {
+                emit('search', newVal);
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+        // For adding text, no auto-search - user must press Enter or click Search button
     }
 });
 </script>

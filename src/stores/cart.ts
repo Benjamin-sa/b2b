@@ -83,7 +83,7 @@ export const useCartStore = defineStore('cart', () => {
 
   const subtotal = computed(() => totalPrice.value)
   
-  const tax = computed(() => totalPrice.value * 0.21) // 21% VAT for BE B2B
+  const tax = computed(() => (totalPrice.value + shippingCost.value) * 0.21) // 21% VAT for BE B2B
   
   const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 

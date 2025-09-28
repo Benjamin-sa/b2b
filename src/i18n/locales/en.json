@@ -11,7 +11,10 @@
     "signOut": "Sign out",
     "adminPanel": "Admin Panel",
     "backToDashboard": "Back to Dashboard",
-    "accountSettings": "Account Settings"
+    "accountSettings": "Account Settings",
+    "menu": "Menu",
+    "account": "Account",
+    "settings": "Settings"
   },
   "footer": {
     "company": {
@@ -524,7 +527,8 @@
       "b2bSupportDesc": "Dedicated business support"
     },
     "carousel": {
-      "newestProducts": "Newest products"
+      "newestProducts": "Newest products",
+      "comingSoon": "Coming Soon"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -658,6 +662,11 @@
     "dueOn": "Due",
     "itemsPurchased": "Items purchased",
     "sku": "SKU",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "total": "Total",
     "shippingAddress": "Shipping Address",
     "orderNotes": "Order Notes",
     "viewInvoice": "View Invoice",

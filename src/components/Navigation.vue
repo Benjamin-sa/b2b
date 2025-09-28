@@ -44,8 +44,8 @@
                     </div>
                 </div>
 
-                <!-- Right side -->
-                <div class="flex items-center space-x-4">
+                <!-- Right side - Desktop -->
+                <div class="hidden md:flex items-center space-x-4">
                     <!-- Language Switcher -->
                     <LanguageSwitcher />
                     <!-- Cart -->
@@ -53,11 +53,12 @@
                         <button @click="toggleCart"
                             class="p-2 text-secondary-600 hover:text-secondary-900 relative transition-smooth hover-scale cursor-pointer">
                             <img src="../assets/shoppingcart.svg" alt="Shopping Cart" class="w-6 h-6">
-                            <Transition name="success-bounce">
-                                <span v-if="cartStore.itemCount > 0"
-                                    class="absolute -top-1 -right-1 bg-danger-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center heartbeat">
-                                    {{ cartStore.itemCount }}
-                                </span>
+                            <Transition name="cart-badge">
+                                <div v-if="cartStore.itemCount > 0" class="absolute -top-1 -right-1 cart-count-badge">
+                                    <span class="cart-count-text">
+                                        {{ cartStore.itemCount > 99 ? '99+' : cartStore.itemCount }}
+                                    </span>
+                                </div>
                             </Transition>
                         </button>
                     </div>
@@ -127,47 +128,46 @@
                             </div>
                         </Transition>
                     </div>
+                </div>
+
+                <!-- Right side - Mobile -->
+                <div class="md:hidden flex items-center space-x-2">
+                    <!-- Mobile Cart Button -->
+                    <button @click="toggleCart"
+                        class="p-2 text-secondary-600 hover:text-secondary-900 relative transition-smooth">
+                        <img src="../assets/shoppingcart.svg" alt="Shopping Cart" class="w-6 h-6">
+                        <Transition name="cart-badge">
+                            <div v-if="cartStore.itemCount > 0"
+                                class="absolute -top-1 -right-1 cart-count-badge mobile-badge">
+                                <span class="cart-count-text">
+                                    {{ cartStore.itemCount > 99 ? '99+' : cartStore.itemCount }}
+                                </span>
+                            </div>
+                        </Transition>
+                    </button>
 
                     <!-- Mobile menu button -->
-                    <button @click="toggleMobileMenu" class="md:hidden p-2 text-secondary-600 hover:text-secondary-900">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    <button @click="toggleMobileMenu"
+                        class="p-2 text-secondary-600 hover:text-secondary-900 transition-smooth"
+                        :class="{ 'text-primary-600': showMobileMenu }">
+                        <svg class="w-6 h-6 transition-transform duration-300" :class="{ 'rotate-90': showMobileMenu }"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path v-if="!showMobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6h16M4 12h16M4 18h16" />
+                            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Mobile Navigation -->
-            <Transition name="slide-down">
-                <div v-if="showMobileMenu" class="md:hidden hover-glow">
-                    <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
-                        <router-link to="/products"
-                            class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            {{ $t('navigation.products') }}
-                        </router-link>
-                        <router-link to="/categories"
-                            class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            {{ $t('navigation.categories') }}
-                        </router-link>
-                        <router-link to="/orders"
-                            class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            {{ $t('navigation.orders') }}
-                        </router-link>
-                        <router-link to="/profile"
-                            class="block px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium transition-smooth hover-lift">
-                            {{ $t('navigation.profile') }}
-                        </router-link>
-                        <!-- Replace router-link with button for admin toggle in mobile -->
-                        <button v-if="authStore.isAdmin" @click="$emit('toggle-admin')"
-                            class="block w-full text-left px-3 py-2 text-secondary-900 hover:bg-secondary-100 rounded-md text-base font-medium btn-animate transition-smooth hover-lift">
-                            {{ showAdminPanel ? $t('navigation.backToDashboard') : $t('navigation.adminPanel') }}
-                        </button>
-                    </div>
-                </div>
-            </Transition>
         </div>
     </nav>
+
+    <!-- Mobile Navigation -->
+    <MobileNavigation :is-open="showMobileMenu" :user-email="authStore.user?.email || undefined"
+        :is-admin="authStore.isAdmin" :show-admin-panel="showAdminPanel" @close="closeMobileMenu"
+        @admin-toggle="handleAdminToggle" @logout="handleMobileLogout" />
 
     <!-- Cart Drawer -->
     <CartDrawer :is-open="showCartDrawer" @close="closeCartDrawer" />
@@ -179,12 +179,13 @@ import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
 import CartDrawer from './cart/CartDrawer.vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
+import MobileNavigation from './MobileNavigation.vue'
 
 // Define props and emits
 defineProps<{
     showAdminPanel: boolean
 }>()
-defineEmits<{
+const emit = defineEmits<{
     'toggle-admin': []
 }>()
 
@@ -216,6 +217,20 @@ const toggleCart = () => {
 
 const closeCartDrawer = () => {
     showCartDrawer.value = false
+}
+
+const closeMobileMenu = () => {
+    showMobileMenu.value = false
+}
+
+const handleAdminToggle = () => {
+    closeMobileMenu()
+    emit('toggle-admin')
+}
+
+const handleMobileLogout = async () => {
+    await authStore.logout()
+    closeMobileMenu()
 }
 
 const handleLogout = async () => {
@@ -305,6 +320,104 @@ onUnmounted(() => {
     }
 
     .hover-scale:hover {
+        transform: none !important;
+    }
+}
+
+/* Cart badge styling */
+.cart-count-badge {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: 2px solid white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    animation: cart-pulse 2s ease-in-out infinite;
+}
+
+.cart-count-text {
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Cart badge transitions */
+.cart-badge-enter-active {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cart-badge-leave-active {
+    transition: all 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.cart-badge-enter-from {
+    opacity: 0;
+    transform: scale(0.3) rotate(180deg);
+}
+
+.cart-badge-leave-to {
+    opacity: 0;
+    transform: scale(0.3) rotate(-180deg);
+}
+
+/* Subtle pulsing animation */
+@keyframes cart-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+}
+
+/* Responsive adjustments for cart badge */
+@media (max-width: 640px) {
+    .cart-count-badge {
+        min-width: 18px;
+        height: 18px;
+        border-width: 1.5px;
+    }
+
+    .cart-count-text {
+        font-size: 10px;
+    }
+}
+
+/* Mobile cart badge adjustments */
+.mobile-badge {
+    min-width: 16px;
+    height: 16px;
+    border-width: 1px;
+}
+
+.mobile-badge .cart-count-text {
+    font-size: 9px;
+}
+
+/* Reduced motion support for cart badge */
+@media (prefers-reduced-motion: reduce) {
+    .cart-count-badge {
+        animation: none !important;
+    }
+
+    .cart-badge-enter-active,
+    .cart-badge-leave-active {
+        transition: opacity 0.2s ease !important;
+    }
+
+    .cart-badge-enter-from,
+    .cart-badge-leave-to {
         transform: none !important;
     }
 }

@@ -3,16 +3,37 @@ const {
   notifyInvoicePaymentSucceeded,
 } = require("../config/telegram");
 const {
-  createInvoiceRecord,
   updateInvoiceStatus,
   reduceLocalStock,
   restoreLocalStock,
-  updateOrderFromInvoice,
 } = require("../utils/database");
 const {
   notifyStockReduction,
   notifyStockRestoration,
 } = require("../services/inventoryWorker");
+
+/**
+ * Extract stock items from invoice line items
+ */
+const extractStockItems = (invoice) => {
+  const stockItems = [];
+  if (invoice.lines?.data) {
+    for (const lineItem of invoice.lines.data) {
+      const shopifyVariantId = lineItem.metadata?.shopifyVariantId;
+      if (shopifyVariantId && lineItem.quantity) {
+        stockItems.push({
+          shopifyVariantId,
+          quantity: lineItem.quantity,
+          productName:
+            lineItem.metadata?.productName ||
+            lineItem.description ||
+            "Unknown Product",
+        });
+      }
+    }
+  }
+  return stockItems;
+};
 
 /**
  * Handle invoice sent
@@ -22,31 +43,14 @@ const handleInvoiceSent = async (invoice) => {
   console.log(`📄 Processing sent invoice: ${invoice.id}`);
 
   try {
-    // Create invoice record in database
-    const invoiceRecord = await createInvoiceRecord(invoice);
-
-    await updateOrderFromInvoice(invoice, {
-      status: "pending",
+    // Update invoice status to sent
+    await updateInvoiceStatus(invoice.id, "sent", {
       sentAt: new Date(),
+      status: "pending",
     });
 
-    // Extract stock items directly from invoice line items metadata
-    const stockItems = [];
-    if (invoice.lines?.data) {
-      for (const lineItem of invoice.lines.data) {
-        const shopifyVariantId = lineItem.metadata?.shopifyVariantId;
-        if (shopifyVariantId && lineItem.quantity) {
-          stockItems.push({
-            shopifyVariantId,
-            quantity: lineItem.quantity,
-            productName:
-              lineItem.metadata?.productName ||
-              lineItem.description ||
-              "Unknown Product",
-          });
-        }
-      }
-    }
+    // Extract and process stock items
+    const stockItems = extractStockItems(invoice);
 
     if (stockItems.length > 0) {
       // Update local Firebase stock
@@ -71,7 +75,7 @@ const handleInvoiceSent = async (invoice) => {
     await notifyInvoiceCreated(invoice);
 
     console.log(
-      `✅ Invoice sent processed successfully: ${invoice.id} → Record: ${invoiceRecord.id}, Stock items: ${stockItems.length}`
+      `✅ Invoice sent processed successfully: ${invoice.id}, Stock items: ${stockItems.length}`
     );
   } catch (error) {
     console.error(`❌ Error processing invoice sent for ${invoice.id}:`, error);
@@ -87,20 +91,18 @@ const handleInvoicePaymentSucceeded = async (invoice) => {
   console.log(`💰 Processing invoice payment success: ${invoice.id}`);
 
   try {
-    // Update invoice status in database
+    // Update invoice status to paid
     await updateInvoiceStatus(invoice.id, "paid", {
       paidAt: new Date(invoice.status_transitions.paid_at * 1000),
-    });
-
-    await updateOrderFromInvoice(invoice, {
       status: "confirmed",
+      stripeAmountPaidCents: invoice.amount_paid,
       paymentIntentId:
         typeof invoice.payment_intent === "string"
           ? invoice.payment_intent
           : invoice.payment_intent?.id || null,
     });
 
-    // Send Telegram notification with invoice data (metadata contains all needed info)
+    // Send Telegram notification
     await notifyInvoicePaymentSucceeded(invoice);
 
     console.log(`✅ Invoice payment processed successfully: ${invoice.id}`);
@@ -121,33 +123,15 @@ const handleInvoiceVoided = async (invoice) => {
   console.log(`❌ Processing invoice voided: ${invoice.id}`);
 
   try {
-    // Update invoice status in database
+    // Update invoice status to cancelled
     await updateInvoiceStatus(invoice.id, "voided", {
       voidedAt: new Date(),
-    });
-
-    await updateOrderFromInvoice(invoice, {
       status: "cancelled",
       cancelledAt: new Date(),
     });
 
-    // Extract stock items directly from invoice line items metadata
-    const stockItems = [];
-    if (invoice.lines?.data) {
-      for (const lineItem of invoice.lines.data) {
-        const shopifyVariantId = lineItem.metadata?.shopifyVariantId;
-        if (shopifyVariantId && lineItem.quantity) {
-          stockItems.push({
-            shopifyVariantId,
-            quantity: lineItem.quantity,
-            productName:
-              lineItem.metadata?.productName ||
-              lineItem.description ||
-              "Unknown Product",
-          });
-        }
-      }
-    }
+    // Extract and restore stock items
+    const stockItems = extractStockItems(invoice);
 
     if (stockItems.length > 0) {
       // Restore local Firebase stock
