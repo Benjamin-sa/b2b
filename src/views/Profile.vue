@@ -99,7 +99,7 @@
                                     'px-2 py-1 rounded-full text-xs font-medium'
                                 ]">
                                     {{ authStore.isActiveUser ? $t('profile.status.active') :
-                                    $t('profile.status.inactive') }}
+                                        $t('profile.status.inactive') }}
                                 </span>
                             </div>
 

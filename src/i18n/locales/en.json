@@ -115,7 +115,19 @@
     "confirmPasswordPlaceholder": "Confirm password",
     "passwordsDoNotMatch": "Passwords do not match",
     "validVatRequired": "Valid VAT number required to continue",
-    "creatingAccount": "Creating Account..."
+    "creatingAccount": "Creating Account...",
+    "error": "Authentication Error",
+    "errors": {
+      "invalidCredentials": "The email or password you entered is incorrect. Please check your credentials and try again.",
+      "accountDisabled": "Your account has been disabled. Please contact support for assistance.",
+      "tooManyAttempts": "Too many failed login attempts. Please try again later or reset your password.",
+      "emailInUse": "An account with this email already exists. Please use a different email or try logging in.",
+      "weakPassword": "Password should be at least 6 characters long and contain a mix of letters and numbers.",
+      "invalidEmail": "Please enter a valid email address.",
+      "operationNotAllowed": "This authentication method is not enabled. Please contact support.",
+      "networkError": "Network connection failed. Please check your internet connection and try again.",
+      "unexpected": "An unexpected error occurred. Please try again or contact support if the problem persists."
+    }
   },
   "admin": {
     "title": "Admin Panel",

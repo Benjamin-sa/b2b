@@ -45,7 +45,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
-                            }}</label>
+                        }}</label>
                         <select v-model="filters.category"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
@@ -64,7 +64,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
-                            }}</label>
+                        }}</label>
                         <select v-model="priceRange"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             @change="handlePriceRangeChange">
@@ -117,7 +117,6 @@
                 <div v-if="viewMode === 'grid'"
                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     <ProductCard v-for="product in productStore.products" :key="product.id" :product="product"
-                        :canOrder="authStore.isVerified || authStore.isAdmin"
                         class="transform hover:scale-102 transition-transform duration-200" />
                 </div>
 
@@ -134,9 +133,15 @@
                                     v-html="truncateHtml(product.description, 150)"></div>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
-                                    <button v-if="authStore.isVerified || authStore.isAdmin"
-                                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                        {{ $t('products.card.addToCart') }}
+                                    <button :disabled="product.comingSoon || !product.inStock" :class="[
+                                            product.comingSoon || !product.inStock
+                                                ? 'bg-gray-300 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700',
+                                            'px-4 py-2 text-white rounded-md'
+                                        ]">
+                                        <span v-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
+                                        <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                                        <span v-else>{{ $t('products.card.addToCart') }}</span>
                                     </button>
                                 </div>
                             </div>
@@ -161,7 +166,6 @@ import { ref, onMounted, watch, reactive, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProductStore } from '../stores/products';
 import { useCategoryStore } from '../stores/categories';
-import { useAuthStore } from '../stores/auth';
 import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
 import { truncateHtml } from '../utils/htmlUtils';
@@ -169,7 +173,6 @@ import type { ProductFilter } from '../types';
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
-const authStore = useAuthStore();
 const route = useRoute();
 
 // Local state

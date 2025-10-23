@@ -113,11 +113,6 @@ onMounted(() => {
 })
 
 // Form data
-const loginForm = ref({
-    email: '',
-    password: ''
-})
-
 const registerForm = ref({
     firstName: '',
     lastName: '',
@@ -180,18 +175,13 @@ const toggleMode = () => {
     authStore.clearError()
 }
 
-const handleLogin = async () => {
+const handleLogin = async (loginData: { email: string; password: string }) => {
     try {
-        await authStore.login(loginForm.value.email, loginForm.value.password)
-        await notificationStore.success(t('auth.welcomeBackMessage'), t('auth.loggedInMessage'))
+        await authStore.login(loginData.email, loginData.password)
         router.push('/')
-        // Reset form
-        loginForm.value = { email: '', password: '' }
     } catch (error) {
+        // Error notifications are now handled by the auth store
         console.error('Login error:', error)
-        const errorMessage = authStore.error || t('auth.loginFailedMessage')
-        console.log('Showing error notification:', errorMessage)
-        await notificationStore.error(t('auth.loginFailed'), errorMessage)
     }
 }
 
@@ -221,8 +211,7 @@ const handleRegister = async () => {
             registerForm.value.phone
         )
 
-        console.log('Registration successful, showing notification')
-        await notificationStore.success(t('auth.accountCreated'), t('auth.welcomeToPlatform'))
+        console.log('Registration successful')
 
         // Small delay to ensure all registration processes complete
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -248,10 +237,8 @@ const handleRegister = async () => {
         }
         vatValidation.value = { isValid: true }
     } catch (error) {
+        // Error notifications are now handled by the auth store
         console.error('Registration error:', error)
-        const errorMessage = authStore.error || t('auth.registrationFailedMessage')
-        console.log('Showing registration error notification:', errorMessage)
-        await notificationStore.error(t('auth.registrationFailed'), errorMessage)
     }
 }
 </script>

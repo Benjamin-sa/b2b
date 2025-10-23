@@ -45,7 +45,7 @@
             <div ref="carouselContainer" class="flex overflow-x-auto scrollbar-hide space-x-4 pb-4"
                 style="scroll-behavior: smooth;" @scroll="updateScrollState">
                 <div v-for="product in products" :key="product.id" class="flex-none w-80 lg:w-72">
-                    <ProductCard :product="product" :can-order="canOrder" @add-to-cart="handleAddToCart" />
+                    <ProductCard :product="product" @add-to-cart="handleAddToCart" />
                 </div>
             </div>
 

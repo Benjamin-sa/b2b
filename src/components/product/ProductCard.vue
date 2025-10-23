@@ -66,7 +66,7 @@
                     <div v-if="product.minOrderQuantity" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>
                         <span class="ml-1">{{ product.minOrderQuantity }} {{ product.unit || $t('products.card.pieces')
-                            }}</span>
+                        }}</span>
                     </div>
                 </div>
             </div>
@@ -95,13 +95,10 @@
 
             <!-- Add to Cart Button -->
             <button @click="addToCart"
-                :disabled="product.comingSoon || !product.inStock || !canOrder || isLoading || maxAddableQuantity <= 0"
-                :class="[
+                :disabled="product.comingSoon || !product.inStock || isLoading || maxAddableQuantity <= 0" :class="[
                     product.comingSoon || !product.inStock || maxAddableQuantity <= 0
                         ? 'bg-gray-300 cursor-not-allowed'
-                        : !canOrder
-                            ? 'bg-yellow-500 hover:bg-yellow-600'
-                            : 'bg-blue-600 hover:bg-blue-700',
+                        : 'bg-blue-600 hover:bg-blue-700',
                     'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
                 ]">
                 <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
@@ -115,7 +112,6 @@
                 <span v-if="isLoading">{{ $t('products.card.adding') }}</span>
                 <span v-else-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
                 <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
-                <span v-else-if="!canOrder">{{ $t('products.card.accountVerificationRequired') }}</span>
                 <span v-else-if="maxAddableQuantity <= 0">{{ $t('products.card.outOfStock') }}</span>
                 <span v-else-if="isInCart">{{ $t('products.card.addedToCart') }}</span>
                 <span v-else>{{ $t('products.card.addToCart') }}</span>
@@ -215,7 +211,7 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = async () => {
-    if (!props.product.inStock || props.product.comingSoon || !props.canOrder || maxAddableQuantity.value <= 0) return
+    if (!props.product.inStock || props.product.comingSoon || maxAddableQuantity.value <= 0) return
 
     isLoading.value = true
     try {

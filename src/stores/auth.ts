@@ -11,6 +11,10 @@ import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } fro
 import { auth, db, functions } from '../init/firebase'
 import type { UserProfile } from '../types'
 import { httpsCallable } from 'firebase/functions'
+// Import for notifications and i18n
+import { useNotificationStore } from './notifications'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -18,6 +22,13 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref('')
   const initializing = ref(true) // Add this to track initial auth state
+
+  // Get access to notifications and translations
+  const notificationStore = useNotificationStore()
+  const { t } = useI18n()
+
+  // Router instance
+  const router = useRouter()
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => userProfile.value?.role === 'admin')
@@ -83,10 +94,16 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password)
       await loadUserProfile(result.user.uid)
+      
+      // Show success notification
+      await notificationStore.success(
+        t('auth.welcomeBack'),
+        t('auth.loggedInMessage', 'You have been successfully logged in.')
+      )
+      
       return result.user
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'login')
     } finally {
       loading.value = false
     }
@@ -145,11 +162,16 @@ export const useAuthStore = defineStore('auth', () => {
       // Small delay to ensure Firestore write is fully propagated
       await new Promise(resolve => setTimeout(resolve, 100))
       
+      // Show success notification
+      await notificationStore.success(
+        t('auth.accountCreated'),
+        t('auth.welcomeToPlatform', 'Welcome to our B2B platform! Your account has been created successfully.')
+      )
+      
       return result.user
     } catch (err: any) {
       console.error('Registration error:', err)
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'register')
     } finally {
       loading.value = false
     }
@@ -160,13 +182,13 @@ export const useAuthStore = defineStore('auth', () => {
       await signOut(auth)
       user.value = null
       userProfile.value = null
+      router.push('/auth')
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
     }
   }
 
-  const requestPasswordReset = async (email: string) => {
+  const requestPasswordReset = async (email: string): Promise<any> => {
     loading.value = true
     error.value = ''
     
@@ -179,15 +201,15 @@ export const useAuthStore = defineStore('auth', () => {
       return result.data
     } catch (err: any) {
       console.error('Password reset request failed:', err)
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
+      return null // Return null on error
     } finally {
       loading.value = false
     }
   }
 
   
-  const updateUserVerification = async (uid: string, isVerified: boolean) => {
+  const updateUserVerification = async (uid: string, isVerified: boolean): Promise<boolean> => {
     // Security check: Only admins can verify/unverify users
     if (!isAdmin.value) {
       throw new Error('Unauthorized: Only admins can update user verification')
@@ -197,12 +219,12 @@ export const useAuthStore = defineStore('auth', () => {
       await updateDoc(doc(db, 'users', uid), { isVerified })
       return true
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
+      return false // Return false on error
     }
   }
 
-  const updateUserStatus = async (uid: string, isActive: boolean) => {
+  const updateUserStatus = async (uid: string, isActive: boolean): Promise<boolean> => {
     // Security check: Only admins can activate/deactivate users
     if (!isAdmin.value) {
       throw new Error('Unauthorized: Only admins can update user status')
@@ -212,12 +234,12 @@ export const useAuthStore = defineStore('auth', () => {
       await updateDoc(doc(db, 'users', uid), { isActive })
       return true
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
+      return false // Return false on error
     }
   }
 
-  const getAllUsers = async () => {
+  const getAllUsers = async (): Promise<UserProfile[]> => {
     // Security check: Only admins can view all users
     if (!isAdmin.value) {
       throw new Error('Unauthorized: Only admins can view all users')
@@ -227,12 +249,12 @@ export const useAuthStore = defineStore('auth', () => {
       const usersSnapshot = await getDocs(collection(db, 'users'))
       return usersSnapshot.docs.map(doc => doc.data() as UserProfile)
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
+      return [] // Return empty array on error
     }
   }
 
-  const getUnverifiedUsers = async () => {
+  const getUnverifiedUsers = async (): Promise<UserProfile[]> => {
     // Security check: Only admins can view unverified users
     if (!isAdmin.value) {
       throw new Error('Unauthorized: Only admins can view unverified users')
@@ -247,25 +269,88 @@ export const useAuthStore = defineStore('auth', () => {
       const usersSnapshot = await getDocs(q)
       return usersSnapshot.docs.map(doc => doc.data() as UserProfile)
     } catch (err: any) {
-      error.value = getErrorMessage(err)
-      throw err
+      await handleAuthError(err, 'general')
+      return [] // Return empty array on error
     }
   }
 
-  const getErrorMessage = (error: any): string => {
-    switch (error.code) {
+  const getErrorMessage = (error: any): { title: string; message: string } => {
+    const errorCode = error.code || error.message || 'unknown'
+    
+    switch (errorCode) {
       case 'auth/user-not-found':
       case 'auth/invalid-credential':
-        return 'Invalid email or password'
+      case 'auth/wrong-password':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect. Please check your credentials and try again.')
+        }
+      
+      case 'auth/user-disabled':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.accountDisabled', 'Your account has been disabled. Please contact support for assistance.')
+        }
+      
+      case 'auth/too-many-requests':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.tooManyAttempts', 'Too many failed login attempts. Please try again later or reset your password.')
+        }
+      
       case 'auth/email-already-in-use':
-        return 'Email is already registered'
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.emailInUse', 'An account with this email already exists. Please use a different email or try logging in.')
+        }
+      
       case 'auth/weak-password':
-        return 'Password should be at least 6 characters'
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.weakPassword', 'Password should be at least 6 characters long and contain a mix of letters and numbers.')
+        }
+      
       case 'auth/invalid-email':
-        return 'Invalid email address'
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.invalidEmail', 'Please enter a valid email address.')
+        }
+      
+      case 'auth/operation-not-allowed':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.operationNotAllowed', 'This authentication method is not enabled. Please contact support.')
+        }
+      
+      case 'auth/network-request-failed':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.networkError', 'Network connection failed. Please check your internet connection and try again.')
+        }
+      
       default:
-        return error.message || 'An error occurred'
+        console.error('Unhandled auth error:', error)
+        return {
+          title: t('auth.error', 'Authentication Error'),
+          message: error.message || t('auth.errors.unexpected', 'An unexpected error occurred. Please try again or contact support if the problem persists.')
+        }
     }
+  }
+
+  // Helper function to handle errors with notifications
+  const handleAuthError = async (error: any, context: 'login' | 'register' | 'general' = 'general') => {
+    const errorInfo = getErrorMessage(error)
+    error.value = errorInfo.message
+
+    // Show notification
+    try {
+      await notificationStore.error(errorInfo.title, errorInfo.message)
+    } catch (notificationError) {
+      console.error('Failed to show error notification:', notificationError)
+    }
+
+    console.error(`Auth error (${context}):`, error)
+    throw error
   }
 
   const clearError = () => {
