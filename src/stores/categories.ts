@@ -1,20 +1,6 @@
 // src/stores/categories.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { 
-  collection, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy,
-  writeBatch
-} from 'firebase/firestore'
-import { db } from '../init/firebase'
 import type { Category, CategoryFilter, CategoryWithChildren } from '../types/category'
 import { appCache } from '../services/cache'
 

@@ -42,3 +42,34 @@ export interface RegisterData {
     country: string
   }
 }
+
+// JWT Authentication types
+export interface AuthTokens {
+  accessToken: string
+  refreshToken: string
+}
+
+// Response format from auth worker
+export interface AuthResponse {
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  user: UserProfile
+}
+
+export interface ValidationResponse {
+  valid: boolean
+  user: UserProfile
+  permissions: string[]
+  sessionId: string
+}
+
+// Password Reset types
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetConfirm {
+  token: string
+  newPassword: string
+}

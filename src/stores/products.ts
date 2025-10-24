@@ -1,19 +1,61 @@
 // src/stores/productStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter, type QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '../init/firebase';
-import type { Product, ProductFilter } from '../types/product';
-import { appCache } from '../services/cache'; // Import our new cache service
+import type { Product, ProductFilter, PaginationResult } from '../types/product';
+import { appCache } from '../services/cache';
+import { useAuthStore } from './auth';
+import { useNotificationStore } from './notifications';
+import { useI18n } from 'vue-i18n';
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+// Always go through the API Gateway - it handles routing, CORS, rate limiting, etc.
+const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5174';
+const PRODUCTS_API_URL = `${API_GATEWAY_URL}api/products`;
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Normalize product data for frontend use
+ * - Converts images array from objects to URLs for easier template usage
+ * - Converts specifications array from objects to simple key-value pairs
+ */
+function normalizeProduct(product: any): Product {
+  return {
+    ...product,
+    // Map images array to simple URL strings for easier template usage
+    images: product.images?.map((img: any) => img.image_url) || [],
+    // Map specifications to simpler format
+    specifications: product.specifications?.map((spec: any) => ({
+      key: spec.spec_key,
+      value: spec.spec_value,
+    })) || [],
+  };
+}
+
+// ============================================================================
+// STORE DEFINITION
+// ============================================================================
 
 export const useProductStore = defineStore('products', () => {
+  const authStore = useAuthStore();
+  const notificationStore = useNotificationStore();
+  const { t } = useI18n();
+
   // --- State ---
   const products = ref<Product[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   
   // For pagination
-  const lastVisibleDoc = ref<QueryDocumentSnapshot | null>(null);
+  const currentPage = ref(1);
+  const pageSize = ref(20);
+  const totalItems = ref(0);
+  const totalPages = ref(0);
   const hasMoreProducts = ref(true);
 
   // --- Computed Properties ---
@@ -26,130 +68,283 @@ export const useProductStore = defineStore('products', () => {
    * This replaces fetchProducts, searchProducts, and filterProducts.
    */
   const fetchProducts = async (filters: ProductFilter = {}, loadMore = false) => {
-    // 1. Caching
-    const cacheKey = appCache.generateKey({ ...filters, startAfter: loadMore ? lastVisibleDoc.value?.id : null });
-    const cachedProducts = appCache.get<Product[]>(cacheKey);
-    if (cachedProducts) {
-      products.value = loadMore ? [...products.value, ...cachedProducts] : cachedProducts;
-      return; // Stop here if we have a valid cache
-    }
-    
-    isLoading.value = true;
-    error.value = null;
-
     try {
-      // 2. Build Firestore Query
-      let q = query(collection(db, 'products'));
+      isLoading.value = true;
+      error.value = null;
 
-      // Apply filters that can be done server-side
-      if (filters.categoryId) q = query(q, where('categoryId', '==', filters.categoryId));
-      if (filters.category) q = query(q, where('category', '==', filters.category)); // Backward compatibility
-      if (filters.inStock !== undefined) q = query(q, where('inStock', '==', filters.inStock));
-      if (filters.comingSoon !== undefined) q = query(q, where('comingSoon', '==', filters.comingSoon));
-      if (filters.brand) q = query(q, where('brand', '==', filters.brand));
-      if (filters.tags && filters.tags.length > 0) {
-        q = query(q, where('tags', 'array-contains-any', filters.tags));
-      }
-      
-      // Price range filtering (if using numeric fields)
-      if (filters.minPrice !== undefined) q = query(q, where('price', '>=', filters.minPrice));
-      if (filters.maxPrice !== undefined) q = query(q, where('price', '<=', filters.maxPrice));
-      
-      const sortBy = filters.sortBy || 'name';
-      const sortOrder = filters.sortOrder || 'asc';
-      q = query(q, orderBy(sortBy, sortOrder));
+      // Determine which page to fetch
+      const page = loadMore ? currentPage.value + 1 : (filters.page || 1);
 
-      if (loadMore && lastVisibleDoc.value) {
-        q = query(q, startAfter(lastVisibleDoc.value));
+      // Check cache first
+      const cacheKey = appCache.generateKey({ type: 'products', ...filters, page });
+      const cached = appCache.get<{ items: Product[], currentPage: number, totalItems: number, totalPages: number, hasNextPage: boolean, hasPreviousPage: boolean }>(cacheKey);
+      
+      if (cached && !loadMore) {
+        products.value = cached.items;
+        currentPage.value = cached.currentPage;
+        totalItems.value = cached.totalItems;
+        totalPages.value = cached.totalPages;
+        hasMoreProducts.value = cached.hasNextPage;
+        return;
       }
 
-      q = query(q, limit(filters.limit || 100));
+      // Build query parameters (using backend field names directly)
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', (filters.limit || pageSize.value).toString());
+      
+      if (filters.category_id) params.append('categoryId', filters.category_id);
+      if (filters.brand) params.append('brand', filters.brand);
+      if (filters.in_stock !== undefined) params.append('inStock', filters.in_stock.toString());
+      if (filters.coming_soon !== undefined) params.append('comingSoon', filters.coming_soon.toString());
+      if (filters.min_price !== undefined) params.append('minPrice', filters.min_price.toString());
+      if (filters.max_price !== undefined) params.append('maxPrice', filters.max_price.toString());
+      if (filters.search_term) params.append('search', filters.search_term);
+      
+      // Direct pass-through - no transformation needed
+      if (filters.sort_by) params.append('sortBy', filters.sort_by);
+      if (filters.sort_order) params.append('sortOrder', filters.sort_order);
 
-      // 3. Execute Query
-      const querySnapshot = await getDocs(q);
-      let fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-
-      // 4. Client-side Filtering (for full-text search)
-      // TODO: Replace with proper search service (Algolia/ElasticSearch) for better performance
-      if (filters.searchTerm && filters.searchTerm.trim()) {
-        const term = filters.searchTerm.toLowerCase().trim();
-        fetchedProducts = fetchedProducts.filter(p => 
-          p.name.toLowerCase().includes(term) ||
-          p.description?.toLowerCase().includes(term) ||
-          p.brand?.toLowerCase().includes(term) ||
-          p.partNumber?.toLowerCase().includes(term) ||
-          p.tags?.some(tag => tag.toLowerCase().includes(term))
-        );
+      // Fetch from API Gateway (which routes to inventory service)
+      const response = await fetch(`${PRODUCTS_API_URL}?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.statusText}`);
       }
 
-      // 5. Update State
-      lastVisibleDoc.value = querySnapshot.docs[querySnapshot.docs.length - 1] ?? null;
-      hasMoreProducts.value = querySnapshot.docs.length === (filters.limit || 100);
+      const data = await response.json();
       
+      // Normalize products for frontend use (map images to URLs)
+      const fetchedProducts = data.items.map(normalizeProduct);
+
+      // Update state
       if (loadMore) {
-        products.value.push(...fetchedProducts);
+        products.value = [...products.value, ...fetchedProducts];
       } else {
         products.value = fetchedProducts;
       }
-      
-      // 6. Set Cache
-      appCache.set(cacheKey, fetchedProducts);
 
-    } catch (err) {
+      currentPage.value = data.pagination.currentPage;
+      totalItems.value = data.pagination.totalItems;
+      totalPages.value = data.pagination.totalPages;
+      hasMoreProducts.value = data.pagination.hasNextPage;
+
+      // Cache the result
+      appCache.set(cacheKey, {
+        items: fetchedProducts,
+        currentPage: data.pagination.currentPage,
+        totalItems: data.pagination.totalItems,
+        totalPages: data.pagination.totalPages,
+        hasNextPage: data.pagination.hasNextPage,
+        hasPreviousPage: data.pagination.hasPreviousPage,
+      });
+
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch products';
+      notificationStore.addNotification({
+        type: 'error',
+        title: t('products.fetchErrorTitle') || 'Error',
+        message: t('products.fetchError') || error.value || 'Failed to fetch products',
+      });
       console.error('Error fetching products:', err);
-      error.value = 'Failed to fetch products.';
     } finally {
       isLoading.value = false;
     }
   };
 
   const getProductById = async (id: string): Promise<Product | null> => {
-    const cacheKey = `product_${id}`;
-    const cachedProduct = appCache.get<Product>(cacheKey);
-    if (cachedProduct) return cachedProduct;
-
     try {
-      const docSnap = await getDoc(doc(db, 'products', id));
-      if (docSnap.exists()) {
-        const product = { id: docSnap.id, ...docSnap.data() } as Product;
-        appCache.set(cacheKey, product);
-        return product;
+      isLoading.value = true;
+      error.value = null;
+
+      // Check cache first
+      const cacheKey = appCache.generateKey({ type: 'product', id });
+      const cached = appCache.get<Product>(cacheKey);
+      if (cached) {
+        return cached;
       }
-      return null;
-    } catch (err) {
+
+      // Fetch from API Gateway
+      const response = await fetch(`${PRODUCTS_API_URL}/${id}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to fetch product: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const product = normalizeProduct(data);
+
+      // Cache the result
+      appCache.set(cacheKey, product);
+
+      return product;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch product';
       console.error('Error fetching product:', err);
       return null;
+    } finally {
+      isLoading.value = false;
     }
   };
 
   const addProduct = async (productData: Omit<Product, 'id'>) => {
     try {
-      const docRef = await addDoc(collection(db, 'products'), { ...productData, createdAt: new Date() });
-      appCache.invalidate(); // Invalidate all caches when data changes
-      return { id: docRef.id, ...productData } as Product;
-    } catch (err) {
-      console.error('Error adding product:', err);
+      isLoading.value = true;
+      error.value = null;
+
+      // Check if user is authenticated and is admin
+      if (!authStore.isAuthenticated || !authStore.isAdmin) {
+        throw new Error('Admin authentication required');
+      }
+
+      // No transformation needed - send data as-is
+      const payload = productData;
+
+      const response = await fetch(PRODUCTS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to create product: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const newProduct = normalizeProduct(data);
+
+      // Add to local state
+      products.value.unshift(newProduct);
+
+      // Invalidate cache
+      appCache.invalidate();
+
+      notificationStore.addNotification({
+        type: 'success',
+        message: t('products.createSuccess') || 'Product created successfully',
+      });
+
+      return newProduct;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to create product';
+      notificationStore.addNotification({
+        type: 'error',
+        message: t('products.createError') || error.value,
+      });
+      console.error('Error creating product:', err);
       throw err;
+    } finally {
+      isLoading.value = false;
     }
   };
 
   const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id'>>) => {
     try {
-      await updateDoc(doc(db, 'products', id), { ...updates, updatedAt: new Date() });
-      appCache.invalidate(); // Invalidate all caches
-    } catch (err) {
+      isLoading.value = true;
+      error.value = null;
+
+      // Check if user is authenticated and is admin
+      if (!authStore.isAuthenticated || !authStore.isAdmin) {
+        throw new Error('Admin authentication required');
+      }
+
+      // No transformation needed - send data as-is
+      const payload = updates;
+
+      const response = await fetch(`${PRODUCTS_API_URL}/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update product: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const updatedProduct = normalizeProduct(data);
+
+      // Update local state
+      const index = products.value.findIndex(p => p.id === id);
+      if (index !== -1) {
+        products.value[index] = updatedProduct;
+      }
+
+      // Invalidate cache
+      appCache.invalidate();
+
+      notificationStore.addNotification({
+        type: 'success',
+        message: t('products.updateSuccess') || 'Product updated successfully',
+      });
+
+      return updatedProduct;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to update product';
+      notificationStore.addNotification({
+        type: 'error',
+        message: t('products.updateError') || error.value,
+      });
       console.error('Error updating product:', err);
       throw err;
+    } finally {
+      isLoading.value = false;
     }
   };
 
   const deleteProduct = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'products', id));
-      appCache.invalidate(); // Invalidate all caches
-    } catch (err) {
+      isLoading.value = true;
+      error.value = null;
+
+      // Check if user is authenticated and is admin
+      if (!authStore.isAuthenticated || !authStore.isAdmin) {
+        throw new Error('Admin authentication required');
+      }
+
+      const response = await fetch(`${PRODUCTS_API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to delete product: ${response.statusText}`);
+      }
+
+      // Remove from local state
+      products.value = products.value.filter(p => p.id !== id);
+
+      // Invalidate cache
+      appCache.invalidate();
+
+      notificationStore.addNotification({
+        type: 'success',
+        message: t('products.deleteSuccess') || 'Product deleted successfully',
+      });
+    } catch (err: any) {
+      error.value = err.message || 'Failed to delete product';
+      notificationStore.addNotification({
+        type: 'error',
+        message: t('products.deleteError') || error.value,
+      });
       console.error('Error deleting product:', err);
       throw err;
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -157,79 +352,155 @@ export const useProductStore = defineStore('products', () => {
 
   /**
    * Get inventory information for a specific variant
+   * Note: This will need to be implemented when the inventory sync service is ready
    */
   const getInventoryInfo = async (shopifyVariantId: string) => {
     try {
-      // Use environment variable or fallback to localhost for development
-      const inventoryServiceUrl = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://127.0.0.1:8787'
-      
-      const response = await fetch(`${inventoryServiceUrl}/api/inventory/search?q=${shopifyVariantId}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch inventory info');
+      // For now, return mock data or fetch from the product that has this variant ID
+      const product = products.value.find(p => p.shopify_variant_id === shopifyVariantId);
+      if (product) {
+        return {
+          shopifyVariantId,
+          stock: product.stock || 0,
+          inStock: product.in_stock === 1, // Convert SQLite boolean
+        };
       }
-
-      // Find the exact variant match
-      const variantInfo = data.data?.find((item: any) => 
-        item.shopify_variant_id === shopifyVariantId
-      );
-
-      return variantInfo || null;
-    } catch (err) {
+      return null;
+    } catch (err: any) {
       console.error('Error fetching inventory info:', err);
-      throw new Error(err instanceof Error ? err.message : 'Failed to fetch inventory info');
+      return null;
     }
   };
 
+  /**
+   * Update stock level for a product (admin only)
+   */
+  const updateStock = async (id: string, stock: number) => {
+    try {
+      isLoading.value = true;
+      error.value = null;
 
+      // Check if user is authenticated and is admin
+      if (!authStore.isAuthenticated || !authStore.isAdmin) {
+        throw new Error('Admin authentication required');
+      }
+
+      const response = await fetch(`${PRODUCTS_API_URL}/${id}/stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.accessToken}`,
+        },
+        body: JSON.stringify({ stock }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update stock: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const updatedProduct = normalizeProduct(data);
+
+      // Update local state
+      const index = products.value.findIndex(p => p.id === id);
+      if (index !== -1) {
+        products.value[index] = updatedProduct;
+      }
+
+      // Invalidate cache
+      appCache.invalidate();
+
+      notificationStore.addNotification({
+        type: 'success',
+        message: t('products.stockUpdateSuccess') || 'Stock updated successfully',
+      });
+
+      return updatedProduct;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to update stock';
+      notificationStore.addNotification({
+        type: 'error',
+        message: t('products.stockUpdateError') || error.value,
+      });
+      console.error('Error updating stock:', err);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
 
   // --- Utility Actions ---
 
   const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
-    const cacheKey = `products_by_category_${categoryId}`;
-    const cachedProducts = appCache.get<Product[]>(cacheKey);
-    if (cachedProducts) return cachedProducts;
-
     try {
-      const q = query(
-        collection(db, 'products'),
-        where('categoryId', '==', categoryId),
-        where('inStock', '==', true),
-        orderBy('name', 'asc')
-      );
-      const snapshot = await getDocs(q);
-      const products = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Product));
+      isLoading.value = true;
+      error.value = null;
+
+      // Check cache first
+      const cacheKey = appCache.generateKey('products-by-category', categoryId);
+      const cached = appCache.get<Product[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      // Fetch from API Gateway using category filter
+      const response = await fetch(`${PRODUCTS_API_URL}/category/${categoryId}`);
       
-      appCache.set(cacheKey, products, 5 * 60 * 1000); // Cache for 5 minutes
-      return products;
-    } catch (err) {
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products by category: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const categoryProducts = data.items.map(normalizeProduct);
+
+      // Cache the result
+      appCache.set(cacheKey, categoryProducts);
+
+      return categoryProducts;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch products by category';
       console.error('Error fetching products by category:', err);
       return [];
+    } finally {
+      isLoading.value = false;
     }
   };
 
   const getCategories = async (): Promise<string[]> => {
-    const cacheKey = 'all_categories';
-    const cachedCategories = appCache.get<string[]>(cacheKey);
-    if (cachedCategories) return cachedCategories;
-
     try {
-      // Note: This reads all documents. For very large collections,
-      // maintain a separate 'categories' collection updated by a Cloud Function.
-      const snapshot = await getDocs(query(collection(db, 'products')));
-      const categories = new Set<string>();
-      snapshot.forEach(doc => {
-        const category = doc.data().category;
-        if (category) categories.add(category);
-      });
-      const sortedCategories = Array.from(categories).sort();
-      appCache.set(cacheKey, sortedCategories, 10 * 60 * 1000); // Cache categories for 10 mins
-      return sortedCategories;
-    } catch (err) {
+      // Check cache first
+      const cacheKey = appCache.generateKey('categories');
+      const cached = appCache.get<string[]>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      // For now, extract unique categories from products
+      // TODO: Replace with dedicated categories endpoint when available
+      const response = await fetch(`${PRODUCTS_API_URL}?limit=100`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const allProducts = data.items; // No transformation needed
+      
+      const categories = Array.from(
+        new Set(
+          allProducts
+            .map((p: Product) => p.category_id)
+            .filter((c: string | null | undefined): c is string => !!c)
+        )
+      );
+
+      // Cache the result
+      appCache.set(cacheKey, categories);
+
+      return categories;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch categories';
       console.error('Error fetching categories:', err);
       return [];
     }
@@ -240,7 +511,10 @@ export const useProductStore = defineStore('products', () => {
     products,
     isLoading,
     error,
-    lastVisibleDoc,
+    currentPage,
+    pageSize,
+    totalItems,
+    totalPages,
     hasMoreProducts,
     // Computed
     hasProducts,
@@ -251,6 +525,7 @@ export const useProductStore = defineStore('products', () => {
     addProduct,
     updateProduct,
     deleteProduct,
+    updateStock,
     getCategories,
     // Inventory Information Actions
     getInventoryInfo,

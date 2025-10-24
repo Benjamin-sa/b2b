@@ -1,56 +1,147 @@
 # Copilot Instructions for B2B Platform
 
+## ⚠️ MIGRATION STATUS: PRODUCTION-ONLY TESTING PHASE
+
+**Current Strategy (Updated: October 24, 2025)**
+- **🚨 DOWNTIME ACCEPTED**: Website is in maintenance mode during migration
+- **🎯 PRODUCTION-ONLY TESTING**: NO dev environment - all testing happens directly in PRODUCTION
+- **📊 Database**: Production D1 database (b2b-prod) is the ONLY active database
+- **⚡ Speed Priority**: Fast iteration over safe staging (downtime allows this)
+- **🔒 Auth Service**: Cloudflare Workers with production D1 + KV (fully deployed)
+- **🔑 Secrets**: JWT_SECRET and REFRESH_SECRET configured in production worker
+
+### 🎪 Why Production-Only Testing?
+**The website is in DOWNTIME**, which allows us to:
+1. ✅ **Skip dev environment entirely** - No need to maintain separate dev database
+2. ✅ **Test with real data** - Users, products, and categories from old system already migrated
+3. ✅ **Single source of truth** - One database (b2b-prod) to manage and monitor
+4. ✅ **Faster iteration** - No dev→prod sync delays, deploy and test immediately
+5. ✅ **Reduced complexity** - No environment switching, config is simpler
+6. ✅ **Real-world validation** - Test in actual production conditions from day one
+
+### 🚀 Data Migration Completed
+- ✅ Schema deployed to production D1 (19 tables + indexes)
+- ✅ User data migrated (3 users with passwords hashed)
+- ✅ Product catalog migrated (35 products with images and specs)
+- ✅ Categories migrated (1 main category)
+- ✅ JWT secrets generated and set (base64-encoded)
+
+**⚠️ CRITICAL**: Every deployment goes DIRECTLY to production. Test thoroughly before deploying!
+
+### 🔄 Deployment Workflow
+```bash
+# 1. Make changes to code
+# 2. Deploy immediately to production
+cd workers/auth-service
+npm run deploy  # No --env flag needed, goes straight to prod
+
+# 3. Test immediately with frontend
+npm run dev  # Frontend connects to production worker
+
+# 4. Monitor production logs in real-time
+wrangler tail  # Live logs from production worker
+```
+
 ## Architecture Overview
 
-This is a **B2B e-commerce platform** with Vue 3 frontend, Firebase backend, Cloudflare Workers for services, and Stripe for payments. The system integrates with Shopify for inventory synchronization.
+This is a **B2B e-commerce platform** transitioning from Firebase to Cloudflare Workers. Currently in hybrid state with Cloudflare auth-service in production.
 
 ### Key Services & Boundaries
 - **Frontend (Vue 3 + Vite)**: `/src` - SPA with Vue Router, Pinia stores, i18n
-- **Firebase Functions**: `/functions` - Node.js backend for payments, webhooks, emails
+- **Auth (Cloudflare Workers)**: `/workers/auth-service` - JWT auth with D1 + KV (PRODUCTION)
+- **Firebase Functions**: `/functions` - Node.js backend for payments, webhooks, emails (LEGACY)
 - **Cloudflare Workers**: `/workers` - Edge services (inventory, email, R2 image storage)
-- **Firebase Firestore**: Database with emulator support on port 8086
+- **Database**: Cloudflare D1 (production) for auth, Firebase Firestore for orders/products (transitioning)
 
 ### Data Flow Pattern
-1. **Inventory Sync**: Shopify → Inventory Worker (D1) → Firebase Functions → Firestore → Frontend
-2. **Orders**: Frontend → Firebase Functions → Stripe Invoice → Webhook → Stock Update (both Firebase & Worker)
-3. **Images**: Frontend → R2 Worker → Cloudflare R2 Bucket
+1. **Authentication**: Frontend → Auth Worker (D1 + KV) → JWT tokens
+2. **Inventory Sync**: Shopify → Inventory Worker (D1) → Firebase Functions → Firestore → Frontend
+3. **Orders**: Frontend → Firebase Functions → Stripe Invoice → Webhook → Stock Update
+4. **Images**: Frontend → R2 Worker → Cloudflare R2 Bucket
 
 ## Critical Developer Workflows
 
-### Development Setup
+### Production Deployment (Current Strategy)
 ```bash
-# Frontend dev with emulators
-npm run dev  # Vite on :5173, auto-connects to Firebase emulators
+# Deploy auth-service to PRODUCTION
+cd workers/auth-service
+npm run deploy  # Goes directly to production, no --env flag
 
-# Firebase emulators (run in separate terminal)
-firebase emulators:start  # Auth:9099, Functions:5001, Firestore:8086
+# Frontend dev (connects to production auth worker)
+npm run dev  # Vite on :5173
 
-# Populate test data in emulator
-npm run mock-product:50  # Creates 50 test products
-
-# Worker development (example: inventory-service)
-cd workers/inventory-service
-npm run dev  # Runs on :8787
+# Check production auth worker
+wrangler tail  # View live logs from production
+wrangler secret list  # View configured secrets
 ```
 
-### Environment Variables
-Frontend uses Vite env vars (prefix `VITE_`):
-- `VITE_FIREBASE_*` - Firebase config
-- `VITE_INVENTORY_SERVICE_URL` - Inventory worker URL (defaults to localhost:8787)
-- `VITE_CLOUDFLARE_WORKER_URL` - R2 image upload worker
+### Database Management (Production D1 Only)
+```bash
+# Query production D1 database (ONLY database in use)
+wrangler d1 execute b2b-prod --remote --command "SELECT * FROM users LIMIT 5"
 
-**DEV MODE AUTO-DETECTION**: `import.meta.env.DEV` auto-connects to Firebase emulators (see `/src/init/firebase.ts`)
+# Run migrations on production
+wrangler d1 execute b2b-prod --remote --file ./migrations/001_initial_schema.sql
 
-### Testing Against Emulators
-Firebase emulators are configured in `firebase.json` with `host: "0.0.0.0"` for network access. All frontends requests in dev mode automatically route to emulators.
+# Backup production data before making changes
+wrangler d1 export b2b-prod --remote --output backup-$(date +%Y%m%d).sql
+
+# Import data to production
+wrangler d1 execute b2b-prod --remote --file ./data-import.sql
+
+# Check production database size and stats
+wrangler d1 info b2b-prod
+```
+
+**Note**: There is NO dev database. All database operations happen on `b2b-prod`.
+
+### Environment Variables (Production-Focused)
+Frontend `.env` file (or Vite env vars):
+- `VITE_AUTH_SERVICE_URL=https://b2b-auth-service.benkee-sauter.workers.dev` (PRODUCTION)
+- `VITE_INVENTORY_SERVICE_URL` - Inventory worker URL (when deployed)
+- `VITE_CLOUDFLARE_WORKER_URL` - R2 image upload worker URL
+- `VITE_FIREBASE_*` - Firebase config (LEGACY, being phased out)
+
+**All services point to PRODUCTION Cloudflare Workers - no local/dev alternatives.**
+
 
 ## Project-Specific Patterns
 
-### Auth & Authorization
-- **Role-based access**: Users have `role: 'admin' | 'customer'` in Firestore `/users/{uid}`
-- **Verification flow**: New customers need admin approval (`isVerified: false` → `true`)
+### Auth & Authorization (Cloudflare Workers)
+- **JWT-based**: Custom auth service using Cloudflare D1 + KV
+- **Role-based access**: Users have `role: 'admin' | 'customer'` in D1 `users` table
+- **Verification flow**: New customers need admin approval (`is_verified: 0` → `1`)
 - **Route guards** in `/src/router/index.ts`: Check `requiresAuth`, `requiresAdmin`, `requiresVerified`
 - **Security model**: `useAuthStore` provides `isAdmin`, `isVerified`, `canAccess` computed properties
+- **Session management**: KV namespace `SESSIONS` for instant token revocation
+- **Secrets**: JWT_SECRET and REFRESH_SECRET set via `wrangler secret put`
+
+### Auth Worker Endpoints
+- `POST /auth/register` - Create new user account
+- `POST /auth/login` - Authenticate and get tokens
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - Invalidate session
+- `POST /auth/validate` - Validate token and get user data (used by other services)
+- `POST /auth/password-reset/request` - Request password reset
+- `POST /auth/password-reset/confirm` - Confirm password reset
+
+### CORS Configuration
+All Cloudflare Workers use Hono's built-in CORS middleware:
+```typescript
+import { cors } from 'hono/cors';
+
+app.use('*', async (c, next) => {
+  const allowedOrigins = c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
+  
+  return cors({
+    origin: allowedOrigins,
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    maxAge: 86400,
+  })(c, next);
+});
+```
 
 ### State Management with Pinia
 All stores in `/src/stores/` follow this pattern:
@@ -71,7 +162,6 @@ export const useXStore = defineStore('x', () => {
 })
 ```
 
-**Cache Service**: `/src/services/cache.ts` - In-memory LRU cache with TTL. Used in `products.ts`, `categories.ts`.
 
 ### Inventory Integration
 Products have TWO stock fields:
@@ -197,12 +287,6 @@ wrangler secret put SENDGRID_API_KEY    # Set worker secrets
 
 This codebase is undergoing a phased migration from Firebase to Cloudflare Workers to reduce costs (~70-85% savings) and improve global performance. Development happens in the `feature/cloudflare-migration` branch.
 
-### Migration Approach
-- **Gradual rollout** with feature flags (not big-bang)
-- **Parallel systems** during transition (Firebase as fallback)
-- **No downtime** deployment strategy
-- **Data integrity** as top priority
-
 ### Current State (Firebase)
 - Frontend: Firebase Hosting
 - Backend: Firebase Functions
@@ -240,29 +324,6 @@ All API calls go through adapters that switch between Firebase/Cloudflare:
 export const useFirebase = import.meta.env.VITE_USE_FIREBASE === 'true'
 export const productsApi = useFirebase ? productsFirebase : productsCloudflare
 ```
-
-### Migration Branches
-```
-main (production - Firebase)
-  └── feature/cloudflare-migration (active development)
-       ├── feature/cf-auth (JWT auth service)
-       ├── feature/cf-api (API gateway)
-       ├── feature/cf-products (products service)
-       └── feature/cf-orders (orders service)
-```
-
-### Working with Migration Code
-- Always check which system is active via feature flags
-- Don't remove Firebase code until migration is 100% complete
-- Test both Firebase AND Cloudflare paths
-- Document any breaking changes between systems
-- Use adapter pattern for all new API integrations
-
-### Testing During Migration
-- Local: Run both Firebase emulators AND Wrangler dev
-- Use `VITE_USE_FIREBASE=true` to test Firebase path
-- Use `VITE_USE_FIREBASE=false` to test Cloudflare path
-- E2E tests must pass for BOTH configurations
 
 See `/MIGRATION.md` for complete strategy, timelines, and phase details.
 

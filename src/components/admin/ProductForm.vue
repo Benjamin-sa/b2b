@@ -143,183 +143,6 @@
                         </div>
                     </div>
 
-                    <!-- Inventory Product Linking (Optional) -->
-                    <div class="md:col-span-3">
-                        <div :class="[
-                            'border-2 rounded-lg p-4',
-                            !enableInventoryLinking
-                                ? 'border-gray-300 bg-gray-50'
-                                : showValidationErrors && !form.shopifyVariantId
-                                    ? 'border-red-300 bg-red-50'
-                                    : form.shopifyVariantId
-                                        ? 'border-green-300 bg-green-50'
-                                        : 'border-blue-300 bg-blue-50'
-                        ]">
-                            <!-- Toggle for Inventory Linking -->
-                            <div class="mb-4 flex items-center justify-between">
-                                <h4 class="text-lg font-medium flex items-center">
-                                    <span class="mr-2">🔗</span>
-                                    Inventory Product Linking
-                                    <span v-if="enableInventoryLinking && form.shopifyVariantId"
-                                        class="ml-2 text-green-600">✅</span>
-                                    <span v-else-if="enableInventoryLinking && showValidationErrors"
-                                        class="ml-2 text-red-600">⚠️</span>
-                                </h4>
-                                <label class="flex items-center">
-                                    <input v-model="enableInventoryLinking" type="checkbox"
-                                        class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                        @change="onInventoryLinkingToggle" />
-                                    <span class="text-sm font-medium text-gray-700">Enable inventory linking</span>
-                                </label>
-                            </div>
-
-                            <div v-if="!enableInventoryLinking"
-                                class="text-sm text-gray-600 p-3 bg-gray-100 rounded-md">
-                                <p>💡 Inventory linking is disabled. The product will be created as a standalone item
-                                    without connection to the inventory system. You'll manage stock manually.</p>
-                            </div>
-
-                            <!-- Search for inventory products -->
-                            <div v-if="enableInventoryLinking" class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Search Inventory Products
-                                </label>
-                                <div class="flex gap-2">
-                                    <input v-model="inventorySearchQuery" type="text"
-                                        placeholder="Search by product name or Shopify ID..."
-                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        @input="searchInventoryProducts" />
-                                    <button type="button" @click="searchInventoryProducts"
-                                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                        Search
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Selected Product Display -->
-                            <div v-if="enableInventoryLinking && form.shopifyVariantId && selectedInventoryProduct"
-                                class="mb-4 p-4 bg-green-50 border border-green-300 rounded-md">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <h5 class="font-medium text-green-900">✅ Linked Product:</h5>
-                                        <div class="text-sm text-green-800 mt-1">
-                                            <div><strong>Name:</strong> {{ selectedInventoryProduct?.title }}</div>
-                                            <div><strong>Shopify Product ID:</strong> {{
-                                                selectedInventoryProduct?.shopify_product_id }}</div>
-                                            <div><strong>Shopify Variant ID:</strong> {{
-                                                selectedInventoryProduct?.shopify_variant_id }}</div>
-                                            <div><strong>Current Stock:</strong> B2C: {{
-                                                selectedInventoryProduct?.b2c_stock }}, B2B: {{
-                                                    selectedInventoryProduct?.b2b_stock }}</div>
-                                        </div>
-                                    </div>
-                                    <button type="button" @click="clearSelectedProduct"
-                                        class="text-red-600 hover:text-red-800 text-sm">
-                                        Clear
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Stock Amount Input (when inventory linking is enabled) -->
-                            <div v-if="enableInventoryLinking && form.shopifyVariantId && selectedInventoryProduct"
-                                class="mb-4 p-4 bg-blue-50 border border-blue-300 rounded-md">
-                                <h5 class="font-medium text-blue-900 mb-3">� Set B2B Stock Amount</h5>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            B2B Stock Amount
-                                        </label>
-                                        <input v-model.number="form.stock" type="number" min="0"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Enter desired B2B stock amount" />
-                                        <!-- Warning for potential negative B2C stock -->
-                                        <div v-if="(form.stock || 0) > (selectedInventoryProduct?.b2c_stock || 0)"
-                                            class="mt-2 p-2 bg-yellow-50 border border-yellow-300 rounded text-sm text-yellow-800">
-                                            ⚠️ Warning: This amount ({{ form.stock || 0 }}) is higher than available B2C
-                                            stock ({{ selectedInventoryProduct?.b2c_stock || 0 }}).
-                                            This will result in negative B2C stock.
-                                        </div>
-                                    </div>
-                                    <div class="text-sm text-gray-600">
-                                        <p class="font-medium mb-1">Current Stock Distribution:</p>
-                                        <p>B2C: {{ selectedInventoryProduct?.b2c_stock || 0 }}</p>
-                                        <p>B2B: {{ selectedInventoryProduct?.b2b_stock || 0 }}</p>
-                                        <p>Total: {{ selectedInventoryProduct?.total_stock || 0 }}</p>
-                                    </div>
-                                </div>
-                                <p class="text-xs text-gray-600 mt-2">
-                                    💡 Stock management and transfers will be handled automatically by Firebase
-                                    functions when the product is saved
-                                </p>
-                            </div>
-
-                            <!-- Validation Error -->
-                            <div v-if="enableInventoryLinking && showValidationErrors && !form.shopifyVariantId"
-                                class="mb-4 p-3 bg-red-50 border border-red-300 rounded-md">
-                                <p class="text-red-700 text-sm">⚠️ You must select an inventory product before saving.
-                                </p>
-                            </div>
-
-                            <!-- Search Results -->
-                            <div v-if="enableInventoryLinking && inventorySearchResults.length > 0" class="mb-4">
-                                <h5 class="font-medium text-gray-900 mb-2">Search Results (click to select):</h5>
-                                <div class="max-h-60 overflow-y-auto space-y-2">
-                                    <div v-for="item in inventorySearchResults" :key="item.id"
-                                        class="p-3 bg-white border rounded-md cursor-pointer hover:bg-blue-50 transition-colors"
-                                        @click="selectInventoryProduct(item)">
-                                        <div class="font-medium">{{ item.title }}</div>
-                                        <div class="text-sm text-gray-600">
-                                            Product ID: {{ item.shopify_product_id }} | Variant ID: {{
-                                                item.shopify_variant_id }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            Stock - B2C: {{ item.b2c_stock }}, B2B: {{ item.b2b_stock }}, Total: {{
-                                                item.total_stock }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div v-if="enableInventoryLinking && inventorySearchAttempted && inventorySearchResults.length === 0 && inventorySearchQuery"
-                                class="text-sm text-gray-500">
-                                No products found matching "{{ inventorySearchQuery }}"
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Manual Stock Management (when inventory linking is disabled) -->
-                    <div v-if="!enableInventoryLinking" class="md:col-span-3">
-                        <div class="border-2 border-gray-300 bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-lg font-medium mb-3 flex items-center">
-                                <span class="mr-2">📦</span>
-                                Manual Stock Management
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="manualStock" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Stock Quantity
-                                    </label>
-                                    <input id="manualStock" v-model.number="form.stock" type="number" min="0"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Enter stock quantity" />
-                                </div>
-                                <div class="flex items-center">
-                                    <label class="flex items-center">
-                                        <input v-model="form.inStock" type="checkbox" :disabled="form.comingSoon"
-                                            class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed" />
-                                        <span class="text-sm font-medium text-gray-700">Product is in stock</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-2">
-                                💡 Without inventory linking, you'll need to manually manage stock levels.
-                                <span v-if="form.comingSoon" class="block text-yellow-700 mt-1">
-                                    {{ $t('admin.products.comingSoonManualHint') }}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-
                     <!-- Unit -->
                     <div>
                         <label for="unit" class="block text-sm font-medium text-gray-700 mb-2">
@@ -495,7 +318,6 @@ const getIndentedCategoryName = (category: any) => {
 const enableInventoryLinking = ref(false)
 const inventorySearchQuery = ref('')
 const inventorySearchResults = ref<any[]>([])
-const inventorySearchAttempted = ref(false)
 const selectedInventoryProduct = ref<any>(null)
 const showValidationErrors = ref(false)
 
@@ -651,56 +473,6 @@ const onDescriptionChange = () => {
     }
 }
 
-// Inventory management functions
-const searchInventoryProducts = async () => {
-    if (!inventorySearchQuery.value.trim()) {
-        inventorySearchResults.value = []
-        inventorySearchAttempted.value = false
-        return
-    }
-
-    try {
-        const inventoryServiceUrl = import.meta.env.VITE_INVENTORY_SERVICE_URL || 'http://127.0.0.1:8787'
-        const response = await fetch(`${inventoryServiceUrl}/api/inventory/search?q=${encodeURIComponent(inventorySearchQuery.value)}`)
-        const data = await response.json()
-
-        inventorySearchAttempted.value = true
-
-        if (data.success && data.data) {
-            inventorySearchResults.value = data.data
-        } else {
-            inventorySearchResults.value = []
-        }
-    } catch (error) {
-        console.error('Error searching inventory:', error)
-        inventorySearchResults.value = []
-        inventorySearchAttempted.value = true
-    }
-}
-
-const selectInventoryProduct = (product: any) => {
-    form.shopifyProductId = product.shopify_product_id
-    form.shopifyVariantId = product.shopify_variant_id
-    selectedInventoryProduct.value = product
-    inventorySearchResults.value = []
-    inventorySearchQuery.value = ''
-    showValidationErrors.value = false
-}
-
-const clearSelectedProduct = () => {
-    form.shopifyProductId = ''
-    form.shopifyVariantId = ''
-    selectedInventoryProduct.value = null
-    form.stock = 0
-}
-
-const onInventoryLinkingToggle = () => {
-    if (!enableInventoryLinking.value) {
-        // Clear inventory data when disabling
-        clearSelectedProduct()
-        showValidationErrors.value = false
-    }
-}
 
 // Generate a random product SKU for standalone products
 const generateRandomSKU = () => {
@@ -724,12 +496,7 @@ const loadInventoryInfo = async (shopifyVariantId: string) => {
 }
 
 const submitForm = async () => {
-    // Validate required inventory linking only if enabled for new products
-    if (enableInventoryLinking.value && !props.product && !form.shopifyVariantId) {
-        showValidationErrors.value = true
-        return
-    }
-
+   
     loading.value = true
 
     try {

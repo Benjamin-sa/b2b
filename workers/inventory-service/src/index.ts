@@ -1,99 +1,122 @@
+/**
+ * Inventory Service - Main Entry Point
+ * 
+ * Product management and inventory tracking for B2B platform
+ * 
+ * Architecture:
+ * - Validates JWT tokens via auth-service
+ * - Admin-only operations: CREATE, UPDATE, DELETE
+ * - Public operations: GET (with optional auth for personalization)
+ * 
+ * Endpoints:
+ * - GET    /products                 - List all products with pagination & filters
+ * - GET    /products/:id             - Get single product by ID
+ * - GET    /products/category/:id    - Get products by category
+ * - POST   /products                 - Create product (admin only)
+ * - PUT    /products/:id             - Update product (admin only)
+ * - PATCH  /products/:id             - Partial update (admin only)
+ * - DELETE /products/:id             - Delete product (admin only)
+ * - POST   /products/:id/stock       - Update stock (admin only)
+ */
+
 import { Hono } from 'hono';
-import { createInventoryRoutes } from './handlers/inventoryHandlers';
-import { createWebhookRoutes } from './handlers/webhookHandlers';
-import type { Env } from './types/inventory';
+import { cors } from 'hono/cors';
+import type { Env, InventoryError } from './types';
+import { loggingMiddleware } from './middleware/logging';
+import productRoutes from './routes/product.routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
-// CORS middleware
+// ============================================================================
+// GLOBAL MIDDLEWARE
+// ============================================================================
+
+app.use('*', loggingMiddleware);
+
+// CORS middleware - allow requests from frontend
 app.use('*', async (c, next) => {
-  const origin = c.req.header('Origin');
-  const allowedOrigins = [
-    'http://localhost:5173',  // Development environment
-    'https://4tparts.com'     // Production domain
-  ];
-
-  // Set CORS headers
-  if (origin && allowedOrigins.includes(origin)) {
-    c.header('Access-Control-Allow-Origin', origin);
-  }
+  const allowedOrigins = c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
   
-  c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key, X-Shopify-Hmac-Sha256');
-  c.header('Access-Control-Max-Age', '86400');
-
-  // Handle preflight requests
-  if (c.req.method === 'OPTIONS') {
-    return c.text('', 204);
-  }
-
-  await next();
+  return cors({
+    origin: allowedOrigins,
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    maxAge: 86400, // 24 hours
+  })(c, next);
 });
 
-// Health check endpoint
-app.get('/', async (c) => {
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
+
+app.get('/', (c) => {
   return c.json({
-    success: true,
-    message: 'Inventory Service API is running',
+    service: 'B2B Inventory Service',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    status: 'healthy',
+    environment: c.env.ENVIRONMENT,
+    description: 'Product management and inventory tracking',
+    timestamp: new Date().toISOString(),
+    features: [
+      'Product CRUD operations',
+      'Pagination and filtering',
+      'Category-based queries',
+      'JWT authentication via auth-service',
+      'Admin-only write operations',
+    ],
   });
 });
 
-// Health check endpoint
-app.get('/health', async (c) => {
-  try {
-    // Test database connection
-    const result = await c.env.DB.prepare('SELECT 1 as test').first();
-    
-    return c.json({
-      success: true,
-      status: 'healthy',
-      database: result ? 'connected' : 'disconnected',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return c.json({
-      success: false,
-      status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, 500);
-  }
+app.get('/health', (c) => {
+  return c.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Add inventory routes
-createInventoryRoutes(app);
+// ============================================================================
+// PRODUCT ROUTES
+// ============================================================================
 
-// Add webhook routes
-createWebhookRoutes(app);
+app.route('/products', productRoutes);
 
-// 404 handler
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
 app.notFound((c) => {
-  return c.json({
-    success: false,
-    error: 'Endpoint not found',
-    available_endpoints: [
-      'GET / - Health check',
-      'GET /health - Detailed health check',
-      'GET /api/inventory - Get all inventory items',
-      'GET /api/inventory/search?q={query} - Search products by name or product ID',
-      'POST /api/inventory/sync-shopify - Sync products from Shopify',
-      'POST /api/inventory/transfer-b2b - Transfer stock from B2C to B2B',
-      'POST /webhook/stock-update - Firebase stock update endpoint for B2B inventory',
-      'POST /webhook/shopify/product-create - Shopify product creation webhook',
-      'POST /webhook/shopify/inventory-update - Shopify inventory update webhook'
-    ]
-  }, 404);
+  return c.json(
+    {
+      error: 'Not Found',
+      code: 'inventory/not-found',
+      message: 'The requested endpoint does not exist',
+      path: c.req.path,
+      timestamp: new Date().toISOString(),
+    },
+    404
+  );
 });
 
-// Error handler
 app.onError((err, c) => {
-  return c.json({
-    success: false,
-    error: 'Internal server error',
-    message: err.message
-  }, 500);
+  console.error('[Inventory Service Error]', err);
+
+  // Handle InventoryError
+  if ((err as InventoryError).toJSON) {
+    const inventoryError = err as InventoryError;
+    return c.json(inventoryError.toJSON(), inventoryError.statusCode as any);
+  }
+
+  // Handle generic errors
+  return c.json(
+    {
+      error: 'Internal Server Error',
+      code: 'inventory/internal-error',
+      message: err.message || 'An unexpected error occurred',
+      timestamp: new Date().toISOString(),
+    },
+    500
+  );
 });
 
 export default app;

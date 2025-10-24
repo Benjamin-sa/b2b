@@ -17,13 +17,13 @@ export default {
     
     // Route handling
     switch (url.pathname) {
-      case '/api/email/welcome':
+      case '/email/welcome':
         return handleWelcomeEmail(request, env);
         
-      case '/api/email/password-reset':
+      case '/email/password-reset':
         return handlePasswordResetEmail(request, env);
         
-      case '/api/email/verification':
+      case '/email/verification':
         return handleVerificationEmail(request, env);
         
       case '/health':

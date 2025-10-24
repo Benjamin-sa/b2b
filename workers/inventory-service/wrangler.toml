@@ -1,29 +1,43 @@
-name = "inventory-service"
+name = "b2b-inventory-service"
 main = "src/index.ts"
-compatibility_date = "2024-09-14"
+compatibility_date = "2024-11-01"
 
-# D1 Database binding
-[[d1_databases]]
-binding = "DB"
-database_name = "inventory-db"
-database_id = "97258abd-343e-41e9-a05f-48a535867eff"  # Will be generated when you create the D1 database
+# Development environment
+[env.dev]
+name = "b2b-inventory-service-dev"
 
-[vars]
-ENVIRONMENT = "development"
-SHOPIFY_STORE_URL = "https://motordashbnl.myshopify.com"  # Non-sensitive, can be in toml
-
-[env.production.vars]
-ENVIRONMENT = "production"
-SHOPIFY_STORE_URL = "https://motordashbnl.myshopify.com"  # Non-sensitive
-
-# Note: SHOPIFY_ACCESS_TOKEN and WEBHOOK_SECRET should be set as secrets, not vars
-# Use: wrangler secret put SHOPIFY_ACCESS_TOKEN
-# Use: wrangler secret put WEBHOOK_SECRET
-
-[env.production.d1_databases]
-binding = "DB"
-database_name = "inventory-db"
-database_id = "your-production-database-id"
-
+[observability]
 [observability.logs]
 enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+AUTH_SERVICE_URL = "http://localhost:8787"
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,http://localhost:5174"
+DEFAULT_PAGE_SIZE = "20"
+MAX_PAGE_SIZE = "100"
+
+# Production environment
+[env.prod]
+name = "b2b-inventory-service"
+
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
+
+[env.prod.vars]
+ENVIRONMENT = "production"
+AUTH_SERVICE_URL = "https://auth.yourdomain.workers.dev"
+ALLOWED_ORIGINS = "https://yourdomain.com"
+DEFAULT_PAGE_SIZE = "20"
+MAX_PAGE_SIZE = "100"
+
+# No secrets needed - services authenticate via auth-service

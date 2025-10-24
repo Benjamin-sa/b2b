@@ -18,7 +18,6 @@ export default defineConfig({
         manualChunks: {
           // Split vendor code for better caching
           vendor: ['vue', 'vue-router', 'pinia'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           stripe: ['@stripe/stripe-js']
         }
       }

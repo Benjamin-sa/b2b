@@ -1,6 +1,6 @@
 import type { Environment, VerificationEmailRequest, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, validateFirebaseAuth, jsonResponse, corsHeaders } from '../utils/validators';
+import { validateRequest, jsonResponse, corsHeaders } from '../utils/validators';
 
 export async function handleVerificationEmail(request: Request, env: Environment): Promise<Response> {
   const origin = request.headers.get('Origin');
@@ -18,16 +18,6 @@ export async function handleVerificationEmail(request: Request, env: Environment
       cors
     );
   }
-
-  // Validate Firebase authentication
-  if (!validateFirebaseAuth(request, env)) {
-    return jsonResponse(
-      { success: false, error: 'Unauthorized' },
-      401,
-      cors
-    );
-  }
-  
   try {
     const body: VerificationEmailRequest = await request.json();
     

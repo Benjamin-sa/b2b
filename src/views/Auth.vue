@@ -177,7 +177,7 @@ const toggleMode = () => {
 
 const handleLogin = async (loginData: { email: string; password: string }) => {
     try {
-        await authStore.login(loginData.email, loginData.password)
+        await authStore.login(loginData)
         router.push('/')
     } catch (error) {
         // Error notifications are now handled by the auth store
@@ -200,16 +200,21 @@ const handleRegister = async () => {
 
     try {
         console.log('Attempting registration...')
-        await authStore.register(
-            registerForm.value.email,
-            registerForm.value.password,
-            registerForm.value.companyName,
-            registerForm.value.firstName,
-            registerForm.value.lastName,
-            registerForm.value.btwNumber.replace(/\s/g, '').toUpperCase(), // Clean BTW for backend
-            registerForm.value.address,
-            registerForm.value.phone
-        )
+        
+        // Prepare registration data as a single object
+        const registrationData = {
+            email: registerForm.value.email,
+            password: registerForm.value.password,
+            confirmPassword: registerForm.value.confirmPassword,
+            companyName: registerForm.value.companyName,
+            firstName: registerForm.value.firstName,
+            lastName: registerForm.value.lastName,
+            btwNumber: registerForm.value.btwNumber.replace(/\s/g, '').toUpperCase(),
+            phone: registerForm.value.phone,
+            address: registerForm.value.address
+        }
+        
+        await authStore.register(registrationData)
 
         console.log('Registration successful')
 

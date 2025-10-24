@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
     address_postal_code TEXT NOT NULL,
     address_city TEXT NOT NULL,
     address_country TEXT NOT NULL,
+    stripe_customer_id TEXT,
     is_active INTEGER DEFAULT 1 CHECK(is_active IN (0, 1)),
     is_verified INTEGER DEFAULT 0 CHECK(is_verified IN (0, 1)),
     created_at TEXT DEFAULT (datetime('now')),

@@ -21,24 +21,6 @@ export function validateRequest(
 
   return { valid: true };
 }
-
-export function validateFirebaseAuth(request: Request, env: Environment): boolean {
-  const authHeader = request.headers.get('X-Firebase-Auth');
-  const expectedSecret = env.FIREBASE_AUTH_SECRET;
-  
-  if (!expectedSecret) {
-    console.warn('FIREBASE_AUTH_SECRET not configured - allowing all requests');
-    return true; // Allow if not configured for backward compatibility
-  }
-  
-  if (!authHeader || authHeader !== expectedSecret) {
-    console.error('Invalid or missing Firebase auth header');
-    return false;
-  }
-  
-  return true;
-}
-
 export function jsonResponse(
   data: any, 
   status: number = 200, 
