@@ -20,6 +20,20 @@ service = "b2b-email-service"
 binding = "INVENTORY_SERVICE"
 service = "b2b-inventory-service"
 
+[[services]]
+binding = "STRIPE_SERVICE"
+service = "b2b-stripe-service"
+
+[[services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service"
+
+# D1 Database binding (for invoice queries)
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
+
 # Production vars (used when no --env specified)
 [vars]
 ENVIRONMENT = "production"
@@ -42,6 +56,20 @@ service = "b2b-email-service-dev"
 [[env.dev.services]]
 binding = "INVENTORY_SERVICE"
 service = "b2b-inventory-service-dev"
+
+[[env.dev.services]]
+binding = "STRIPE_SERVICE"
+service = "b2b-stripe-service-dev"
+
+[[env.dev.services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service-dev"
+
+# D1 Database binding (dev)
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
 
 [env.dev.vars]
 ENVIRONMENT = "development"

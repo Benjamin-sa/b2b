@@ -1,0 +1,61 @@
+name = "b2b-stripe-service"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# ============================================================================
+# PRODUCTION (DEFAULT - No --env flag)
+# ============================================================================
+
+# D1 Database binding (for invoice persistence)
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
+
+[vars]
+ENVIRONMENT = "production"
+STRIPE_API_VERSION = "2024-06-20"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+# ============================================================================
+# DEVELOPMENT ENVIRONMENT
+# ============================================================================
+[env.dev]
+name = "b2b-stripe-service-dev"
+
+# D1 Database binding (dev)
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+STRIPE_API_VERSION = "2024-06-20"
+
+[env.dev.observability]
+enabled = true
+
+[env.dev.observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+# ============================================================================
+# SECRETS (set via: wrangler secret put SECRET_NAME [--env dev])
+# ============================================================================
+# - STRIPE_SECRET_KEY: Your Stripe secret key (sk_test_... or sk_live_...)
+# - STRIPE_WEBHOOK_SECRET: Webhook signing secret from Stripe Dashboard (whsec_...)
+#
+# Set secrets with:
+#   wrangler secret put STRIPE_SECRET_KEY --env dev
+#   wrangler secret put STRIPE_WEBHOOK_SECRET --env dev
+#   wrangler secret put STRIPE_SECRET_KEY (production)
+#   wrangler secret put STRIPE_WEBHOOK_SECRET (production)

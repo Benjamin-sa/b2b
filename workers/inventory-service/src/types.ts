@@ -4,10 +4,26 @@
  * Product management and inventory tracking
  */
 
+// Service binding type for auth-service
+export interface AuthService extends Fetcher {
+  fetch: (request: Request) => Promise<Response>;
+}
+
+// Service binding type for stripe-service
+export interface StripeService extends Fetcher {
+  fetch: (request: Request) => Promise<Response>;
+}
+
 export interface Env {
   DB: D1Database;
   ENVIRONMENT: 'development' | 'production';
-  AUTH_SERVICE_URL: string;
+  
+  // Service binding for auth validation (no HTTP overhead!)
+  AUTH_SERVICE: AuthService;
+  
+  // Service binding for Stripe operations
+  STRIPE_SERVICE: StripeService;
+  
   ALLOWED_ORIGINS: string;
   DEFAULT_PAGE_SIZE: string;
   MAX_PAGE_SIZE: string;
@@ -79,6 +95,45 @@ export interface ProductDimension {
 }
 
 // ============================================================================
+// CATEGORY TYPES
+// ============================================================================
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  parent_id: string | null;
+  image_url: string | null;
+  sort_order: number;
+  is_active: number; // SQLite boolean (0 or 1)
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description?: string;
+  slug: string;
+  parentId?: string;
+  imageUrl?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCategoryRequest extends Partial<CreateCategoryRequest> {}
+
+export interface CategoryFilters {
+  parentId?: string | null;
+  isActive?: boolean;
+  searchTerm?: string;
+}
+
+// ============================================================================
 // REQUEST/RESPONSE TYPES
 // ============================================================================
 
@@ -100,6 +155,7 @@ export interface CreateProductRequest {
   weight?: number;
   shopifyProductId?: string;
   shopifyVariantId?: string;
+  shopifyInventoryItemId?: string; // ✅ REQUIRED for Shopify inventory sync
   stripeProductId?: string;
   stripePriceId?: string;
   images?: string[];

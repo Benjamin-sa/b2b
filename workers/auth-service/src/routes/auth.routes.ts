@@ -188,29 +188,48 @@ auth.post('/logout', async (c) => {
  */
 auth.post('/validate', async (c) => {
   try {
+    
     const data = await c.req.json<{ accessToken: string }>();
+    console.log('[Auth Validate] Body received:', { 
+      hasAccessToken: !!data.accessToken,
+      tokenLength: data.accessToken?.length,
+      tokenPrefix: data.accessToken?.substring(0, 20) + '...' // First 20 chars only for security
+    });
 
     if (!data.accessToken) {
+      console.log('[Auth Validate] ❌ Missing access token');
       throw createAuthError('MISSING_FIELDS', 'Access token is required');
     }
 
     // Step 1: Verify JWT signature and decode payload
+    console.log('[Auth Validate] Step 1: Verifying JWT signature...');
     const payload = await verifyAccessToken(data.accessToken, c.env.JWT_SECRET);
+    console.log('[Auth Validate] ✅ JWT verified. Payload:', {
+      uid: payload.uid,
+      email: payload.email,
+      role: payload.role,
+      sessionId: payload.sessionId
+    });
 
     // Step 2: Check if session is still active
     // This is how we achieve instant revocation!
+    console.log('[Auth Validate] Step 2: Checking session in KV...');
     const session = await getSession(c.env.SESSIONS, payload.sessionId);
     
     if (!session) {
+      console.log('[Auth Validate] ❌ Session not found or expired:', payload.sessionId);
       throw createAuthError('SESSION_EXPIRED', 'Session has been revoked or expired');
     }
+    console.log('[Auth Validate] ✅ Session found and valid');
 
     // Step 3: Fetch FRESH user data from D1
     // This ensures we always have the latest user state (isVerified, role, etc.)
+    console.log('[Auth Validate] Step 3: Fetching user from D1...');
     const user = await c.env.DB.prepare(`
       SELECT 
-        id, email, role, company_name, first_name, last_name, 
-        is_verified, is_active, created_at, updated_at
+        id, email, role, company_name, first_name, last_name, phone, btw_number,
+        address_street, address_house_number, address_postal_code, address_city, address_country,
+        stripe_customer_id, is_verified, is_active, created_at, updated_at
       FROM users 
       WHERE id = ?
     `)
@@ -218,44 +237,35 @@ auth.post('/validate', async (c) => {
       .first<User>();
 
     if (!user) {
+      console.log('[Auth Validate] ❌ User not found in database:', payload.uid);
       throw createAuthError('USER_NOT_FOUND', 'User no longer exists');
     }
+    console.log('[Auth Validate] ✅ User found:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isActive: user.is_active,
+      isVerified: user.is_verified
+    });
 
     // Step 4: Check if user is still active
     if (user.is_active === 0) {
+      console.log('[Auth Validate] ❌ User account disabled');
       throw createAuthError('USER_DISABLED', 'User account has been disabled');
     }
+   
+    // Build address object if any address fields exist
+    const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
+      ? {
+          street: user.address_street || '',
+          houseNumber: user.address_house_number || '',
+          postalCode: user.address_postal_code || '',
+          city: user.address_city || '',
+          country: user.address_country || '',
+        }
+      : undefined;
 
-    // Step 5: Build permissions array based on role and verification status
-    const permissions: string[] = [];
-    
-    // All authenticated users can read products and categories
-    permissions.push('read:products', 'read:categories');
-    
-    // Only verified users can create orders
-    if (user.is_verified === 1) {
-      permissions.push('create:orders', 'read:orders', 'update:profile');
-    }
-    
-    // Admins get full permissions
-    if (user.role === 'admin') {
-      permissions.push(
-        'create:products',
-        'update:products',
-        'delete:products',
-        'create:categories',
-        'update:categories',
-        'delete:categories',
-        'read:all-orders',
-        'update:orders',
-        'read:users',
-        'update:users',
-        'verify:users'
-      );
-    }
-
-    // Step 6: Return validation result with fresh data
-    return c.json({
+    const validationResponse = {
       valid: true,
       user: {
         uid: user.id,
@@ -264,14 +274,31 @@ auth.post('/validate', async (c) => {
         companyName: user.company_name,
         firstName: user.first_name,
         lastName: user.last_name,
+        phone: user.phone || undefined,
+        btwNumber: user.btw_number || undefined,
+        stripeCustomerId: user.stripe_customer_id || undefined,
+        address,
         isVerified: user.is_verified === 1,
         isActive: user.is_active === 1,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
       },
-      permissions,
       sessionId: payload.sessionId,
       validatedAt: new Date().toISOString(),
-    });
+    };
+
+    console.log('[Auth Validate] ✅ Validation successful for:', user.email);
+    console.log('[Auth Validate] === REQUEST END ===');
+    
+    return c.json(validationResponse);
   } catch (error) {
+    // Log the error details
+    console.error('[Auth Validate] ❌ Validation failed');
+    console.error('[Auth Validate] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('[Auth Validate] Error message:', error instanceof Error ? error.message : String(error));
+    console.error('[Auth Validate] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.log('[Auth Validate] === REQUEST END (ERROR) ===');
+    
     // Return proper error responses
     if (error instanceof Error && error.message.includes('expired')) {
       throw createAuthError('TOKEN_EXPIRED', 'Access token has expired');

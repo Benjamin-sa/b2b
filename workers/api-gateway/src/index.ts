@@ -23,6 +23,8 @@ import { loggingMiddleware } from './middleware/logging';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 import authOrchestration from './routes/auth.orchestration';
 import productsOrchestration from './routes/products.orchestration';
+import categoriesOrchestration from './routes/categories.orchestration';
+import invoicesOrchestration from './routes/invoices.orchestration';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -50,6 +52,7 @@ app.get('/', (c) => {
       auth: 'Available via service binding',
       email: 'Available via service binding',
       inventory: 'Available via service binding',
+      stripe: 'Available via service binding',
     },
     timestamp: new Date().toISOString(),
   });
@@ -73,6 +76,39 @@ app.route('/auth', authOrchestration);
 // ============================================================================
 // Product routes proxied to inventory service via service binding
 app.route('/api/products', productsOrchestration);
+
+// ============================================================================
+// CATEGORIES ROUTES → Inventory Service (via Orchestration)
+// ============================================================================
+// Category routes proxied to inventory service via service binding
+app.route('/api/categories', categoriesOrchestration);
+
+// ============================================================================
+// INVOICES ROUTES → Stripe Service (via Orchestration)
+// ============================================================================
+// Invoice creation routes orchestrated to stripe service via service binding
+app.route('/api/invoices', invoicesOrchestration);
+
+// ============================================================================
+// SHOPIFY ROUTES → Shopify Sync Service (via Service Binding)
+// ============================================================================
+// Shopify product search - direct service binding to shopify-sync-service
+app.all('/api/shopify/*', async (c) => {
+  const path = c.req.path.replace('/api/shopify', '');
+  
+  // ✅ CRITICAL: Preserve query parameters when forwarding request
+  const url = new URL(c.req.url);
+  const queryString = url.search; // Includes the '?' prefix
+  const fullPath = `${path || '/'}${queryString}`;
+  
+  const request = new Request(`https://dummy${fullPath}`, {
+    method: c.req.method,
+    headers: c.req.raw.headers,
+    body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
+  });
+  
+  return c.env.SHOPIFY_SYNC_SERVICE.fetch(request);
+});
 
 // ============================================================================
 // ADMIN ROUTES → Auth Service (Direct Binding)

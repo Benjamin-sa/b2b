@@ -92,6 +92,78 @@
                             placeholder="Shopify Product ID" />
                     </div>
 
+                    <!-- Shopify Product Search (Debug Tool) -->
+                    <div class="md:col-span-2 border-2 border-blue-200 bg-blue-50 rounded-lg p-4">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                            🔍 Shopify Product Search (Link Inventory)
+                        </h4>
+                        
+                        <!-- Search Input -->
+                        <div class="mb-3">
+                            <input 
+                                v-model="shopifySearchQuery" 
+                                type="text"
+                                placeholder="Search by product name, variant ID, or SKU..."
+                                class="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                @keyup.enter="searchShopifyProducts"
+                            />
+                            <button 
+                                type="button"
+                                @click="searchShopifyProducts"
+                                :disabled="shopifySearchLoading"
+                                class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
+                            >
+                                {{ shopifySearchLoading ? 'Searching...' : 'Search Shopify' }}
+                            </button>
+                        </div>
+
+                        <!-- Search Results -->
+                        <div v-if="shopifySearchResults.length > 0" class="max-h-60 overflow-y-auto space-y-2">
+                            <div 
+                                v-for="variant in shopifySearchResults" 
+                                :key="variant.id"
+                                @click="selectShopifyVariant(variant)"
+                                class="p-3 bg-white border border-blue-200 rounded cursor-pointer hover:bg-blue-100 transition"
+                            >
+                                <div class="font-semibold text-sm text-gray-900">{{ variant.title }}</div>
+                                <div class="text-xs text-gray-600 mt-1">
+                                    <span class="font-mono">Variant ID:</span> {{ extractShopifyId(variant.id) }}
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                    <span class="font-mono">Inventory ID:</span> {{ extractShopifyId(variant.inventoryItemId) }}
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                    <span class="font-mono">SKU:</span> {{ variant.sku || 'N/A' }} | 
+                                    <span class="font-mono">Stock:</span> {{ variant.inventoryQuantity }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selected Variant Info -->
+                        <div v-if="form.shopifyVariantId" class="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm relative">
+                            <button 
+                                type="button"
+                                @click="delinkShopifyProduct"
+                                class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                                title="Delink Shopify Product"
+                            >
+                                ✕
+                            </button>
+                            <div class="font-semibold text-green-900">✅ Linked to Shopify</div>
+                            <div class="text-xs text-green-700 mt-1">
+                                Variant ID: {{ form.shopifyVariantId }}
+                            </div>
+                            <div v-if="form.shopifyInventoryItemId" class="text-xs text-green-700">
+                                Inventory ID: {{ form.shopifyInventoryItemId }}
+                            </div>
+                        </div>
+
+                        <!-- Error Display -->
+                        <div v-if="shopifySearchError" class="mt-3 p-2 bg-red-100 border border-red-300 rounded text-sm text-red-700">
+                            ❌ {{ shopifySearchError }}
+                        </div>
+                    </div>
+
                     <!-- Part Number -->
                     <div>
                         <label for="partNumber" class="block text-sm font-medium text-gray-700 mb-2">
@@ -104,10 +176,10 @@
                 </div>
             </div>
 
-            <!-- Pricing & Stock -->
+            <!-- Pricing -->
             <div>
                 <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.pricing') }}</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Price -->
                     <div>
                         <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
@@ -129,7 +201,7 @@
                     </div>
 
                     <!-- Coming Soon Toggle -->
-                    <div class="md:col-span-3">
+                    <div class="md:col-span-2">
                         <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 flex flex-col gap-2">
                             <label class="flex items-center">
                                 <input v-model="form.comingSoon" type="checkbox"
@@ -316,10 +388,13 @@ const getIndentedCategoryName = (category: any) => {
 
 // Inventory linking variables
 const enableInventoryLinking = ref(false)
-const inventorySearchQuery = ref('')
-const inventorySearchResults = ref<any[]>([])
 const selectedInventoryProduct = ref<any>(null)
-const showValidationErrors = ref(false)
+
+// Shopify product search variables
+const shopifySearchQuery = ref('')
+const shopifySearchResults = ref<any[]>([])
+const shopifySearchLoading = ref(false)
+const shopifySearchError = ref('')
 
 const form = reactive<Product>({
     id: '', // Will be set for editing, ignored for new products
@@ -333,7 +408,6 @@ const form = reactive<Product>({
     category: '', // Keep for backward compatibility
     inStock: false,
     comingSoon: false,
-    stock: 0,
     brand: '',
     partNumber: '',
     specifications: [],
@@ -350,6 +424,7 @@ const form = reactive<Product>({
     // Shopify inventory linking fields (required)
     shopifyProductId: '',
     shopifyVariantId: '',
+    shopifyInventoryItemId: '', // ✅ CRITICAL: Required for inventory sync
     // Stripe fields - not used in form but part of Product interface
     stripeProductId: '',
     stripePriceId: '',
@@ -377,7 +452,6 @@ onMounted(async () => {
             category: props.product.category || '',
             inStock: props.product.inStock,
             comingSoon: props.product.comingSoon ?? false,
-            stock: props.product.stock || 0, // B2B stock amount
             brand: props.product.brand || '',
             partNumber: props.product.partNumber || '',
             images: props.product.images || [],
@@ -495,6 +569,110 @@ const loadInventoryInfo = async (shopifyVariantId: string) => {
     }
 }
 
+// ============================================================================
+// SHOPIFY PRODUCT SEARCH FUNCTIONS
+// ============================================================================
+
+/**
+ * Search Shopify products via API Gateway
+ * Sends query to: API Gateway → Shopify Sync Service → Shopify GraphQL API
+ */
+const searchShopifyProducts = async () => {
+    if (!shopifySearchQuery.value.trim()) {
+        shopifySearchError.value = 'Please enter a search query'
+        return
+    }
+
+    shopifySearchLoading.value = true
+    shopifySearchError.value = ''
+    shopifySearchResults.value = []
+
+    try {
+        const API_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787'
+        
+        // Build query params
+        const params = new URLSearchParams({ 
+            query: shopifySearchQuery.value.trim(), 
+            limit: '20' 
+        })
+        
+        const response = await fetch(`${API_URL}/api/shopify/shopify/products?${params}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.status} ${response.statusText}`)
+        }
+
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+            shopifySearchResults.value = result.data
+            
+            if (result.data.length === 0) {
+                shopifySearchError.value = 'No products found. Try a different search term.'
+            }
+        } else {
+            shopifySearchError.value = result.error || 'Search failed'
+        }
+    } catch (error: any) {
+        console.error('Shopify search error:', error)
+        shopifySearchError.value = error.message || 'Failed to search Shopify products'
+    } finally {
+        shopifySearchLoading.value = false
+    }
+}
+
+/**
+ * Select a Shopify variant and populate form fields
+ * Extracts numeric IDs from Shopify GID format
+ */
+const selectShopifyVariant = (variant: any) => {
+    // Extract numeric IDs from Shopify GID format
+    form.shopifyProductId = extractShopifyId(variant.productId)
+    form.shopifyVariantId = extractShopifyId(variant.id)
+    form.shopifyInventoryItemId = extractShopifyId(variant.inventoryItemId)
+    
+    // Clear search results
+    shopifySearchResults.value = []
+    shopifySearchQuery.value = ''
+    
+    console.log('✅ Selected Shopify variant:', {
+        productId: form.shopifyProductId,
+        variantId: form.shopifyVariantId,
+        inventoryItemId: form.shopifyInventoryItemId,
+    })
+}
+
+/**
+ * Extract numeric ID from Shopify GID format
+ * Examples:
+ * - "gid://shopify/ProductVariant/123" → "123"
+ * - "123" → "123"
+ */
+const extractShopifyId = (gid: string): string => {
+    if (!gid) return ''
+    if (gid.startsWith('gid://')) {
+        return gid.split('/').pop() || gid
+    }
+    return gid
+}
+
+/**
+ * Delink Shopify product - removes all Shopify variant/product IDs
+ */
+const delinkShopifyProduct = () => {
+    
+        form.shopifyProductId = ''
+        form.shopifyVariantId = ''
+        form.shopifyInventoryItemId = ''
+        
+        console.log('🔗 Shopify product delinked')
+}
+
 const submitForm = async () => {
    
     loading.value = true
@@ -520,15 +698,13 @@ const submitForm = async () => {
 
         // Stock and inventory fields depend on whether inventory linking is enabled
         if (enableInventoryLinking.value) {
-            productData.inStock = !form.comingSoon && (form.stock || 0) > 0 // Calculate based on B2B stock
-            productData.stock = form.stock || 0 // B2B stock amount
+            // Stock management will be handled via dedicated admin page (product_inventory table)
             productData.shopifyProductId = form.shopifyProductId
             productData.shopifyVariantId = form.shopifyVariantId
+            productData.shopifyInventoryItemId = form.shopifyInventoryItemId // ✅ CRITICAL for inventory sync
         } else {
-            // For standalone products, use manual stock input and generate random SKU
-            productData.inStock = !form.comingSoon && form.inStock
-            productData.stock = form.stock || 0
-            // Generate random SKU/variant ID for standalone products
+            // For standalone products (no Shopify link), generate random IDs
+            // Stock management will be handled via dedicated admin page
             if (!props.product) {
                 // Only generate for new products, keep existing for edits
                 productData.shopifyVariantId = generateRandomSKU()

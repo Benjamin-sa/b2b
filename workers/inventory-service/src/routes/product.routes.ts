@@ -137,7 +137,7 @@ products.post('/', requireAuth, requireAdmin, async (c) => {
   try {
     const data = await c.req.json();
 
-    const product = await createProduct(c.env.DB, data);
+    const product = await createProduct(c.env.DB, c.env, data);
 
     return c.json(product, 201);
   } catch (error) {
@@ -154,7 +154,7 @@ products.put('/:id', requireAuth, requireAdmin, async (c) => {
     const productId = c.req.param('id');
     const data = await c.req.json();
 
-    const product = await updateProduct(c.env.DB, productId, data);
+    const product = await updateProduct(c.env.DB, c.env, productId, data);
 
     return c.json(product);
   } catch (error) {
@@ -171,7 +171,7 @@ products.patch('/:id', requireAuth, requireAdmin, async (c) => {
     const productId = c.req.param('id');
     const data = await c.req.json();
 
-    const product = await updateProduct(c.env.DB, productId, data);
+    const product = await updateProduct(c.env.DB, c.env, productId, data);
 
     return c.json(product);
   } catch (error) {
@@ -187,7 +187,7 @@ products.delete('/:id', requireAuth, requireAdmin, async (c) => {
   try {
     const productId = c.req.param('id');
 
-    await deleteProduct(c.env.DB, productId);
+    await deleteProduct(c.env.DB, c.env, productId);
 
     return c.json({ message: 'Product deleted successfully' });
   } catch (error) {
@@ -209,7 +209,7 @@ products.post('/:id/stock', requireAuth, requireAdmin, async (c) => {
       throw errors.validationError('Stock must be a non-negative number');
     }
 
-    const product = await updateProduct(c.env.DB, productId, { stock });
+    const product = await updateProduct(c.env.DB, c.env, productId, { stock });
 
     return c.json(product);
   } catch (error) {

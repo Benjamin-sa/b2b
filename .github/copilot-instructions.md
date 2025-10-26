@@ -1,334 +1,696 @@
-# Copilot Instructions for B2B Platform
+# AI Coding Agent Instructions - B2B Platform
 
-## ⚠️ MIGRATION STATUS: PRODUCTION-ONLY TESTING PHASE
+**Platform**: B2B E-commerce on Cloudflare Workers + Vue 3  
+**Status**: Active migration from Firebase to Cloudflare (feature/cloudflare-migration branch)  
+**Architecture**: Microservices with Service Bindings + D1 Database + KV Sessions
 
-**Current Strategy (Updated: October 24, 2025)**
-- **🚨 DOWNTIME ACCEPTED**: Website is in maintenance mode during migration
-- **🎯 PRODUCTION-ONLY TESTING**: NO dev environment - all testing happens directly in PRODUCTION
-- **📊 Database**: Production D1 database (b2b-prod) is the ONLY active database
-- **⚡ Speed Priority**: Fast iteration over safe staging (downtime allows this)
-- **🔒 Auth Service**: Cloudflare Workers with production D1 + KV (fully deployed)
-- **🔑 Secrets**: JWT_SECRET and REFRESH_SECRET configured in production worker
+---
 
-### 🎪 Why Production-Only Testing?
-**The website is in DOWNTIME**, which allows us to:
-1. ✅ **Skip dev environment entirely** - No need to maintain separate dev database
-2. ✅ **Test with real data** - Users, products, and categories from old system already migrated
-3. ✅ **Single source of truth** - One database (b2b-prod) to manage and monitor
-4. ✅ **Faster iteration** - No dev→prod sync delays, deploy and test immediately
-5. ✅ **Reduced complexity** - No environment switching, config is simpler
-6. ✅ **Real-world validation** - Test in actual production conditions from day one
+## 🏗️ Architecture Overview
 
-### 🚀 Data Migration Completed
-- ✅ Schema deployed to production D1 (19 tables + indexes)
-- ✅ User data migrated (3 users with passwords hashed)
-- ✅ Product catalog migrated (35 products with images and specs)
-- ✅ Categories migrated (1 main category)
-- ✅ JWT secrets generated and set (base64-encoded)
+### Microservices Architecture (Cloudflare Workers)
 
-**⚠️ CRITICAL**: Every deployment goes DIRECTLY to production. Test thoroughly before deploying!
-
-### 🔄 Deployment Workflow
-```bash
-# 1. Make changes to code
-# 2. Deploy immediately to production
-cd workers/auth-service
-npm run deploy  # No --env flag needed, goes straight to prod
-
-# 3. Test immediately with frontend
-npm run dev  # Frontend connects to production worker
-
-# 4. Monitor production logs in real-time
-wrangler tail  # Live logs from production worker
+```
+Frontend (Vue 3 + Vite)
+    ↓
+API Gateway (Orchestrator)
+    ↓ ↓ ↓ ↓
+    ├─→ Auth Service (D1 + KV)
+    ├─→ Inventory Service (D1)
+    ├─→ Stripe Service (Stripe API wrapper)
+    └─→ Email Service (SendGrid)
 ```
 
-## Architecture Overview
+**Service Boundaries**:
+- **API Gateway** (`/workers/api-gateway`): Orchestrates multi-service workflows using **service bindings** (NOT HTTP proxying)
+- **Auth Service** (`/workers/auth-service`): JWT authentication, D1 users table, KV sessions
+- **Inventory Service** (`/workers/inventory-service`): Product/category CRUD, D1 database
+- **Stripe Service** (`/workers/stripe-service`): Centralized Stripe operations (customers, products, invoices)
+- **Email Service** (`/workers/email-service`): Transactional emails via SendGrid
+- **Frontend** (`/src`): Vue 3 SPA, Pinia stores, Vue Router, i18n
 
-This is a **B2B e-commerce platform** transitioning from Firebase to Cloudflare Workers. Currently in hybrid state with Cloudflare auth-service in production.
+### Key Data Flows
 
-### Key Services & Boundaries
-- **Frontend (Vue 3 + Vite)**: `/src` - SPA with Vue Router, Pinia stores, i18n
-- **Auth (Cloudflare Workers)**: `/workers/auth-service` - JWT auth with D1 + KV (PRODUCTION)
-- **Firebase Functions**: `/functions` - Node.js backend for payments, webhooks, emails (LEGACY)
-- **Cloudflare Workers**: `/workers` - Edge services (inventory, email, R2 image storage)
-- **Database**: Cloudflare D1 (production) for auth, Firebase Firestore for orders/products (transitioning)
+1. **User Registration**: Frontend → API Gateway → Auth Service (creates user in D1) + Email Service (sends welcome email) ← **Orchestrated workflow**
+2. **Product Listing**: Frontend → API Gateway → Inventory Service → D1 products table
+3. **Invoice Creation**: Frontend → API Gateway → Stripe Service (creates Stripe invoice) → Returns invoice URL
 
-### Data Flow Pattern
-1. **Authentication**: Frontend → Auth Worker (D1 + KV) → JWT tokens
-2. **Inventory Sync**: Shopify → Inventory Worker (D1) → Firebase Functions → Firestore → Frontend
-3. **Orders**: Frontend → Firebase Functions → Stripe Invoice → Webhook → Stock Update
-4. **Images**: Frontend → R2 Worker → Cloudflare R2 Bucket
+---
 
-## Critical Developer Workflows
+## 🛠️ Critical Development Patterns
 
-### Production Deployment (Current Strategy)
-```bash
-# Deploy auth-service to PRODUCTION
-cd workers/auth-service
-npm run deploy  # Goes directly to production, no --env flag
+### 1. Cloudflare Worker Structure (MANDATORY)
 
-# Frontend dev (connects to production auth worker)
-npm run dev  # Vite on :5173
+**Every worker follows this exact structure:**
 
-# Check production auth worker
-wrangler tail  # View live logs from production
-wrangler secret list  # View configured secrets
-```
-
-### Database Management (Production D1 Only)
-```bash
-# Query production D1 database (ONLY database in use)
-wrangler d1 execute b2b-prod --remote --command "SELECT * FROM users LIMIT 5"
-
-# Run migrations on production
-wrangler d1 execute b2b-prod --remote --file ./migrations/001_initial_schema.sql
-
-# Backup production data before making changes
-wrangler d1 export b2b-prod --remote --output backup-$(date +%Y%m%d).sql
-
-# Import data to production
-wrangler d1 execute b2b-prod --remote --file ./data-import.sql
-
-# Check production database size and stats
-wrangler d1 info b2b-prod
-```
-
-**Note**: There is NO dev database. All database operations happen on `b2b-prod`.
-
-### Environment Variables (Production-Focused)
-Frontend `.env` file (or Vite env vars):
-- `VITE_AUTH_SERVICE_URL=https://b2b-auth-service.benkee-sauter.workers.dev` (PRODUCTION)
-- `VITE_INVENTORY_SERVICE_URL` - Inventory worker URL (when deployed)
-- `VITE_CLOUDFLARE_WORKER_URL` - R2 image upload worker URL
-- `VITE_FIREBASE_*` - Firebase config (LEGACY, being phased out)
-
-**All services point to PRODUCTION Cloudflare Workers - no local/dev alternatives.**
-
-
-## Project-Specific Patterns
-
-### Auth & Authorization (Cloudflare Workers)
-- **JWT-based**: Custom auth service using Cloudflare D1 + KV
-- **Role-based access**: Users have `role: 'admin' | 'customer'` in D1 `users` table
-- **Verification flow**: New customers need admin approval (`is_verified: 0` → `1`)
-- **Route guards** in `/src/router/index.ts`: Check `requiresAuth`, `requiresAdmin`, `requiresVerified`
-- **Security model**: `useAuthStore` provides `isAdmin`, `isVerified`, `canAccess` computed properties
-- **Session management**: KV namespace `SESSIONS` for instant token revocation
-- **Secrets**: JWT_SECRET and REFRESH_SECRET set via `wrangler secret put`
-
-### Auth Worker Endpoints
-- `POST /auth/register` - Create new user account
-- `POST /auth/login` - Authenticate and get tokens
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - Invalidate session
-- `POST /auth/validate` - Validate token and get user data (used by other services)
-- `POST /auth/password-reset/request` - Request password reset
-- `POST /auth/password-reset/confirm` - Confirm password reset
-
-### CORS Configuration
-All Cloudflare Workers use Hono's built-in CORS middleware:
 ```typescript
+// workers/<service>/src/index.ts
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { Env } from './types';
 
-app.use('*', async (c, next) => {
-  const allowedOrigins = c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
-  
-  return cors({
-    origin: allowedOrigins,
-    credentials: true,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    maxAge: 86400,
-  })(c, next);
+const app = new Hono<{ Bindings: Env }>();
+
+// ============================================================================
+// GLOBAL MIDDLEWARE (Always in this order)
+// ============================================================================
+app.use('*', loggingMiddleware);  // Log all requests
+app.use('*', corsMiddleware);     // Handle CORS
+app.use('*', authMiddleware);     // Validate JWT (if protected routes)
+
+// ============================================================================
+// HEALTH CHECK (Always first route)
+// ============================================================================
+app.get('/', (c) => {
+  return c.json({
+    service: 'Service Name',
+    version: '1.0.0',
+    status: 'healthy',
+    environment: c.env.ENVIRONMENT,
+    timestamp: new Date().toISOString(),
+  });
 });
+
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ============================================================================
+// ROUTES (Use Hono router)
+// ============================================================================
+app.route('/auth', authRoutes);   // Sub-routers for organization
+
+// ============================================================================
+// ERROR HANDLING (Always last)
+// ============================================================================
+app.notFound((c) => {
+  return c.json({ error: 'Not Found', code: 'service/not-found' }, 404);
+});
+
+app.onError((err, c) => {
+  console.error('[Service Error]', err);
+  return c.json({ error: 'Internal Error', code: 'service/error' }, 500);
+});
+
+export default app;
 ```
 
-### State Management with Pinia
-All stores in `/src/stores/` follow this pattern:
+### 2. Service Bindings Pattern (API Gateway)
+
+**DO NOT use HTTP fetch() between workers. Use service bindings:**
+
 ```typescript
-// Standard store structure
-export const useXStore = defineStore('x', () => {
-  const data = ref<T[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+// ❌ WRONG: HTTP fetch between workers
+const response = await fetch('https://auth-service.workers.dev/auth/validate', {
+  method: 'POST',
+  body: JSON.stringify({ token })
+});
+
+// ✅ CORRECT: Service binding (direct worker-to-worker)
+const request = new Request('https://dummy.url/auth/validate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ token })
+});
+const response = await c.env.AUTH_SERVICE.fetch(request);
+```
+
+**wrangler.toml configuration:**
+```toml
+[[services]]
+binding = "AUTH_SERVICE"
+service = "b2b-auth-service"
+```
+
+### 3. D1 Database Operations
+
+**Always use parameterized queries (prevent SQL injection):**
+
+```typescript
+// ✅ CORRECT: Parameterized query
+const result = await c.env.DB.prepare(
+  'SELECT * FROM users WHERE email = ?'
+).bind(email).first();
+
+// ❌ WRONG: String concatenation
+const result = await c.env.DB.prepare(
+  `SELECT * FROM users WHERE email = '${email}'`
+).first();
+```
+
+**Transaction pattern for multi-table operations:**
+```typescript
+await c.env.DB.batch([
+  c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?)').bind(userId, email),
+  c.env.DB.prepare('INSERT INTO user_profile (user_id, company) VALUES (?, ?)').bind(userId, company)
+]);
+```
+
+### 4. JWT Authentication Flow
+
+**Token validation middleware (reusable pattern):**
+
+```typescript
+// workers/<service>/src/middleware/auth.ts
+import { Context, Next } from 'hono';
+import { verifyAccessToken } from '../utils/jwt';
+
+export async function authMiddleware(c: Context, next: Next) {
+  const authHeader = c.req.header('Authorization');
   
-  // Always cache reads (see /src/services/cache.ts)
-  const cacheKey = appCache.generateKey(...)
-  const cached = appCache.get<T>(cacheKey)
-  if (cached) return cached
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized', code: 'auth/missing-token' }, 401);
+  }
   
-  // Invalidate on writes
-  appCache.invalidate()
-})
-```
-
-
-### Inventory Integration
-Products have TWO stock fields:
-- `stock` (number): B2B allocated stock in Firestore
-- Shopify inventory via `shopifyVariantId`: Fetched from inventory-service worker
-
-**Stock sync workflow**:
-1. Firebase Functions webhook receives Stripe invoice.sent
-2. Reduces `stock` in Firestore products collection
-3. Calls inventory-service `/webhook/stock-update` to reduce Shopify inventory
-4. On invoice void: Both stocks are restored
-
-See `/functions/src/handlers/webhookHandlers.js` for implementation.
-
-### Type System
-All types exported from `/src/types/index.ts` as single import:
-```typescript
-import type { Product, UserProfile, Order } from '@/types'
-```
-
-**Critical types**:
-- `Product.shopifyVariantId` - Links to Shopify for real-time inventory
-- `UserProfile.isVerified` - Admin approval status
-- `OrderStatus` - Mirrors Stripe invoice states
-
-### Stripe Integration
-**Invoice-based payments** (NOT checkout sessions):
-- Functions create Stripe invoices with metadata: `{ userId, shopifyVariantId, productName }`
-- Webhooks in `/functions/src/functions/webhooks.js` handle: `invoice.sent`, `invoice.payment_succeeded`, `invoice.voided`
-- All invoice amounts in **cents** (minor currency units)
-
-Expanded invoice fields for tax rates:
-```javascript
-const EXPANDED_INVOICE_FIELDS = ['lines.data.price', 'total_tax_amounts.tax_rate']
-```
-
-### i18n Conventions
-- Translation files in `/src/i18n/locales/`
-- Use `const { t } = useI18n()` in components
-- Notification messages use i18n: `t('auth.welcomeBack')`
-- All user-facing errors translated
-
-### Firebase Functions Structure
-Entry: `/functions/src/index.js` exports all functions
-Organized by feature:
-- `/functions/products.js` - Firestore triggers on product changes (sync to Stripe)
-- `/functions/customers.js` - Firestore triggers on user changes
-- `/functions/webhooks.js` - Stripe webhook handler
-- `/functions/welcomeEmail.js`, `/functions/verificationEmail.js` - Email triggers
-
-**Emulator detection**: `isEmulator` flag skips secret requirements in dev.
-
-### Cloudflare Workers Architecture
-Three workers in `/workers/`:
-1. **inventory-service**: Hono app, D1 database, Shopify API integration
-2. **email-service**: SendGrid integration for transactional emails  
-3. **r2-bucket**: Image upload/management with R2 storage
-
-All use environment-based configuration in `wrangler.toml` and secrets via `wrangler secret put`.
-
-## Common Gotchas
-
-### Firestore Rules
-`firestore.rules` is currently **WIDE OPEN** for emulator testing (`allow read, write: if true`). Production rules commented out - must be enabled before deployment.
-
-### Router Redirect Loops
-Watch for verification/auth loops in `/src/router/index.ts`. The guard checks:
-1. Auth required → redirect to /auth
-2. Verified required → redirect to /verification-pending  
-3. Admin bypass for verification
-
-**Pattern**: Always check `authStore.initializing` before navigation decisions.
-
-### Stripe Metadata Extraction
-Invoice line items store product context in metadata:
-```javascript
-lineItem.metadata?.shopifyVariantId
-lineItem.metadata?.productName
-```
-This metadata drives stock reduction. Missing metadata = no stock sync.
-
-### Image Upload Flow
-1. Frontend uploads to `/workers/r2-bucket` worker
-2. Worker returns public R2 URL: `https://pub-{hash}.r2.dev/{path}`
-3. Store URL in `product.imageUrl` or `product.images[]`
-
-**Component**: `/src/components/admin/ImageUpload.vue` handles this flow.
-
-## Key Files Reference
-
-- **Auth flow**: `src/stores/auth.ts` (348 lines, comprehensive error handling)
-- **Product management**: `src/stores/products.ts` (client-side search, cache integration)
-- **Webhook processing**: `functions/src/handlers/webhookHandlers.js` (stock sync logic)
-- **Worker endpoints**: `workers/inventory-service/src/index.ts` (API routes with CORS)
-- **Firebase init**: `src/init/firebase.ts` (emulator auto-connect)
-
-## Development Commands Quick Reference
-
-```bash
-# Frontend
-npm run dev              # Start Vite dev server
-npm run build            # Production build
-npm run deploy:firebase  # Deploy to Firebase Hosting
-
-# Emulator & Testing
-firebase emulators:start           # Start all emulators
-npm run populate-emulator          # Seed products
-npm run mock-product:100           # Seed 100 products
-
-# Firebase Functions
-cd functions && npm run serve      # Functions emulator only
-cd functions && npm run deploy     # Deploy functions
-
-# Cloudflare Workers
-cd workers/<service> && npm run dev     # Local development
-cd workers/<service> && npm run deploy  # Deploy to Cloudflare
-wrangler secret put SENDGRID_API_KEY    # Set worker secrets
-```
-
-## Active Migration: Firebase → Cloudflare Workers
-
-**STATUS**: Planning phase - See `/MIGRATION.md` for full strategy
-
-This codebase is undergoing a phased migration from Firebase to Cloudflare Workers to reduce costs (~70-85% savings) and improve global performance. Development happens in the `feature/cloudflare-migration` branch.
-
-### Current State (Firebase)
-- Frontend: Firebase Hosting
-- Backend: Firebase Functions
-- Database: Firestore (NoSQL)
-- Auth: Firebase Auth
-- Partial CF: 3 workers (inventory, email, r2-bucket)
-
-### Target State (Cloudflare)
-- Frontend: Cloudflare Pages
-- Backend: Cloudflare Workers
-- Database: D1 (SQL)
-- Auth: Custom JWT-based (Workers + KV)
-- Workers: 7+ services (modular architecture)
-
-### Key Migration Decisions
-1. **Database**: Firestore → D1 (SQL schema designed in MIGRATION.md)
-2. **Auth**: Firebase Auth → Custom JWT + KV sessions
-3. **API**: Monolithic Functions → Microservice Workers
-4. **Hosting**: Firebase Hosting → Cloudflare Pages
-
-### Feature Flags Pattern
-Use environment variables to toggle between systems:
-```typescript
-export const config = {
-  useCloudflareAuth: import.meta.env.VITE_USE_CF_AUTH === 'true',
-  useCloudflareAPI: import.meta.env.VITE_USE_CF_API === 'true',
-  rolloutPercentage: parseInt(import.meta.env.VITE_ROLLOUT_PERCENT || '0')
+  const token = authHeader.substring(7);
+  
+  try {
+    const user = await verifyAccessToken(token, c.env.JWT_SECRET);
+    c.set('user', user);  // Attach user to context
+    await next();
+  } catch (error) {
+    return c.json({ error: 'Unauthorized', code: 'auth/invalid-token' }, 401);
+  }
 }
 ```
 
-### Adapter Pattern for Services
-All API calls go through adapters that switch between Firebase/Cloudflare:
+**Access user in route handlers:**
 ```typescript
-// src/services/api/adapter.ts
-export const useFirebase = import.meta.env.VITE_USE_FIREBASE === 'true'
-export const productsApi = useFirebase ? productsFirebase : productsCloudflare
+app.get('/profile', authMiddleware, async (c) => {
+  const user = c.get('user');  // Get user from context
+  return c.json({ user });
+});
 ```
 
-See `/MIGRATION.md` for complete strategy, timelines, and phase details.
+### 5. Frontend Auth Store Pattern
 
-## Notes
-- This platform serves a dual inventory model: Shopify B2C + Firebase B2B
-- Telegram notifications configured for invoice events (check `functions/src/config/telegram.js`)
-- VAT validation utilities in `src/utils/vatValidation.ts`
-- Image gallery component supports multiple images per product
+**Token management with automatic refresh:**
+
+```typescript
+// src/stores/auth.ts
+const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${accessToken.value}`
+  };
+
+  let response = await fetch(url, { ...options, headers });
+
+  // Auto-refresh on 401
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      headers.Authorization = `Bearer ${accessToken.value}`;
+      response = await fetch(url, { ...options, headers });
+    } else {
+      clearAuthData();
+      router.push('/auth');
+      throw new Error('Session expired');
+    }
+  }
+
+  return response;
+};
+```
+
+### 6. Error Handling Standard
+
+**Consistent error response format:**
+
+```typescript
+// All services return errors in this format:
+{
+  "error": "Validation Error",
+  "code": "service/validation-error",  // service/error-type pattern
+  "message": "Email is required",
+  "statusCode": 400
+}
+```
+
+**Custom error class pattern:**
+```typescript
+// workers/<service>/src/types/errors.ts
+export class ServiceError extends Error {
+  constructor(
+    public code: string,
+    public message: string,
+    public statusCode: number = 500
+  ) {
+    super(message);
+    this.name = 'ServiceError';
+  }
+}
+
+// Usage:
+throw new ServiceError('auth/user-not-found', 'User not found', 404);
+```
+
+### 7. Environment Variable Management
+
+**wrangler.toml structure (EVERY worker):**
+
+```toml
+name = "service-name"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Top-level = production (default)
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "..."
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGINS = "https://yourdomain.com"
+
+# Dev environment
+[env.dev]
+name = "service-name-dev"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "..."
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+ALLOWED_ORIGINS = "http://localhost:5173"
+```
+
+**Secrets (never in wrangler.toml):**
+```bash
+# Set secrets per environment
+wrangler secret put JWT_SECRET
+wrangler secret put JWT_SECRET --env dev
+```
+
+---
+
+## 🚀 Critical Workflows
+
+### Deploy a Worker
+
+```bash
+cd workers/<service-name>
+
+# Deploy to dev
+npm run deploy:dev
+# OR: wrangler deploy --env dev
+
+# Deploy to prod (default)
+npm run deploy
+# OR: wrangler deploy
+
+# Monitor logs
+wrangler tail                  # Production logs
+wrangler tail --env dev        # Dev logs
+```
+
+### Database Migrations
+
+```bash
+# Create migration file
+# /migrations/00X_description.sql
+
+# Apply to dev
+wrangler d1 execute b2b-dev --env dev --file ./migrations/00X_description.sql
+
+# Apply to prod (AFTER testing in dev!)
+wrangler d1 execute b2b-prod --remote --file ./migrations/00X_description.sql
+
+# Query database
+wrangler d1 execute b2b-prod --remote --command "SELECT * FROM users LIMIT 5"
+```
+
+### Frontend Development
+
+```bash
+# Start dev server (connects to production workers by default!)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+**Frontend connects to workers via:**
+```typescript
+// src/stores/auth.ts
+const VITE_API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787'
+```
+
+---
+
+## ⚠️ Common Mistakes to AVOID
+
+### 1. ❌ Using Firebase patterns in Cloudflare workers
+
+```typescript
+// ❌ WRONG: Firebase-style imports
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
+// ✅ CORRECT: D1 database binding
+const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+```
+
+### 2. ❌ HTTP fetch between workers
+
+```typescript
+// ❌ WRONG: HTTP overhead, can fail
+const response = await fetch('https://stripe-service.workers.dev/customers', {...});
+
+// ✅ CORRECT: Service binding (direct)
+const request = new Request('https://dummy/customers', {...});
+const response = await c.env.STRIPE_SERVICE.fetch(request);
+```
+
+### 3. ❌ Hardcoded URLs/secrets
+
+```typescript
+// ❌ WRONG: Hardcoded
+const JWT_SECRET = 's87R+vvfw+qLIp5S7lyb...';
+
+// ✅ CORRECT: From environment
+const user = await verifyAccessToken(token, c.env.JWT_SECRET);
+```
+
+### 4. ❌ SQL injection vulnerabilities
+
+```typescript
+// ❌ WRONG: String concatenation
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+
+// ✅ CORRECT: Parameterized
+const result = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+```
+
+### 5. ❌ Missing CORS headers
+
+```typescript
+// ❌ WRONG: No CORS middleware
+app.get('/api/products', async (c) => {...});
+
+// ✅ CORRECT: CORS middleware on ALL routes
+app.use('*', corsMiddleware);
+app.get('/api/products', async (c) => {...});
+```
+
+---
+
+## 📋 Code Quality Standards
+
+### File Organization (STRICT)
+
+```
+workers/<service>/
+├── src/
+│   ├── index.ts              # Main entry point (Hono app)
+│   ├── types/
+│   │   ├── index.ts          # Export all types
+│   │   └── errors.ts         # Custom error classes
+│   ├── routes/
+│   │   ├── auth.routes.ts    # Route handlers
+│   │   └── admin.routes.ts
+│   ├── middleware/
+│   │   ├── cors.ts           # CORS middleware
+│   │   ├── logging.ts        # Request logging
+│   │   └── auth.ts           # JWT validation
+│   ├── services/
+│   │   └── user.service.ts   # Business logic (DB ops)
+│   └── utils/
+│       ├── jwt.ts            # JWT helpers
+│       └── validators.ts     # Input validation
+├── wrangler.toml             # Cloudflare config
+├── package.json
+└── tsconfig.json
+```
+
+### TypeScript Standards
+
+```typescript
+// ALWAYS use strict TypeScript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  }
+}
+
+// ALWAYS define Env type
+// workers/<service>/src/types/index.ts
+export interface Env {
+  DB: D1Database;
+  SESSIONS: KVNamespace;
+  JWT_SECRET: string;
+  ENVIRONMENT: 'development' | 'production';
+  ALLOWED_ORIGINS: string;
+}
+
+// ALWAYS type function parameters and returns
+async function getUserById(
+  db: D1Database,
+  userId: string
+): Promise<User | null> {
+  const result = await db.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+  return result as User | null;
+}
+```
+
+### Naming Conventions
+
+```typescript
+// Files: kebab-case
+auth.routes.ts
+user.service.ts
+jwt.ts
+
+// Variables/Functions: camelCase
+const accessToken = '...';
+async function createUser() {}
+
+// Classes/Interfaces/Types: PascalCase
+interface UserProfile {}
+class ServiceError extends Error {}
+type AuthTokens = { accessToken: string };
+
+// Constants: UPPER_SNAKE_CASE
+const ACCESS_TOKEN_KEY = 'b2b_access_token';
+const DEFAULT_PAGE_SIZE = 20;
+
+// Environment bindings: UPPER_CASE
+c.env.DB
+c.env.JWT_SECRET
+c.env.STRIPE_SERVICE
+```
+
+---
+
+## 🔐 Security Checklist
+
+**Before deploying ANY worker:**
+
+- [ ] All routes use CORS middleware
+- [ ] Protected routes use `authMiddleware`
+- [ ] All DB queries use parameterized statements (`.bind()`)
+- [ ] No secrets in `wrangler.toml` (use `wrangler secret put`)
+- [ ] Input validation on ALL user inputs
+- [ ] Error messages don't leak sensitive data
+- [ ] JWT tokens have expiration (`exp` claim)
+- [ ] KV sessions invalidated on logout
+- [ ] Rate limiting on public endpoints (API Gateway)
+
+---
+
+## �️ Database Schema - Inventory Management (CRITICAL)
+
+### ⚠️ DEPRECATED COLUMNS - DO NOT USE!
+
+**The `products` table has DEPRECATED columns that MUST NOT be used in any code:**
+
+```sql
+-- ❌ DEPRECATED - DO NOT USE THESE COLUMNS:
+products.stock              -- Use product_inventory.total_stock instead
+products.in_stock           -- Compute from product_inventory (b2b_stock + b2c_stock > 0)
+products.shopify_product_id -- Use product_inventory.shopify_product_id instead
+products.shopify_variant_id -- Use product_inventory.shopify_variant_id instead
+```
+
+**Why they still exist:** D1 doesn't support `DROP COLUMN`, so they remain in the schema but are completely ignored.
+
+### ✅ Inventory Management - Single Source of Truth
+
+**ALWAYS use the `product_inventory` table for ALL stock operations:**
+
+```typescript
+// ✅ CORRECT: Query inventory table
+const inventory = await c.env.DB.prepare(
+  'SELECT * FROM product_inventory WHERE product_id = ?'
+).bind(productId).first();
+
+// Access stock:
+const totalStock = inventory.total_stock;
+const b2bStock = inventory.b2b_stock;
+const b2cStock = inventory.b2c_stock;
+const isInStock = (inventory.b2b_stock + inventory.b2c_stock) > 0;
+
+// ❌ WRONG: Never query products table for stock
+const product = await c.env.DB.prepare(
+  'SELECT stock FROM products WHERE id = ?'
+).bind(productId).first();
+```
+
+### Product Inventory Table Schema
+
+```sql
+CREATE TABLE product_inventory (
+  product_id TEXT PRIMARY KEY,
+  
+  -- Stock allocation (B2B/B2C split)
+  total_stock INTEGER NOT NULL DEFAULT 0,      -- Total available units
+  b2b_stock INTEGER NOT NULL DEFAULT 0,        -- Allocated to B2B platform
+  b2c_stock INTEGER NOT NULL DEFAULT 0,        -- Allocated to B2C (Shopify)
+  reserved_stock INTEGER NOT NULL DEFAULT 0,   -- In checkout (pending)
+  
+  -- Shopify synchronization
+  shopify_product_id TEXT,
+  shopify_variant_id TEXT,
+  shopify_inventory_item_id TEXT,              -- Required for Shopify API updates
+  shopify_location_id TEXT,
+  sync_enabled INTEGER DEFAULT 0,              -- 1 = auto-sync to Shopify
+  last_synced_at TEXT,
+  sync_error TEXT,
+  
+  -- Constraints
+  CHECK (b2b_stock >= 0),
+  CHECK (b2c_stock >= 0),
+  CHECK (reserved_stock >= 0),
+  CHECK (total_stock >= 0),
+  CHECK (b2b_stock + b2c_stock <= total_stock),
+  CHECK (reserved_stock <= total_stock)
+);
+```
+
+### Stock Operations Pattern
+
+**Always JOIN products with product_inventory:**
+
+```typescript
+// ✅ CORRECT: Get product with inventory
+const query = `
+  SELECT 
+    p.*,
+    i.total_stock,
+    i.b2b_stock,
+    i.b2c_stock,
+    i.reserved_stock,
+    i.shopify_variant_id,
+    i.sync_enabled
+  FROM products p
+  LEFT JOIN product_inventory i ON p.id = i.product_id
+  WHERE p.id = ?
+`;
+const result = await c.env.DB.prepare(query).bind(productId).first();
+```
+
+**Update stock (B2B order example):**
+
+```typescript
+// ✅ CORRECT: Update via product_inventory table
+await c.env.DB.prepare(`
+  UPDATE product_inventory 
+  SET 
+    total_stock = total_stock - ?,
+    b2b_stock = b2b_stock - ?,
+    updated_at = ?
+  WHERE product_id = ? AND b2b_stock >= ?
+`).bind(quantity, quantity, new Date().toISOString(), productId, quantity).run();
+
+// Log the change
+await c.env.DB.prepare(`
+  INSERT INTO inventory_sync_log (id, product_id, action, source, total_change, b2b_change, created_at)
+  VALUES (?, ?, 'b2b_order', 'checkout', ?, ?, ?)
+`).bind(nanoid(), productId, -quantity, -quantity, new Date().toISOString()).run();
+```
+
+### Audit Trail
+
+**All inventory changes MUST be logged:**
+
+```typescript
+// After any stock change, log it:
+await c.env.DB.prepare(`
+  INSERT INTO inventory_sync_log (
+    id, product_id, action, source,
+    total_change, b2b_change, b2c_change,
+    total_stock_after, b2b_stock_after, b2c_stock_after,
+    reference_id, reference_type, created_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`).bind(
+  nanoid(),
+  productId,
+  'b2b_order',           // action
+  'checkout',            // source
+  -quantity,             // total_change
+  -quantity,             // b2b_change
+  0,                     // b2c_change
+  newTotalStock,         // snapshot after
+  newB2BStock,
+  b2cStock,
+  orderId,               // reference
+  'order',
+  new Date().toISOString()
+).run();
+```
+
+---
+
+## �📚 Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `/workers/api-gateway/src/index.ts` | Service orchestration logic |
+| `/workers/auth-service/src/index.ts` | JWT auth implementation |
+| `/workers/auth-service/src/utils/jwt.ts` | JWT sign/verify functions |
+| `/src/stores/auth.ts` | Frontend auth state + auto-refresh |
+| `/src/router/index.ts` | Route guards (requiresAuth, requiresVerified) |
+| `/migrations/001_initial_schema.sql` | Complete D1 schema (19 tables) |
+| `/migrations/003_product_inventory_system.sql` | **Inventory management system (B2B/B2C)** |
+| `/workers/stripe-service/src/index.ts` | Stripe API wrapper |
+
+---
+
+## 🎯 When Starting a New Task
+
+1. **Identify the service** - Which worker does this belong to?
+2. **Check existing patterns** - Look at similar routes/functions in that service
+3. **Follow the structure** - Use the exact file organization above
+4. **Use service bindings** - Never HTTP fetch between workers
+5. **Test locally first** - `wrangler dev` before deploying
+6. **Check types** - Ensure TypeScript compiles without errors
+7. **Deploy to dev** - Test in dev environment before prod
+
+---
+
+## 🚨 Emergency Rollback
+
+```bash
+# View deployment history
+wrangler deployments list
+
+# Rollback to previous version
+wrangler rollback
+
+# Check logs for errors
+wrangler tail
+```
+
+---
+
+**Last Updated**: October 24, 2025  
+**Questions?**: Check worker-specific README.md files in `/workers/<service>/`

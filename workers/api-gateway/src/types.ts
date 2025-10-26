@@ -21,6 +21,16 @@ export interface InventoryService extends Fetcher {
   fetch: (request: Request) => Promise<Response>;
 }
 
+export interface StripeService extends Fetcher {
+  // Stripe service is callable via service binding
+  fetch: (request: Request) => Promise<Response>;
+}
+
+export interface ShopifySyncService extends Fetcher {
+  // Shopify Sync service is callable via service binding
+  fetch: (request: Request) => Promise<Response>;
+}
+
 export interface Env {
   ENVIRONMENT: 'development' | 'production';
   
@@ -28,6 +38,11 @@ export interface Env {
   AUTH_SERVICE: AuthService;
   EMAIL_SERVICE: EmailService;
   INVENTORY_SERVICE: InventoryService;
+  STRIPE_SERVICE: StripeService;
+  SHOPIFY_SYNC_SERVICE: ShopifySyncService;
+  
+  // D1 Database binding (for invoice persistence)
+  DB: D1Database;
   
   // Allowed origins for CORS
   ALLOWED_ORIGINS: string;

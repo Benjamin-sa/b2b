@@ -31,8 +31,8 @@
             </div>
         </div>
 
-        <ProductsHeader :search-term="filters.searchTerm" :active-category="filters.category"
-            :in-stock-only="filters.inStock" :sort-by="filters.sortBy" :is-loading="productStore.isLoading"
+        <ProductsHeader :search-term="filters.search_term" :active-category="filters.category_id"
+            :in-stock-only="filters.in_stock" :sort-by="filters.sort_by" :is-loading="productStore.isLoading"
             :product-count="productStore.products.length" :total-count="productStore.products.length"
             :view-mode="viewMode" :price-range="priceRange" :has-advanced-filters="showAdvancedFilters"
             @search="handleSearch" @category-change="handleCategoryChange"
@@ -44,9 +44,9 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
+                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category_id')
                         }}</label>
-                        <select v-model="filters.category"
+                        <select v-model="filters.category_id"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
                             <option v-for="category in categories" :key="category" :value="category">{{ category }}
@@ -56,10 +56,10 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">{{
                             $t('products.filters.availability') }}</label>
-                        <select v-model="filters.inStock"
+                        <select v-model="filters.in_stock"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
-                            <option :value="true">{{ $t('products.filters.inStockOnly') }}</option>
+                            <option :value="true">{{ $t('products.filters.in_stockOnly') }}</option>
                         </select>
                     </div>
                     <div>
@@ -125,7 +125,7 @@
                     <div v-for="product in productStore.products" :key="product.id"
                         class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
                         <div class="flex items-center space-x-6">
-                            <img :src="product.imageUrl || '/placeholder-product.jpg'" :alt="product.name"
+                            <img :src="product.image_url || '/placeholder-product.jpg'" :alt="product.name"
                                 class="w-24 h-24 object-cover rounded-lg">
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ product.name }}</h3>
@@ -198,7 +198,7 @@ const categoryIdFromRoute = computed(() => route.params.categoryId as string || 
 
 // --- Local State for Filters ---
 const filters = reactive<ProductFilter>({
-    searchTerm: '',
+    search_term: '',
     categoryId: '',
     category: '',
     inStock: undefined,
@@ -212,35 +212,35 @@ const categories = ref<string[]>([]);
 // Watch for route changes to update category filter
 watch(categoryIdFromRoute, (newCategoryId) => {
     if (newCategoryId) {
-        filters.categoryId = newCategoryId;
-        filters.category = ''; // Clear old category filter
+        filters.category_id_id = newCategoryId;
+        filters.category_id = ''; // Clear old category filter
     } else {
-        filters.categoryId = '';
+        filters.category_id_id = '';
     }
 }, { immediate: true });
 
 // Get current category info for display
 const currentCategory = computed(() => {
-    if (!filters.categoryId) return null;
-    return categoryStore.categories.find(cat => cat.id === filters.categoryId);
+    if (!filters.category_id_id) return null;
+    return categoryStore.categories.find(cat => cat.id === filters.category_id_id);
 });
 
 // --- Event Handlers ---
 const handleSearch = (searchTerm: string) => {
-    filters.searchTerm = searchTerm;
+    filters.search_term = searchTerm;
 };
 
 const handleCategoryChange = (category: string) => {
-    filters.category = category;
-    filters.categoryId = ''; // Clear categoryId when using old category filter
+    filters.category_id = category;
+    filters.category_id_id = ''; // Clear categoryId when using old category filter
 };
 
 const handleStockFilterChange = (inStock: boolean) => {
-    filters.inStock = inStock || undefined;
+    filters.in_stock = inStock || undefined;
 };
 
 const handleSortChange = (sortBy: string) => {
-    filters.sortBy = sortBy as 'name' | 'price' | 'createdAt' | 'updatedAt';
+    filters.sort_by = sort_by as 'name' | 'price' | 'createdAt' | 'updatedAt';
 };
 
 const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -249,20 +249,20 @@ const handleViewModeChange = (mode: 'grid' | 'list') => {
 
 const handlePriceRangeChange = () => {
     if (priceRange.value === '') {
-        filters.minPrice = undefined;
-        filters.maxPrice = undefined;
+        filters.min_price = undefined;
+        filters.max_price = undefined;
     } else if (priceRange.value === '0-50') {
-        filters.minPrice = 0;
-        filters.maxPrice = 50;
+        filters.min_price = 0;
+        filters.max_price = 50;
     } else if (priceRange.value === '50-100') {
-        filters.minPrice = 50;
-        filters.maxPrice = 100;
+        filters.min_price = 50;
+        filters.max_price = 100;
     } else if (priceRange.value === '100-500') {
-        filters.minPrice = 100;
-        filters.maxPrice = 500;
+        filters.min_price = 100;
+        filters.max_price = 500;
     } else if (priceRange.value === '500+') {
-        filters.minPrice = 500;
-        filters.maxPrice = undefined;
+        filters.min_price = 500;
+        filters.max_price = undefined;
     }
 };
 
@@ -275,11 +275,11 @@ const toggleAdvancedFilters = () => {
 // The single, unified function to fetch data based on current filters
 const applyFiltersAndFetch = (loadMore = false) => {
     console.log('🔍 Applying filters and fetching products with:');
-    console.log('  - Search term:', filters.searchTerm);
-    console.log('  - Category:', filters.category);
-    console.log('  - In stock:', filters.inStock);
-    console.log('  - Price range:', filters.minPrice, 'to', filters.maxPrice);
-    console.log('  - Sort by:', filters.sortBy);
+    console.log('  - Search term:', filters.search_term);
+    console.log('  - Category:', filters.category_id);
+    console.log('  - In stock:', filters.in_stock);
+    console.log('  - Price range:', filters.min_price, 'to', filters.max_price);
+    console.log('  - Sort by:', filters.sort_by);
     console.log('  - Load more:', loadMore);
     productStore.fetchProducts(filters, loadMore);
 };
@@ -297,13 +297,13 @@ const loadMore = () => {
 };
 
 const clearFilters = () => {
-    filters.searchTerm = '';
-    filters.category = '';
-    filters.categoryId = categoryIdFromRoute.value || ''; // Keep category from route
-    filters.inStock = undefined;
-    filters.minPrice = undefined;
-    filters.maxPrice = undefined;
-    filters.sortBy = 'name';
+    filters.search_term = '';
+    filters.category_id = '';
+    filters.category_id_id = categoryIdFromRoute.value || ''; // Keep category from route
+    filters.in_stock = undefined;
+    filters.min_price = undefined;
+    filters.max_price = undefined;
+    filters.sort_by = 'name';
     priceRange.value = '';
     showAdvancedFilters.value = false;
     // The watch effect will automatically trigger a re-fetch

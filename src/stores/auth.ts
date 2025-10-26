@@ -119,7 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       console.log('Refreshing access token...')
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/refresh`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export const useAuthStore = defineStore('auth', () => {
         return false
       }
 
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/validate`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -230,9 +230,8 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = ''
 
     try {
-      console.log('Logging in:', credentials.email)
       
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/login`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -282,7 +281,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       console.log('Registering user:', data.email)
 
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/register`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -331,7 +330,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // Call logout endpoint to invalidate session on server
       if (refreshToken.value) {
-        await fetch(`${VITE_API_GATEWAY_URL}auth/logout`, {
+        await fetch(`${VITE_API_GATEWAY_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -374,7 +373,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       console.log('Requesting password reset for:', email)
 
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/password-reset/request`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/password-reset/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -413,7 +412,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       console.log('Confirming password reset...')
 
-      const response = await fetch(`${VITE_API_GATEWAY_URL}auth/password-reset/confirm`, {
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/password-reset/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -452,7 +451,7 @@ export const useAuthStore = defineStore('auth', () => {
   const getErrorMessage = (error: any): { title: string; message: string } => {
     const errorMessage = error.message?.toLowerCase() || ''
     
-    if (errorMessage.includes('invalid credentials') || errorMessage.includes('incorrect password')) {
+    if (errorMessage.includes('invalid credentials') || errorMessage.includes('Invalid password')) {
       return {
         title: t('auth.loginFailed'),
         message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')

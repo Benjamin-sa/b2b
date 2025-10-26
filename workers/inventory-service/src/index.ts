@@ -24,6 +24,7 @@ import { cors } from 'hono/cors';
 import type { Env, InventoryError } from './types';
 import { loggingMiddleware } from './middleware/logging';
 import productRoutes from './routes/product.routes';
+import categoryRoutes from './routes/category.routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -76,10 +77,11 @@ app.get('/health', (c) => {
 });
 
 // ============================================================================
-// PRODUCT ROUTES
+// ROUTES
 // ============================================================================
 
 app.route('/products', productRoutes);
+app.route('/categories', categoryRoutes);
 
 // ============================================================================
 // ERROR HANDLING

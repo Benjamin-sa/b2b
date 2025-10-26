@@ -78,22 +78,22 @@
                                 <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
-                                    <span v-if="product.shopifyVariantId">{{ $t('productDetail.sku', {
+                                    <span v-if="product.shopify_variant_id">{{ $t('productDetail.sku', {
                                         sku:
-                                            product.shopifyVariantId
+                                            product.shopify_variant_id
                                     }) }}</span>
-                                    <span v-if="product.partNumber">{{ $t('productDetail.partNumber', {
+                                    <span v-if="product.part_number">{{ $t('productDetail.partNumber', {
                                         partNumber:
-                                            product.partNumber
+                                            product.part_number
                                     }) }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center ml-4">
-                                <div v-if="product.comingSoon"
+                                <div v-if="product.coming_soon"
                                     class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
                                     {{ $t('productDetail.comingSoon') }}
                                 </div>
-                                <div v-else-if="!product.inStock"
+                                <div v-else-if="!product.in_stock"
                                     class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
                                     {{ $t('productDetail.outOfStock') }}
                                 </div>
@@ -114,13 +114,13 @@
                                 <span class="text-4xl font-bold text-gray-900">
                                     €{{ formatPrice(product.price) }}
                                 </span>
-                                <span v-if="product.originalPrice && product.originalPrice > product.price"
+                                <span v-if="product.original_price && product.original_price > product.price"
                                     class="text-xl text-gray-500 line-through">
-                                    €{{ formatPrice(product.originalPrice) }}
+                                    €{{ formatPrice(product.original_price) }}
                                 </span>
-                                <span v-if="product.originalPrice && product.originalPrice > product.price"
+                                <span v-if="product.original_price && product.original_price > product.price"
                                     class="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
-                                    {{ Math.round(((product.originalPrice - product.price) / product.originalPrice) *
+                                    {{ Math.round(((product.original_price - product.price) / product.original_price) *
                                         100) }}% OFF
                                 </span>
                             </div>
@@ -161,7 +161,7 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
-                                        :disabled="!canAddMore || product.comingSoon || quantity <= inputMinValue"
+                                        :disabled="!canAddMore || product.coming_soon || quantity <= inputMinValue"
                                         class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-lg">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -169,11 +169,11 @@
                                         </svg>
                                     </button>
                                     <input v-model.number="quantity" type="number" :min="inputMinValue"
-                                        :max="inputMaxValue" :disabled="!canAddMore || product.comingSoon"
+                                        :max="inputMaxValue" :disabled="!canAddMore || product.coming_soon"
                                         class="w-20 px-3 py-3 text-center border-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         @blur="validateQuantity" @input="validateQuantity" />
                                     <button @click="increaseQuantity"
-                                        :disabled="!canAddMore || product.comingSoon || quantity >= inputMaxValue"
+                                        :disabled="!canAddMore || product.coming_soon || quantity >= inputMaxValue"
                                         class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-lg">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -182,16 +182,16 @@
                                     </button>
                                 </div>
                                 <div class="text-sm text-gray-600">
-                                    <div v-if="product.minOrderQuantity">{{ $t('productDetail.min') }} {{
-                                        product.minOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                    <div v-if="product.min_order_quantity">{{ $t('productDetail.min') }} {{
+                                        product.min_order_quantity }} {{ product.unit || $t('productDetail.pieces') }}
                                     </div>
                                     <div v-if="isLimitedByStock">
                                         {{ $t('productDetail.max') }} {{ inputMaxValue }} {{ product.unit ||
                                             $t('productDetail.pieces') }}
                                         <span class="text-red-600">{{ $t('productDetail.limitedByStock') }}</span>
                                     </div>
-                                    <div v-else-if="product.maxOrderQuantity">{{ $t('productDetail.max') }} {{
-                                        product.maxOrderQuantity }} {{ product.unit || $t('productDetail.pieces') }}
+                                    <div v-else-if="product.max_order_quantity">{{ $t('productDetail.max') }} {{
+                                        product.max_order_quantity }} {{ product.unit || $t('productDetail.pieces') }}
                                     </div>
                                     <div v-if="product.stock" class="text-xs text-gray-500 mt-1">
                                         {{ availableStock }} {{ $t('productDetail.available') }}
@@ -225,9 +225,9 @@
 
                         <!-- Add to Cart Button -->
                         <button @click="addToCart"
-                            :disabled="product.comingSoon || !product.inStock || !canOrder || isAddingToCart || !canAddMore"
+                            :disabled="product.coming_soon || !product.in_stock || !canOrder || isAddingToCart || !canAddMore"
                             :class="[
-                                product.comingSoon || !product.inStock || !canAddMore
+                                product.coming_soon || !product.in_stock || !canAddMore
                                     ? 'bg-gray-300 cursor-not-allowed'
                                     : !canOrder
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
@@ -261,8 +261,8 @@
                             </svg>
 
                             <span v-if="isAddingToCart">{{ $t('productDetail.addingToCart') }}</span>
-                            <span v-else-if="product.comingSoon">{{ $t('productDetail.comingSoon') }}</span>
-                            <span v-else-if="!product.inStock">{{ $t('productDetail.outOfStock') }}</span>
+                            <span v-else-if="product.coming_soon">{{ $t('productDetail.comingSoon') }}</span>
+                            <span v-else-if="!product.in_stock">{{ $t('productDetail.outOfStock') }}</span>
                             <span v-else-if="!canOrder">{{ $t('productDetail.accountVerificationRequired') }}</span>
                             <span v-else-if="!canAddMore">{{ $t('productDetail.onlyItemsAvailable', { count: 0 })
                             }}</span>
@@ -338,11 +338,11 @@ const productImages = computed(() => {
     if (!product.value) return []
 
     const images = []
-    if (product.value.imageUrl) {
-        images.push(product.value.imageUrl)
+    if (product.value.image_url) {
+        images.push(product.value.image_url)
     }
     if (product.value.images && product.value.images.length > 0) {
-        images.push(...product.value.images.filter(img => img !== product.value!.imageUrl))
+        images.push(...product.value.images.filter(img => img !== product.value!.image_url))
     }
 
     return images
@@ -352,7 +352,7 @@ const formatPrice = (price: number) => {
     return price.toFixed(2)
 }
 
-const minOrder = computed(() => product.value?.minOrderQuantity || 1)
+const minOrder = computed(() => product.value?.min_order_quantity || 1)
 
 const rawRemainingCapacity = computed(() => {
     if (!product.value) return 0
@@ -363,7 +363,7 @@ const maxAddableQuantity = computed(() => {
     if (!product.value) return 0
     const remaining = rawRemainingCapacity.value
     if (!Number.isFinite(remaining)) {
-        return product.value.maxOrderQuantity || 999
+        return product.value.max_order_quantity || 999
     }
     return Math.max(0, remaining)
 })
@@ -394,12 +394,12 @@ const isLimitedByStock = computed(() => {
     if (!product.value) return false
     const remaining = rawRemainingCapacity.value
     if (!Number.isFinite(remaining)) return false
-    const maxOrderLimit = product.value.maxOrderQuantity || 999
+    const maxOrderLimit = product.value.max_order_quantity || 999
     return remaining < maxOrderLimit
 })
 
 const canAddMore = computed(() => {
-    return !!product.value && !product.value.comingSoon && product.value.inStock && maxAddableQuantity.value > 0
+    return !!product.value && !product.value.coming_soon && product.value.in_stock && maxAddableQuantity.value > 0
 })
 
 const validateQuantity = () => {
@@ -432,14 +432,14 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = async () => {
-    if (!product.value || product.value.comingSoon || !product.value.inStock || !canOrder.value || maxAddableQuantity.value <= 0) return
+    if (!product.value || product.value.coming_soon || !product.value.in_stock || !canOrder.value || maxAddableQuantity.value <= 0) return
 
     isAddingToCart.value = true
     addedToCartRecently.value = false
 
     try {
         const cartItem: CartItem = {
-            productId: product.value.id,
+            product_id: product.value.id,
             product: product.value,
             quantity: quantity.value,
             price: product.value.price,
@@ -535,7 +535,7 @@ onMounted(async () => {
 
         if (fetchedProduct) {
             product.value = fetchedProduct
-            quantity.value = fetchedProduct.minOrderQuantity || 1
+            quantity.value = fetchedProduct.min_order_quantity || 1
         } else {
             // Product not found
             product.value = null

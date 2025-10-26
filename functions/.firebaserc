@@ -1,8 +1,0 @@
-{
-  "projects": {
-    "default": "motordash-cf401",
-    "motordash": "motordash-cf401"
-  },
-  "targets": {},
-  "etags": {}
-}

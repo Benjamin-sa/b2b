@@ -14,7 +14,7 @@ export interface Env {
   REFRESH_TOKEN_TTL: string;
   PASSWORD_MIN_LENGTH: string;
   ALLOWED_ORIGINS: string;
-  STRIPE_SECRET_KEY?: string; // Optional: Stripe integration
+  STRIPE_SERVICE: Fetcher; // Service binding to stripe-service worker
 }
 
 export interface User {
@@ -84,9 +84,19 @@ export interface AuthResponse {
     companyName?: string;
     firstName?: string;
     lastName?: string;
+    phone?: string;
+    btwNumber?: string;
+    address?: {
+      street: string;
+      houseNumber: string;
+      postalCode: string;
+      city: string;
+      country: string;
+    };
     isVerified: boolean;
     isActive: boolean;
-    btwNumber?: string;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 

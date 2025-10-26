@@ -88,7 +88,8 @@ export const useCartStore = defineStore('cart', () => {
   const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 
   const addItem = async (item: CartItem): Promise<CartMutationResult> => {
-    if (!item.product.inStock || item.product.comingSoon) {
+    if (!item.product.in_stock || item.product.coming_soon) {
+      console.warn(`Product ${item.productId} is out of stock or coming soon`)
       return {
         status: 'unavailable',
         requestedQuantity: item.quantity,

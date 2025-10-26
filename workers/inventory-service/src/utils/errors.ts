@@ -41,6 +41,12 @@ export const errors = {
   forbidden: (message: string = 'Forbidden') =>
     createError('FORBIDDEN', message, 403),
 
+  conflict: (message: string, details?: any) =>
+    createError('CONFLICT', message, 409, details),
+
+  badRequest: (message: string, details?: any) =>
+    createError('BAD_REQUEST', message, 400, details),
+
   internalError: (message: string = 'Internal server error', details?: any) =>
     createError('INTERNAL_ERROR', message, 500, details),
 

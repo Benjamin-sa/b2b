@@ -229,6 +229,17 @@ async function createUserSession(
     refreshTokenTtl
   );
 
+  // Build address object if any address fields exist
+  const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
+    ? {
+        street: user.address_street || '',
+        houseNumber: user.address_house_number || '',
+        postalCode: user.address_postal_code || '',
+        city: user.address_city || '',
+        country: user.address_country || '',
+      }
+    : undefined;
+
   return {
     accessToken,
     refreshToken,
@@ -240,9 +251,13 @@ async function createUserSession(
       companyName: user.company_name || undefined,
       firstName: user.first_name || undefined,
       lastName: user.last_name || undefined,
+      phone: user.phone || undefined,
+      btwNumber: user.btw_number || undefined,
+      address,
       isVerified: user.is_verified === 1,
       isActive: user.is_active === 1,
-      btwNumber: user.btw_number || undefined,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     },
   };
 }

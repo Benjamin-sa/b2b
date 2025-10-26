@@ -1,0 +1,53 @@
+name = "b2b-shopify-sync-service"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ============================================
+# PRODUCTION (default)
+# ============================================
+
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGINS = "https://4tparts.com"
+
+# Shopify configuration (non-sensitive)
+SHOPIFY_STORE_DOMAIN = "motordashbnl.myshopify.com"
+SHOPIFY_API_VERSION = "2025-10"
+
+# ============================================
+# DEVELOPMENT
+# ============================================
+
+[env.dev]
+name = "b2b-shopify-sync-service-dev"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "your-dev-db-id"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:8787"
+SHOPIFY_STORE_DOMAIN = "your-dev-store.myshopify.com"
+SHOPIFY_API_VERSION = "2025-10"
+
+# ============================================
+# CRON TRIGGERS
+# ============================================
+# Full reconciliation every 5 minutes
+[triggers]
+crons = ["*/10 * * * *"]
+
+# ============================================
+# SECRETS (set via: wrangler secret put SECRET_NAME)
+# ============================================
+# SHOPIFY_ACCESS_TOKEN - Admin API access token
+# SHOPIFY_WEBHOOK_SECRET - For webhook signature verification
+# SHOPIFY_LOCATION_ID - Main warehouse location ID

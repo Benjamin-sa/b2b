@@ -102,33 +102,65 @@
 
                     <!-- Order Details -->
                     <div class="px-6 py-4 space-y-6">
-                        <!-- Order Items -->
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">{{ $t('orders.itemsPurchased') }}</h4>
-                            <div class="divide-y divide-gray-100">
-                                <div v-for="item in order.items" :key="item.productId"
-                                    class="py-3 flex items-start justify-between">
-                                    <div class="flex items-start space-x-3">
-                                        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.productName"
-                                            class="w-14 h-14 object-cover rounded-md border" />
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">{{ item.productName }}</p>
-                                            <p v-if="item.productSku" class="text-xs text-gray-500">
-                                                {{ $t('orders.sku') }}: {{ item.productSku }}
-                                            </p>
-                                            <p class="text-xs text-gray-500">
-                                                {{ item.quantity }} × €{{ formatPrice(item.unitPrice) }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="text-sm font-medium text-gray-900">
-                                        €{{ formatPrice(item.totalPrice) }}
-                                    </div>
-                                </div>
+                        <!-- Line Items Table -->
+                        <div v-if="order.items && order.items.length > 0">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">{{ $t('orders.items') }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {{ $t('orders.product') }}
+                                            </th>
+                                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {{ $t('orders.sku') }}
+                                            </th>
+                                            <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {{ $t('orders.quantity') }}
+                                            </th>
+                                            <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {{ $t('orders.unitPrice') }}
+                                            </th>
+                                            <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {{ $t('orders.total') }}
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr v-for="item in order.items" :key="item.id || item.stripeLineItemId" class="hover:bg-gray-50">
+                                            <td class="px-3 py-4">
+                                                <div class="flex items-center">
+                                                    <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.productName" 
+                                                         class="h-10 w-10 rounded object-cover mr-3" />
+                                                    <div>
+                                                        <div class="text-sm font-medium text-gray-900">
+                                                            {{ item.productName }}
+                                                        </div>
+                                                        <div v-if="item.brand" class="text-xs text-gray-500">
+                                                            {{ item.brand }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-4 text-sm text-gray-500">
+                                                {{ item.productSku || '-' }}
+                                            </td>
+                                            <td class="px-3 py-4 text-sm text-gray-900 text-right">
+                                                {{ item.quantity }}
+                                            </td>
+                                            <td class="px-3 py-4 text-sm text-gray-900 text-right">
+                                                €{{ formatPrice(item.unitPrice) }}
+                                            </td>
+                                            <td class="px-3 py-4 text-sm font-medium text-gray-900 text-right">
+                                                €{{ formatPrice(item.totalPrice) }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        <!-- Order Totals -->
+                        <!-- Order Summary -->
                         <div class="border-t border-gray-200 pt-4">
                             <h4 class="text-sm font-medium text-gray-900 mb-3">{{ $t('orders.orderSummary') }}</h4>
                             <div class="space-y-2">
@@ -137,47 +169,25 @@
                                     <span class="text-gray-600">{{ $t('orders.subtotal') }}</span>
                                     <span class="text-gray-900">€{{ formatPrice(order.subtotal) }}</span>
                                 </div>
-
-                                <!-- Shipping -->
-                                <div v-if="order.shipping > 0" class="flex justify-between text-sm">
-                                    <span class="text-gray-600">{{ $t('orders.shipping') }}</span>
-                                    <span class="text-gray-900">€{{ formatPrice(order.shipping) }}</span>
-                                </div>
-
+                                
                                 <!-- Tax -->
                                 <div v-if="order.tax > 0" class="flex justify-between text-sm">
                                     <span class="text-gray-600">{{ $t('orders.tax') }}</span>
                                     <span class="text-gray-900">€{{ formatPrice(order.tax) }}</span>
                                 </div>
-
+                                
+                                <!-- Shipping -->
+                                <div v-if="order.shipping > 0" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $t('orders.shipping') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.shipping) }}</span>
+                                </div>
+                                
                                 <!-- Total -->
                                 <div class="flex justify-between text-base font-medium border-t border-gray-200 pt-2">
                                     <span class="text-gray-900">{{ $t('orders.total') }}</span>
                                     <span class="text-gray-900">€{{ formatPrice(order.totalAmount) }}</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Shipping Address -->
-                        <div v-if="order.shippingAddress" class="text-sm text-gray-600">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('orders.shippingAddress') }}</h4>
-                            <div>
-                                <p v-if="order.shippingAddress.company">{{ order.shippingAddress.company }}</p>
-                                <p v-if="order.shippingAddress.contactPerson">{{ order.shippingAddress.contactPerson }}
-                                </p>
-                                <p>{{ order.shippingAddress.street }}</p>
-                                <p>
-                                    {{ order.shippingAddress.zipCode }}
-                                    {{ order.shippingAddress.city }}
-                                </p>
-                                <p>{{ order.shippingAddress.country }}</p>
-                            </div>
-                        </div>
-
-                        <!-- Order Notes -->
-                        <div v-if="order.notes" class="text-sm text-gray-600">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('orders.orderNotes') }}</h4>
-                            <p>{{ order.notes }}</p>
                         </div>
                     </div>
 
@@ -242,13 +252,8 @@ const refreshOrders = () => {
 
 const formatDate = (date: any) => {
     if (!date) return 'N/A'
-    if (date && typeof date.toDate === 'function') {
-        return date.toDate().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        })
-    }
+    
+    // Handle ISO string (from D1 database)
     if (typeof date === 'string') {
         const parsed = new Date(date)
         if (!isNaN(parsed.getTime())) {
@@ -260,6 +265,8 @@ const formatDate = (date: any) => {
         }
         return 'N/A'
     }
+    
+    // Handle Unix timestamp (milliseconds)
     if (typeof date === 'number') {
         return new Date(date).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -267,6 +274,8 @@ const formatDate = (date: any) => {
             day: 'numeric'
         })
     }
+    
+    // Handle Date object
     if (date instanceof Date) {
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
@@ -274,6 +283,7 @@ const formatDate = (date: any) => {
             day: 'numeric'
         })
     }
+    
     return 'N/A'
 }
 

@@ -29,19 +29,24 @@ function extractBearerToken(authHeader: string | undefined): string | null {
 }
 
 /**
- * Validate token with auth-service
+ * Validate token with auth-service via service binding
+ * Uses direct RPC call - no HTTP/network overhead!
  */
 async function validateToken(
   token: string,
-  authServiceUrl: string
+  authService: any
 ): Promise<AuthValidationResponse> {
-  const response = await fetch(`${authServiceUrl}/auth/validate`, {
+  // Create request for service binding
+  const request = new Request('http://internal/auth/validate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ accessToken: token }),
   });
+
+  // Service binding call (no network overhead!)
+  const response = await authService.fetch(request);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -70,8 +75,8 @@ export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
       throw createError('NO_TOKEN', 'Authorization token is required', 401);
     }
 
-    // Validate token with auth-service
-    const validation = await validateToken(token, c.env.AUTH_SERVICE_URL);
+    // Validate token with auth-service via service binding
+    const validation = await validateToken(token, c.env.AUTH_SERVICE);
 
     if (!validation.valid) {
       throw createError('INVALID_TOKEN', 'Token validation failed', 401);
@@ -156,7 +161,7 @@ export async function optionalAuth(c: Context<{ Bindings: Env }>, next: Next) {
     const token = extractBearerToken(authHeader);
 
     if (token) {
-      const validation = await validateToken(token, c.env.AUTH_SERVICE_URL);
+      const validation = await validateToken(token, c.env.AUTH_SERVICE);
 
       if (validation.valid) {
         c.set('user', {

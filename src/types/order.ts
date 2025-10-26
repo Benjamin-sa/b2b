@@ -51,27 +51,28 @@ export interface Order {
 }
 
 export interface OrderItem {
+  id?: string // D1 invoice_item ID
+  stripeLineItemId?: string // Stripe line item ID
   productId: string
   productName: string
-  productSku?: string
+  productSku?: string // SKU/part number at purchase time
+  brand?: string // Brand at purchase time
   quantity: number
-  unitPrice: number
-  totalPrice: number
-  imageUrl?: string
-  stripeInvoiceItemId?: string | null
-  taxCents?: number | null
+  unitPrice: number // Unit price at purchase time (in euros)
+  totalPrice: number // Total price for line (in euros)
+  tax?: number // Tax amount for line (in euros)
+  imageUrl?: string // Product image at purchase time
+  currency?: string
   metadata?: {
     shopifyVariantId?: string
-    productName?: string
     productId?: string
-    brand?: string | null
-    unit?: string | null
-    weight?: number | null
     stripePriceId?: string
-    stripeInvoiceItemId?: string | null
-    taxCents?: number | null
-    taxAmounts?: Array<{ taxRateId?: string | null; amount: number }>
+    stripeProductId?: string
+    [key: string]: any
   }
+  // Legacy fields (kept for backward compatibility)
+  stripeInvoiceItemId?: string | null
+  taxCents?: number | null
 }
 
 export type OrderStatus = 

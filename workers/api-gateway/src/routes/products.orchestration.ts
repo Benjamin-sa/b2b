@@ -86,10 +86,13 @@ products.get('/category/:categoryId', async (c) => {
  */
 products.post('/', async (c) => {
   try {
+    // Clone the request to avoid consuming the body stream
+    const clonedRequest = c.req.raw.clone();
+    
     const request = new Request('http://inventory-service/products', {
       method: 'POST',
-      headers: c.req.raw.headers,
-      body: c.req.raw.body,
+      headers: clonedRequest.headers,
+      body: clonedRequest.body,
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
@@ -109,10 +112,13 @@ products.put('/:id', async (c) => {
   try {
     const productId = c.req.param('id');
     
+    // Clone the request to avoid consuming the body stream
+    const clonedRequest = c.req.raw.clone();
+    
     const request = new Request(`http://inventory-service/products/${productId}`, {
       method: 'PUT',
-      headers: c.req.raw.headers,
-      body: c.req.raw.body,
+      headers: clonedRequest.headers,
+      body: clonedRequest.body,
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
@@ -132,10 +138,13 @@ products.patch('/:id', async (c) => {
   try {
     const productId = c.req.param('id');
     
+    // Clone the request to avoid consuming the body stream
+    const clonedRequest = c.req.raw.clone();
+    
     const request = new Request(`http://inventory-service/products/${productId}`, {
       method: 'PATCH',
-      headers: c.req.raw.headers,
-      body: c.req.raw.body,
+      headers: clonedRequest.headers,
+      body: clonedRequest.body,
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
@@ -177,10 +186,13 @@ products.post('/:id/stock', async (c) => {
   try {
     const productId = c.req.param('id');
     
+    // Clone the request to avoid consuming the body stream
+    const clonedRequest = c.req.raw.clone();
+    
     const request = new Request(`http://inventory-service/products/${productId}/stock`, {
       method: 'POST',
-      headers: c.req.raw.headers,
-      body: c.req.raw.body,
+      headers: clonedRequest.headers,
+      body: clonedRequest.body,
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);

@@ -214,33 +214,6 @@ CREATE TABLE IF NOT EXISTS order_item_tax_amounts (
     amount_cents INTEGER NOT NULL,
     FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE
 );
-
--- ============================================
--- INVOICES TABLE
--- Maps from Firestore collection: invoices
--- ============================================
-CREATE TABLE IF NOT EXISTS invoices (
-    id TEXT PRIMARY KEY,
-    stripe_invoice_id TEXT UNIQUE NOT NULL,
-    user_id TEXT NOT NULL,
-    status TEXT NOT NULL,
-    amount_cents INTEGER NOT NULL,
-    amount_paid_cents INTEGER DEFAULT 0,
-    currency TEXT DEFAULT 'EUR',
-    invoice_pdf TEXT,
-    hosted_invoice_url TEXT,
-    invoice_number TEXT,
-    payment_intent_id TEXT,
-    sent_at TEXT,
-    paid_at TEXT,
-    voided_at TEXT,
-    cancelled_at TEXT,
-    due_date TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 -- ============================================
 -- SESSIONS TABLE
 -- JWT session management

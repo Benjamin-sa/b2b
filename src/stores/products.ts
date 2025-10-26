@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n';
 
 // Always go through the API Gateway - it handles routing, CORS, rate limiting, etc.
 const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5174';
-const PRODUCTS_API_URL = `${API_GATEWAY_URL}api/products`;
+const PRODUCTS_API_URL = `${API_GATEWAY_URL}/api/products`;
 
 // ============================================================================
 // HELPER FUNCTIONS
