@@ -145,7 +145,7 @@
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}
                             </h3>
                             <div class="text-gray-700 leading-relaxed html-content"
-                                v-html="sanitizeHtml(product.description)"></div>
+                                v-html="sanitizeHtml(product.description || '')"></div>
                         </div>
                     </div>
 
@@ -161,7 +161,7 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
                                     <button @click="decreaseQuantity"
-                                        :disabled="!canAddMore || product.coming_soon || quantity <= inputMinValue"
+                                        :disabled="!canAddMore || Boolean(product.coming_soon) || quantity <= inputMinValue"
                                         class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-lg">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -169,11 +169,11 @@
                                         </svg>
                                     </button>
                                     <input v-model.number="quantity" type="number" :min="inputMinValue"
-                                        :max="inputMaxValue" :disabled="!canAddMore || product.coming_soon"
+                                        :max="inputMaxValue" :disabled="!canAddMore || Boolean(product.coming_soon)"
                                         class="w-20 px-3 py-3 text-center border-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         @blur="validateQuantity" @input="validateQuantity" />
                                     <button @click="increaseQuantity"
-                                        :disabled="!canAddMore || product.coming_soon || quantity >= inputMaxValue"
+                                        :disabled="!canAddMore || Boolean(product.coming_soon) || quantity >= inputMaxValue"
                                         class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-lg">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -225,9 +225,9 @@
 
                         <!-- Add to Cart Button -->
                         <button @click="addToCart"
-                            :disabled="product.coming_soon || !product.in_stock || !canOrder || isAddingToCart || !canAddMore"
+                            :disabled="Boolean(product.coming_soon) || !Boolean(product.in_stock) || !canOrder || isAddingToCart || !canAddMore"
                             :class="[
-                                product.coming_soon || !product.in_stock || !canAddMore
+                                Boolean(product.coming_soon) || !Boolean(product.in_stock) || !canAddMore
                                     ? 'bg-gray-300 cursor-not-allowed'
                                     : !canOrder
                                         ? 'bg-yellow-500 hover:bg-yellow-600'
@@ -439,7 +439,7 @@ const addToCart = async () => {
 
     try {
         const cartItem: CartItem = {
-            product_id: product.value.id,
+            productId: product.value.id,
             product: product.value,
             quantity: quantity.value,
             price: product.value.price,

@@ -8,6 +8,10 @@ import { nanoid } from 'nanoid';
 import type {
   Product,
   ProductWithRelations,
+  ProductInventory,
+  ProductImage,
+  ProductSpecification,
+  ProductDimension,
   CreateProductRequest,
   UpdateProductRequest,
   PaginatedResponse,
@@ -17,13 +21,14 @@ import type {
 } from '../types';
 import { getOne, getOneOrNull, getMany, getPaginated, batch } from '../utils/database';
 import { errors } from '../utils/errors';
-import { validateRequired, validatePrice, validateStock } from '../utils/validation';
+import { validateRequired, validatePrice } from '../utils/validation';
 import {
   createStripeProductWithPrice,
   updateStripeProduct,
   replaceStripePrice,
   archiveStripeProduct,
 } from './stripe.service';
+import { buildUpdateQuery, buildFieldUpdates, boolToInt } from '../utils/query-builder';
 
 /**
  * Get product by ID with all relations
@@ -39,8 +44,8 @@ export async function getProductById(
     [productId]
   );
 
-  // Get related data
-  const [images, specifications, tags, dimensions] = await Promise.all([
+  // Get related data (including inventory from product_inventory table)
+  const [images, specifications, tags, dimensions, inventory] = await Promise.all([
     getMany(db, 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [
       productId,
     ]),
@@ -51,14 +56,17 @@ export async function getProductById(
     ),
     getMany(db, 'SELECT tag FROM product_tags WHERE product_id = ?', [productId]),
     getOneOrNull(db, 'SELECT * FROM product_dimensions WHERE product_id = ?', [productId]),
+    // ✅ CRITICAL: Fetch inventory from product_inventory table (single source of truth)
+    getOneOrNull(db, 'SELECT * FROM product_inventory WHERE product_id = ?', [productId]),
   ]);
 
   return {
     ...product,
-    images,
-    specifications,
+    images: images as ProductImage[],
+    specifications: specifications as ProductSpecification[],
     tags: tags.map((t: any) => t.tag),
-    dimensions,
+    dimensions: dimensions as ProductDimension | null,
+    inventory: (inventory as ProductInventory | null) || undefined, // Include inventory data
   };
 }
 
@@ -124,7 +132,7 @@ export async function getProducts(
   // Get related data for each product
   const itemsWithRelations = await Promise.all(
     result.items.map(async (product) => {
-      const [images, specifications, tags, dimensions] = await Promise.all([
+      const [images, specifications, tags, dimensions, inventory] = await Promise.all([
         getMany(db, 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [
           product.id,
         ]),
@@ -137,14 +145,17 @@ export async function getProducts(
         getOneOrNull(db, 'SELECT * FROM product_dimensions WHERE product_id = ?', [
           product.id,
         ]),
+        // ✅ CRITICAL: Fetch inventory from product_inventory table (single source of truth)
+        getOneOrNull(db, 'SELECT * FROM product_inventory WHERE product_id = ?', [product.id]),
       ]);
 
       return {
         ...product,
-        images,
-        specifications,
+        images: images as ProductImage[],
+        specifications: specifications as ProductSpecification[],
         tags: tags.map((t: any) => t.tag),
-        dimensions,
+        dimensions: dimensions as ProductDimension | null,
+        inventory: (inventory as ProductInventory | null) || undefined, // Include inventory data
       };
     })
   );
@@ -186,17 +197,13 @@ export async function createProduct(
   validateRequired(data, ['name', 'price']);
   validatePrice(data.price);
 
-  if (data.stock !== undefined) {
-    validateStock(data.stock);
-  }
-
   // Generate ID
   const productId = nanoid();
   const now = new Date().toISOString();
 
   // Create Stripe product and price first (if not provided)
-  let stripeProductId = data.stripeProductId || null;
-  let stripePriceId = data.stripePriceId || null;
+  let stripeProductId = data.stripe_product_id || null;
+  let stripePriceId = data.stripe_price_id || null;
 
   if (!stripeProductId && !stripePriceId) {
     try {
@@ -207,12 +214,12 @@ export async function createProduct(
         name: data.name,
         description: data.description,
         price: data.price,
-        image_url: data.imageUrl || (data.images && data.images[0]) || null,
-        category_id: data.categoryId,
+        image_url: data.image_url || (data.images && data.images[0]) || null,
+        category_id: data.category_id,
         brand: data.brand,
-        part_number: data.partNumber,
-        shopify_product_id: data.shopifyProductId,
-        shopify_variant_id: data.shopifyVariantId,
+        part_number: data.part_number,
+        shopify_product_id: data.shopify_product_id,
+        shopify_variant_id: data.shopify_variant_id,
       });
 
       stripeProductId = stripeResult.stripeProductId;
@@ -221,7 +228,6 @@ export async function createProduct(
       console.log(`✅ Stripe product created: ${stripeProductId}, price: ${stripePriceId}`);
     } catch (error: any) {
       console.error('❌ Failed to create Stripe product:', error);
-      // Continue without Stripe - product will be created in D1 only
       console.warn('⚠️ Product will be created without Stripe integration');
     }
   }
@@ -247,17 +253,17 @@ export async function createProduct(
         data.name,
         data.description || null,
         data.price,
-        data.originalPrice || null,
-        data.imageUrl || null,
-        data.categoryId || null,
+        data.original_price || null,
+        data.image_url || null,
+        data.category_id || null,
         1, // DEPRECATED: in_stock - always 1, use product_inventory instead
-        data.comingSoon ? 1 : 0,
+        data.coming_soon ? 1 : 0,
         0, // DEPRECATED: stock - always 0, use product_inventory instead
         data.brand || null,
-        data.partNumber || null,
+        data.part_number || null,
         data.unit || null,
-        data.minOrderQuantity || 1,
-        data.maxOrderQuantity || null,
+        data.min_order_quantity || 1,
+        data.max_order_quantity || null,
         data.weight || null,
         null, // DEPRECATED: shopify_product_id - use product_inventory instead
         null, // DEPRECATED: shopify_variant_id - use product_inventory instead
@@ -268,61 +274,42 @@ export async function createProduct(
       )
   );
 
-  // ⚠️ CRITICAL: Insert into product_inventory table (single source of truth for stock)
-  const initialStock = data.stock || 0;
+  // ✅ ALWAYS create inventory record with stock allocation
+  // sync_enabled = 1 only when Shopify fields are provided
+  const hasShopifyIntegration = !!(
+    data.shopify_product_id || 
+    data.shopify_variant_id || 
+    data.shopify_inventory_item_id
+  );
+
+  // Extract stock values from request (sent from ProductForm)
+  const totalStock = data.total_stock ?? 0;
+  const b2bStock = data.b2b_stock ?? 0;
+  const b2cStock = data.b2c_stock ?? 0;
+
   statements.push(
     db
       .prepare(
         `INSERT INTO product_inventory (
-        product_id, total_stock, b2b_stock, b2c_stock, reserved_stock,
-        shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
-        shopify_location_id, sync_enabled, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
+        total_stock, b2b_stock, b2c_stock, reserved_stock,
+        sync_enabled, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         productId,
-        initialStock,
-        initialStock, // Initially allocate all stock to B2B
-        0, // No B2C stock initially
-        0, // No reserved stock
-        data.shopifyProductId || null,
-        data.shopifyVariantId || null,
-        data.shopifyInventoryItemId || null, // ✅ NEW: Store inventory_item_id
-        null, // shopify_location_id - set later if needed
-        0, // sync_enabled - disabled by default
+        data.shopify_product_id || null,
+        data.shopify_variant_id || null,
+        data.shopify_inventory_item_id || null,
+        totalStock,
+        b2bStock,
+        b2cStock,
+        0, // reserved_stock starts at 0
+        hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
         now,
         now
       )
   );
-
-  // Log initial stock creation
-  if (initialStock > 0) {
-    statements.push(
-      db
-        .prepare(
-          `INSERT INTO inventory_sync_log (
-          id, product_id, action, source,
-          total_change, b2b_change, b2c_change,
-          total_stock_after, b2b_stock_after, b2c_stock_after,
-          synced_to_shopify, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        )
-        .bind(
-          nanoid(),
-          productId,
-          'restock',
-          'admin_manual',
-          initialStock,
-          initialStock,
-          0,
-          initialStock,
-          initialStock,
-          0,
-          0,
-          now
-        )
-    );
-  }
 
   // Insert images
   if (data.images && data.images.length > 0) {
@@ -411,17 +398,12 @@ export async function updateProduct(
     validatePrice(data.price);
   }
 
-  if (data.stock !== undefined) {
-    validateStock(data.stock);
-  }
-
   const now = new Date().toISOString();
   const statements: any[] = [];
 
   // Handle Stripe updates if product has Stripe integration
   let newStripePriceId = existing.stripe_price_id;
 
-  if (existing.stripe_product_id) {
     try {
       // Check if price changed - need to create new price in Stripe
       const priceChanged = data.price !== undefined && data.price !== existing.price;
@@ -439,12 +421,12 @@ export async function updateProduct(
         console.log(`✅ New Stripe price created: ${newStripePriceId}`);
       }
 
-      // Update product details in Stripe (if not just a stock update)
-      const hasNonStockChanges = Object.keys(data).some(
-        (key) => key !== 'stock' && key !== 'inStock'
+      // Update product details in Stripe (if not just a stock/inventory update)
+      const hasNonInventoryChanges = Object.keys(data).some(
+        (key) => !['stock', 'inStock', 'shopifyProductId', 'shopifyVariantId', 'shopifyInventoryItemId'].includes(key)
       );
 
-      if (hasNonStockChanges) {
+      if (hasNonInventoryChanges) {
         console.log(`🔄 Updating Stripe product ${existing.stripe_product_id}`);
         
         await updateStripeProduct(env, {
@@ -453,12 +435,12 @@ export async function updateProduct(
           name: data.name ?? existing.name,
           description: data.description ?? existing.description,
           price: data.price ?? existing.price,
-          image_url: data.imageUrl ?? existing.image_url,
-          category_id: data.categoryId ?? existing.category_id,
+          image_url: data.image_url ?? existing.image_url,
+          category_id: data.category_id ?? existing.category_id,
           brand: data.brand ?? existing.brand,
-          part_number: data.partNumber ?? existing.part_number,
-          shopify_product_id: data.shopifyProductId ?? existing.shopify_product_id,
-          shopify_variant_id: data.shopifyVariantId ?? existing.shopify_variant_id,
+          part_number: data.part_number ?? existing.part_number,
+          shopify_product_id: null, // Not stored in products table anymore
+          shopify_variant_id: null,  // Not stored in products table anymore
         });
 
         console.log(`✅ Stripe product updated`);
@@ -468,104 +450,119 @@ export async function updateProduct(
       // Continue with D1 update - Stripe sync can be done later
       console.warn('⚠️ Product will be updated in D1 only, Stripe sync failed');
     }
-  }
 
-  // Build update query for product
-  const updateFields: string[] = [];
-  const updateParams: any[] = [];
 
-  if (data.name !== undefined) {
-    updateFields.push('name = ?');
-    updateParams.push(data.name);
-  }
-  if (data.description !== undefined) {
-    updateFields.push('description = ?');
-    updateParams.push(data.description);
-  }
-  if (data.price !== undefined) {
-    updateFields.push('price = ?');
-    updateParams.push(data.price);
-  }
-  if (data.originalPrice !== undefined) {
-    updateFields.push('original_price = ?');
-    updateParams.push(data.originalPrice);
-  }
-  if (data.imageUrl !== undefined) {
-    updateFields.push('image_url = ?');
-    updateParams.push(data.imageUrl);
-  }
-  if (data.categoryId !== undefined) {
-    updateFields.push('category_id = ?');
-    updateParams.push(data.categoryId);
-  }
-  if (data.inStock !== undefined) {
-    updateFields.push('in_stock = ?');
-    updateParams.push(data.inStock ? 1 : 0);
-  }
-  if (data.comingSoon !== undefined) {
-    updateFields.push('coming_soon = ?');
-    updateParams.push(data.comingSoon ? 1 : 0);
-  }
-  if (data.stock !== undefined) {
-    updateFields.push('stock = ?');
-    updateParams.push(data.stock);
-  }
-  if (data.brand !== undefined) {
-    updateFields.push('brand = ?');
-    updateParams.push(data.brand);
-  }
-  if (data.partNumber !== undefined) {
-    updateFields.push('part_number = ?');
-    updateParams.push(data.partNumber);
-  }
-  if (data.unit !== undefined) {
-    updateFields.push('unit = ?');
-    updateParams.push(data.unit);
-  }
-  if (data.minOrderQuantity !== undefined) {
-    updateFields.push('min_order_quantity = ?');
-    updateParams.push(data.minOrderQuantity);
-  }
-  if (data.maxOrderQuantity !== undefined) {
-    updateFields.push('max_order_quantity = ?');
-    updateParams.push(data.maxOrderQuantity);
-  }
-  if (data.weight !== undefined) {
-    updateFields.push('weight = ?');
-    updateParams.push(data.weight);
-  }
-  if (data.shopifyProductId !== undefined) {
-    updateFields.push('shopify_product_id = ?');
-    updateParams.push(data.shopifyProductId);
-  }
-  if (data.shopifyVariantId !== undefined) {
-    updateFields.push('shopify_variant_id = ?');
-    updateParams.push(data.shopifyVariantId);
-  }
-  if (data.stripeProductId !== undefined) {
-    updateFields.push('stripe_product_id = ?');
-    updateParams.push(data.stripeProductId);
-  }
+  // ============================================================================
+  // UPDATE PRODUCTS TABLE
+  // ============================================================================
+  const productUpdates = buildFieldUpdates({
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    original_price: data.original_price,
+    image_url: data.image_url,
+    category_id: data.category_id,
+    in_stock: boolToInt(data.in_stock),
+    coming_soon: boolToInt(data.coming_soon),
+    brand: data.brand,
+    part_number: data.part_number,
+    unit: data.unit,
+    min_order_quantity: data.min_order_quantity,
+    max_order_quantity: data.max_order_quantity,
+    weight: data.weight,
+    stripe_product_id: data.stripe_product_id,
+    updated_at: now,
+  });
+
   // Update stripe_price_id if we created a new price
   if (newStripePriceId !== existing.stripe_price_id) {
-    updateFields.push('stripe_price_id = ?');
-    updateParams.push(newStripePriceId);
-  } else if (data.stripePriceId !== undefined) {
-    updateFields.push('stripe_price_id = ?');
-    updateParams.push(data.stripePriceId);
+    productUpdates.stripe_price_id = newStripePriceId;
+  } else if (data.stripe_price_id !== undefined) {
+    productUpdates.stripe_price_id = data.stripe_price_id;
   }
 
-  updateFields.push('updated_at = ?');
-  updateParams.push(now);
+  // NOTE: shopify_product_id and shopify_variant_id are DEPRECATED in products table
+  // They should NOT be updated here - use product_inventory table instead
 
-  if (updateFields.length > 0) {
-    updateParams.push(productId);
+  if (Object.keys(productUpdates).length > 0) {
+    const { sql, params } = buildUpdateQuery('products', productUpdates, 'id = ?', [productId]);
+    statements.push(db.prepare(sql).bind(...params));
+  }
+
+  // ============================================================================
+  // UPDATE PRODUCT_INVENTORY TABLE (Shopify fields + Stock allocation)
+  // ============================================================================
+  const inventoryUpdates = buildFieldUpdates({
+    shopify_product_id: data.shopify_product_id,
+    shopify_variant_id: data.shopify_variant_id,
+    shopify_inventory_item_id: data.shopify_inventory_item_id,
+    total_stock: data.total_stock,
+    b2b_stock: data.b2b_stock,
+    b2c_stock: data.b2c_stock,
+    updated_at: now,
+  });
+
+  // Check if inventory record exists
+  const inventoryExists = await getOneOrNull(
+    db,
+    'SELECT product_id FROM product_inventory WHERE product_id = ?',
+    [productId]
+  );
+
+  // Determine if sync should be enabled (any Shopify field present)
+  const hasShopifyIntegration = !!(
+    data.shopify_product_id || 
+    data.shopify_variant_id || 
+    data.shopify_inventory_item_id
+  );
+
+  if (inventoryExists) {
+    // Update existing inventory record (Shopify fields + stock + sync_enabled)
+    if (Object.keys(inventoryUpdates).length > 1) { // More than just updated_at
+      inventoryUpdates.sync_enabled = hasShopifyIntegration ? 1 : 0;
+      const { sql, params } = buildUpdateQuery(
+        'product_inventory',
+        inventoryUpdates,
+        'product_id = ?',
+        [productId]
+      );
+      statements.push(db.prepare(sql).bind(...params));
+    }
+  } else {
+    // ✅ ALWAYS create inventory record if missing with stock allocation
+    // This handles legacy products that don't have inventory records yet
+    const totalStock = data.total_stock ?? 0;
+    const b2bStock = data.b2b_stock ?? 0;
+    const b2cStock = data.b2c_stock ?? 0;
+    
     statements.push(
       db
-        .prepare(`UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`)
-        .bind(...updateParams)
+        .prepare(
+          `INSERT INTO product_inventory (
+            product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
+            total_stock, b2b_stock, b2c_stock, reserved_stock,
+            sync_enabled, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          productId,
+          data.shopify_product_id || null,
+          data.shopify_variant_id || null,
+          data.shopify_inventory_item_id || null,
+          totalStock,
+          b2bStock,
+          b2cStock,
+          0, // reserved_stock starts at 0
+          hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
+          now,
+          now
+        )
     );
   }
+
+  // ============================================================================
+  // UPDATE RELATED TABLES
+  // ============================================================================
 
   // Update images (replace all)
   if (data.images !== undefined) {
@@ -677,8 +674,10 @@ export async function deleteProduct(db: any, env: Env, productId: string): Promi
     db.prepare('DELETE FROM product_specifications WHERE product_id = ?').bind(productId),
     db.prepare('DELETE FROM product_tags WHERE product_id = ?').bind(productId),
     db.prepare('DELETE FROM product_dimensions WHERE product_id = ?').bind(productId),
+    db.prepare('DELETE FROM product_inventory WHERE product_id = ?').bind(productId),
     db.prepare('DELETE FROM products WHERE id = ?').bind(productId),
   ];
 
   await batch(db, statements);
 }
+

@@ -96,7 +96,17 @@ products.post('/', async (c) => {
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
-    
+
+    // Trigger Shopify sync (non-blocking, errors don't fail the request)
+    try {
+      const syncRequest = new Request(`http://shopify-sync/sync/all`, {
+        method: "POST",
+      });
+      await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
+    } catch (syncError: any) {
+      console.error('[Products Orchestration] Shopify sync failed after product creation:', syncError);
+    }
+
     return response;
   } catch (error: any) {
     console.error('[Products Orchestration] Error creating product:', error);
@@ -122,6 +132,16 @@ products.put('/:id', async (c) => {
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
+
+    // Trigger Shopify sync (non-blocking)
+    try {
+      const syncRequest = new Request(`http://shopify-sync/sync/${productId}`, {
+        method: "POST",
+      });
+      await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
+    } catch (syncError: any) {
+      console.error('[Products Orchestration] Shopify sync failed after product update:', syncError);
+    }
     
     return response;
   } catch (error: any) {
@@ -148,6 +168,16 @@ products.patch('/:id', async (c) => {
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
+
+    // Trigger Shopify sync (non-blocking)
+    try {
+      const syncRequest = new Request(`http://shopify-sync/sync/${productId}`, {
+        method: "POST",
+      });
+      await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
+    } catch (syncError: any) {
+      console.error('[Products Orchestration] Shopify sync failed after product patch:', syncError);
+    }
     
     return response;
   } catch (error: any) {
@@ -179,27 +209,29 @@ products.delete('/:id', async (c) => {
 });
 
 /**
- * POST /api/products/:id/stock
- * Update product stock (admin only)
+ * POST /api/inventory/:id/stock
+ * Update product inventory (B2B/B2C stock allocation) - admin only
+ * This is the new endpoint for managing stock in the product_inventory table
  */
-products.post('/:id/stock', async (c) => {
+products.post('/inventory/:id/stock', async (c) => {
   try {
     const productId = c.req.param('id');
     
     // Clone the request to avoid consuming the body stream
     const clonedRequest = c.req.raw.clone();
     
-    const request = new Request(`http://inventory-service/products/${productId}/stock`, {
+    const request = new Request(`http://inventory-service/products/inventory/${productId}/stock`, {
       method: 'POST',
       headers: clonedRequest.headers,
       body: clonedRequest.body,
     });
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
+
     
     return response;
   } catch (error: any) {
-    console.error('[Products Orchestration] Error updating stock:', error);
+    console.error('[Products Orchestration] Error updating inventory:', error);
     throw error;
   }
 });

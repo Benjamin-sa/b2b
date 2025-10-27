@@ -81,7 +81,7 @@ export interface InvoiceItemInput {
   metadata: {
     shopify_variant_id?: string;
     product_name?: string;
-    product_id?: string;
+    product_id: string;
   };
 }
 

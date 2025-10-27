@@ -171,7 +171,7 @@ export const useOrderStore = defineStore('orders', () => {
         metadata: {
           productId: item.productId,
           productName: item.product.name,
-          shopifyVariantId: item.product.shopify_variant_id || '',
+          shopifyVariantId: item.product.inventory?.shopify_variant_id || '',
         }
       }))
 

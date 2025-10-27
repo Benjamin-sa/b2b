@@ -34,7 +34,7 @@
                 </div>
 
                 <p class="text-secondary-600 text-sm mb-3 line-clamp-2 flex-shrink-0 html-content"
-                    v-html="truncateHtml(product.description, 100)">
+                    v-html="truncateHtml(product.description || '', 100)">
                 </p>
 
                 <!-- Pricing -->
@@ -79,14 +79,14 @@
                 <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
                 <div class="flex items-center border rounded-md">
                     <button @click="decreaseQuantity"
-                        :disabled="quantity <= minSelectableQuantity || product.coming_soon"
+                        :disabled="quantity <= minSelectableQuantity || product.coming_soon === 1"
                         class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                         -
                     </button>
                     <input v-model.number="quantity" type="number" :min="minInputValue" :max="maxInputValue"
-                        :disabled="maxAddableQuantity <= 0 || product.coming_soon"
+                        :disabled="maxAddableQuantity <= 0 || product.coming_soon === 1"
                         class="w-16 px-2 py-1 text-center border-0 focus:ring-0" @blur="validateQuantity" />
-                    <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.coming_soon"
+                    <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.coming_soon === 1"
                         class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                         +
                     </button>
@@ -95,8 +95,8 @@
 
             <!-- Add to Cart Button -->
             <button @click="addToCart"
-                :disabled="product.coming_soon || !product.in_stock || isLoading || maxAddableQuantity <= 0" :class="[
-                    product.coming_soon || !product.in_stock || maxAddableQuantity <= 0
+                :disabled="product.coming_soon === 1 || product.in_stock === 0 || isLoading || maxAddableQuantity <= 0" :class="[
+                    product.coming_soon === 1 || product.in_stock === 0 || maxAddableQuantity <= 0
                         ? 'bg-gray-300 cursor-not-allowed'
                         : 'bg-blue-600 hover:bg-blue-700',
                     'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
@@ -216,7 +216,7 @@ const addToCart = async () => {
     isLoading.value = true
     try {
         const cartItem: CartItem = {
-            product_id: props.product.id,
+            productId: props.product.id,
             product: props.product,
             quantity: quantity.value,
             price: props.product.price,

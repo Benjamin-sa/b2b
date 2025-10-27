@@ -21,6 +21,7 @@ import {
 } from './services/sync.service';
 import { searchShopifyProducts } from './services/product-search.service';
 import { verifyShopifyWebhook, isWebhookProcessed, markWebhookProcessed } from './utils/webhooks';
+import { getInventoryByInventoryItemId, updateB2CStock } from './utils/database';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -213,18 +214,61 @@ app.post('/webhooks/inventory-update', async (c) => {
 
     console.log('📥 Inventory update webhook:', payload);
 
-    // Extract variant ID from inventory_item_id
-    // Note: You may need to query Shopify to map inventory_item_id → variant_id
-    // For now, assuming we store inventory_item_id in product_inventory table
+    // Extract inventory data from webhook payload
+    // Shopify webhook structure: { inventory_item_id, location_id, available }
+    const inventoryItemId = payload.inventory_item_id?.toString();
+    const locationId = payload.location_id?.toString();
+    const available = payload.available;
 
-    // Process the update
-    // This is simplified - in production you'd need to map inventory_item_id to variant_id
-    // For now, we'll mark it as processed and log it
+    if (!inventoryItemId || available === undefined) {
+      console.error('❌ Invalid webhook payload - missing inventory_item_id or available');
+      await markWebhookProcessed(c.env.DB, webhookId, topic, body, false, 'Invalid payload');
+      return c.json({ error: 'Invalid payload' }, 400);
+    }
+
+    // Extract numeric ID from Shopify GID format if needed
+    const cleanInventoryItemId = inventoryItemId.includes('/')
+      ? inventoryItemId.split('/').pop()
+      : inventoryItemId;
+
+    console.log(`📦 Processing inventory update: item=${cleanInventoryItemId}, location=${locationId}, available=${available}`);
+
+    // Find product by inventory_item_id using database utility
+    const inventory = await getInventoryByInventoryItemId(c.env.DB, cleanInventoryItemId || '');
+
+    if (!inventory) {
+      console.warn(`⚠️ No B2B product linked to Shopify inventory item ${cleanInventoryItemId}`);
+      await markWebhookProcessed(c.env.DB, webhookId, topic, body, true, 'No linked product');
+      return c.json({ success: true, message: 'No linked product found' });
+    }
+
+    // Log the stock changes
+    const oldB2CStock = inventory.b2c_stock;
+    const newB2CStock = available;
+    const b2cChange = newB2CStock - oldB2CStock;
+    const totalChange = b2cChange;
+
+    console.log(`📊 Updating product ${inventory.product_id}:`);
+    console.log(`   B2C: ${oldB2CStock} → ${newB2CStock} (${b2cChange > 0 ? '+' : ''}${b2cChange})`);
+    console.log(`   B2B: ${inventory.b2b_stock} (unchanged)`);
+    console.log(`   Total: ${inventory.total_stock} → ${inventory.total_stock + totalChange}`);
+
+    // Update B2C stock using database utility
+    await updateB2CStock(c.env.DB, inventory.product_id, newB2CStock);
+
+    // Mark webhook as processed
     await markWebhookProcessed(c.env.DB, webhookId, topic, body, true);
+
+    console.log(`✅ Successfully updated B2C stock for product ${inventory.product_id}`);
 
     return c.json({
       success: true,
-      message: 'Webhook processed',
+      message: 'Inventory updated',
+      productId: inventory.product_id,
+      changes: {
+        b2c_stock: { old: oldB2CStock, new: newB2CStock, change: b2cChange },
+        total_stock: { old: inventory.total_stock, new: inventory.total_stock + totalChange, change: totalChange },
+      },
     });
   } catch (error: any) {
     console.error('❌ Error processing inventory webhook:', error);

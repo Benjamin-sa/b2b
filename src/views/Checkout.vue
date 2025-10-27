@@ -183,7 +183,7 @@
                             <div v-for="item in cartStore.items" :key="item.productId"
                                 class="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
                                 <div class="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md overflow-hidden">
-                                    <img v-if="item.product.imageUrl" :src="item.product.imageUrl"
+                                    <img v-if="item.product.image_url" :src="item.product.image_url"
                                         :alt="item.product.name" class="w-full h-full object-cover" />
                                 </div>
                                 <div class="flex-1 min-w-0">

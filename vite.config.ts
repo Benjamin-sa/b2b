@@ -1,28 +1,30 @@
+import { fileURLToPath, URL } from 'node:url'
+
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
+
+
+import { cloudflare } from "@cloudflare/vite-plugin"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
-  server: {
-    host: '0.0.0.0', // Expose to local network
-    port: 5173, // Optional: Choose a port, defaults to 5173
-  },
-  build: {
-    // Optimize for Cloudflare Pages
-    target: 'es2020',
-    cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Split vendor code for better caching
-          vendor: ['vue', 'vue-router', 'pinia'],
-          stripe: ['@stripe/stripe-js']
-        }
-      }
-    },
-    // Generate source maps for debugging
-    sourcemap: process.env.NODE_ENV !== 'production'
-  }
+	plugins: [
+		vue(),
+		vueDevTools(),
+		cloudflare(),
+		tailwindcss(),
+	],
+	resolve: {
+		alias: {
+			'@': fileURLToPath(new URL('./src', import.meta.url))
+		},
+	},
+	build: {
+		// Explicitly exclude workers directory from build
+		rollupOptions: {
+			external: (id) => id.includes('workers/') || id.includes('workers\\')
+		}
+	},
 })

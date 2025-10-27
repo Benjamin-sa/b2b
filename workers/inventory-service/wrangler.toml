@@ -20,6 +20,11 @@ service = "b2b-auth-service"
 binding = "STRIPE_SERVICE"
 service = "b2b-stripe-service"
 
+# Service binding for Shopify sync operations
+[[services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service"
+
 [vars]
 ENVIRONMENT = "production"
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,https://4tparts.com"
@@ -51,6 +56,10 @@ service = "b2b-auth-service-dev"
 [[env.dev.services]]
 binding = "STRIPE_SERVICE"
 service = "b2b-stripe-service-dev"
+
+[[env.dev.services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service-dev"
 
 [env.dev.vars]
 ENVIRONMENT = "development"

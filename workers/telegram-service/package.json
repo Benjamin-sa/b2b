@@ -1,0 +1,21 @@
+{
+  "name": "b2b-telegram-service",
+  "version": "1.0.0",
+  "description": "Telegram notification service for B2B platform",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dev": "wrangler deploy --env dev",
+    "tail": "wrangler tail",
+    "tail:dev": "wrangler tail --env dev"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.45.0"
+  }
+}

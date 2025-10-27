@@ -2,7 +2,7 @@
     <div class="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0">
         <!-- Product Image -->
         <div class="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-md overflow-hidden">
-            <img v-if="item.product.imageUrl" :src="item.product.imageUrl" :alt="item.product.name"
+            <img v-if="item.product.image_url" :src="item.product.image_url" :alt="item.product.name"
                 class="w-full h-full object-cover" @error="handleImageError" />
             <div v-else class="w-full h-full flex items-center justify-center">
                 <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,11 +17,8 @@
             <h4 class="text-sm font-medium text-gray-900 truncate">
                 {{ item.product.name }}
             </h4>
-            <p class="text-sm text-gray-500 truncate">
-                {{ item.product.category }}
-            </p>
-            <p v-if="item.product.shopifyVariantId" class="text-xs text-gray-400">
-                {{ $t('cart.sku', { sku: item.product.shopifyVariantId }) }}
+            <p v-if="item.product.inventory?.shopify_variant_id" class="text-xs text-gray-400">
+                {{ $t('cart.sku', { sku: item.product.inventory.shopify_variant_id }) }}
             </p>
             <div class="mt-1">
                 <span class="text-sm font-medium text-gray-900">
@@ -37,16 +34,16 @@
         <div class="flex items-center space-x-2">
             <div class="flex items-center border rounded-md">
                 <button @click="decreaseQuantity"
-                    :disabled="quantity <= (item.product.minOrderQuantity || 1) || isUpdating"
+                    :disabled="quantity <= (item.product.min_order_quantity || 1) || isUpdating"
                     class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                     -
                 </button>
-                <input v-model.number="quantity" type="number" :min="item.product.minOrderQuantity || 1"
-                    :max="item.product.maxOrderQuantity || 999"
+                <input v-model.number="quantity" type="number" :min="item.product.min_order_quantity || 1"
+                    :max="item.product.max_order_quantity || 999"
                     class="w-12 px-1 py-1 text-center border-0 text-sm focus:ring-0" @blur="validateAndUpdate"
                     @keyup.enter="validateAndUpdate" :disabled="isUpdating" />
                 <button @click="increaseQuantity"
-                    :disabled="quantity >= (item.product.maxOrderQuantity || 999) || isUpdating"
+                    :disabled="quantity >= (item.product.max_order_quantity || 999) || isUpdating"
                     class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
                     +
                 </button>
@@ -107,8 +104,8 @@ const formatPrice = (price: number) => {
 }
 
 const validateQuantity = () => {
-    const min = props.item.product.minOrderQuantity || 1
-    const max = props.item.product.maxOrderQuantity || 999
+    const min = props.item.product.min_order_quantity || 1
+    const max = props.item.product.max_order_quantity || 999
 
     if (quantity.value < min) quantity.value = min
     if (quantity.value > max) quantity.value = max
@@ -130,7 +127,7 @@ const validateAndUpdate = async () => {
 }
 
 const increaseQuantity = async () => {
-    const max = props.item.product.maxOrderQuantity || 999
+    const max = props.item.product.max_order_quantity || 999
     if (quantity.value < max) {
         quantity.value++
         await validateAndUpdate()
@@ -138,7 +135,7 @@ const increaseQuantity = async () => {
 }
 
 const decreaseQuantity = async () => {
-    const min = props.item.product.minOrderQuantity || 1
+    const min = props.item.product.min_order_quantity || 1
     if (quantity.value > min) {
         quantity.value--
         await validateAndUpdate()

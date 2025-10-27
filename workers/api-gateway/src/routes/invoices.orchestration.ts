@@ -18,7 +18,6 @@ const invoices = new Hono<{ Bindings: Env }>();
  * Validate user token via AUTH_SERVICE and get user details
  * 
  * Uses Cloudflare Service Bindings for direct worker-to-worker communication
- * (no HTTP overhead, much faster than fetch!)
  */
 async function validateUserToken(env: Env, authHeader: string | null): Promise<{ 
   userId: string; 
@@ -143,16 +142,119 @@ invoices.post('/', async (c) => {
         }, 400);
       }
 
-      if (!item.metadata || !item.metadata.shopifyVariantId) {
+      // Metadata is optional - shopifyVariantId can be empty for standalone products
+      if (!item.metadata) {
         return c.json({ 
           error: 'invalid-argument',
-          message: 'Each item must have metadata with shopifyVariantId' 
+          message: 'Each item must have metadata (productId, productName, shopifyVariantId)' 
         }, 400);
       }
 
     }
 
-    // 4. Prepare invoice creation request for STRIPE_SERVICE
+    // 4. Check stock availability and reduce B2B stock for all items
+    // This happens BEFORE creating the invoice to ensure we don't oversell
+    const now = new Date().toISOString();
+    const stockUpdates: D1PreparedStatement[] = [];
+    const stockLogs: D1PreparedStatement[] = [];
+    const stockValidationErrors: string[] = [];
+
+    for (const item of body.items) {
+      const productId = item.metadata.productId;
+      const quantity = item.quantity;
+
+      // Get current inventory
+      const inventory = await c.env.DB.prepare(
+        'SELECT total_stock, b2b_stock, b2c_stock FROM product_inventory WHERE product_id = ?'
+      ).bind(productId).first();
+
+      if (!inventory) {
+        stockValidationErrors.push(`Product ${productId} has no inventory record`);
+        continue;
+      }
+
+      const currentB2BStock = (inventory as any).b2b_stock;
+      const currentB2CStock = (inventory as any).b2c_stock;
+      const currentTotalStock = (inventory as any).total_stock;
+
+      // Validate sufficient B2B stock
+      if (currentB2BStock < quantity) {
+        stockValidationErrors.push(
+          `Insufficient stock for product ${productId}: need ${quantity}, have ${currentB2BStock} available`
+        );
+        continue;
+      }
+
+      // Calculate new stock levels
+      const newB2BStock = currentB2BStock - quantity;
+      const newTotalStock = currentTotalStock - quantity;
+
+      // Prepare stock update query
+      stockUpdates.push(
+        c.env.DB.prepare(`
+          UPDATE product_inventory
+          SET 
+            total_stock = ?,
+            b2b_stock = ?,
+            updated_at = ?
+          WHERE product_id = ?
+        `).bind(newTotalStock, newB2BStock, now, productId)
+      );
+
+      // Prepare audit log entry
+      stockLogs.push(
+        c.env.DB.prepare(`
+          INSERT INTO inventory_sync_log (
+            id, product_id, action, source,
+            total_change, b2b_change, b2c_change,
+            total_stock_after, b2b_stock_after, b2c_stock_after,
+            reference_id, reference_type, created_at, created_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          crypto.randomUUID(),
+          productId,
+          'b2b_order',
+          'invoice_creation',
+          -quantity,
+          -quantity,
+          0,
+          newTotalStock,
+          newB2BStock,
+          currentB2CStock,
+          'pending', // Will be updated with invoice ID after creation
+          'invoice',
+          now,
+          userId
+        )
+      );
+
+      console.log(`📉 Stock reduction prepared for ${productId}: ${currentB2BStock} → ${newB2BStock} (-${quantity})`);
+    }
+
+    // If stock validation failed, return error BEFORE creating invoice
+    if (stockValidationErrors.length > 0) {
+      return c.json({
+        error: 'insufficient-stock',
+        message: 'Some items do not have enough stock available',
+        details: stockValidationErrors
+      }, 400);
+    }
+
+    // Execute all stock updates in a single transaction
+    if (stockUpdates.length > 0) {
+      try {
+        await c.env.DB.batch([...stockUpdates, ...stockLogs]);
+        console.log(`✅ Reduced stock for ${stockUpdates.length} products`);
+      } catch (error: any) {
+        console.error('❌ Failed to reduce stock:', error);
+        return c.json({
+          error: 'stock-update-failed',
+          message: 'Failed to update inventory. Please try again.',
+        }, 500);
+      }
+    }
+
+    // 5. Prepare invoice creation request for STRIPE_SERVICE
     // Note: Using service binding for direct worker-to-worker communication
     // Service bindings are much faster and more secure than HTTP requests
     // IMPORTANT: Use snake_case to match Stripe service's InvoiceInput type
@@ -177,7 +279,7 @@ invoices.post('/', async (c) => {
       }),
     });
 
-    // 5. Create invoice via STRIPE_SERVICE using service binding
+    // 6. Create invoice via STRIPE_SERVICE using service binding
     const invoiceResponse = await c.env.STRIPE_SERVICE.fetch(invoiceRequest);
 
     if (!invoiceResponse.ok) {
@@ -189,6 +291,44 @@ invoices.post('/', async (c) => {
         };
       };
       console.error('Stripe service error:', errorData);
+
+      // IMPORTANT: Rollback stock changes if Stripe invoice creation fails
+      if (stockUpdates.length > 0) {
+        console.log('⚠️  Rolling back stock changes due to Stripe error...');
+        const rollbackUpdates: D1PreparedStatement[] = [];
+        
+        for (const item of body.items) {
+          const productId = item.metadata.productId;
+          const quantity = item.quantity;
+          
+          // Get current stock (after our reduction)
+          const currentInventory = await c.env.DB.prepare(
+            'SELECT total_stock, b2b_stock FROM product_inventory WHERE product_id = ?'
+          ).bind(productId).first();
+          
+          if (currentInventory) {
+            const currentTotal = (currentInventory as any).total_stock;
+            const currentB2B = (currentInventory as any).b2b_stock;
+            
+            // Restore stock
+            rollbackUpdates.push(
+              c.env.DB.prepare(`
+                UPDATE product_inventory
+                SET 
+                  total_stock = ?,
+                  b2b_stock = ?,
+                  updated_at = ?
+                WHERE product_id = ?
+              `).bind(currentTotal + quantity, currentB2B + quantity, new Date().toISOString(), productId)
+            );
+          }
+        }
+        
+        if (rollbackUpdates.length > 0) {
+          await c.env.DB.batch(rollbackUpdates);
+          console.log('✅ Stock rollback completed');
+        }
+      }
       
       return c.json({ 
         error: 'stripe-error',
@@ -211,7 +351,24 @@ invoices.post('/', async (c) => {
       };
     };
 
-    // 6. Store order AND line items in D1 database (orders + order_items tables)
+    // Update audit log with actual invoice ID
+    if (stockLogs.length > 0) {
+      try {
+        const updateLogQueries = body.items.map(item => 
+          c.env.DB.prepare(`
+            UPDATE inventory_sync_log
+            SET reference_id = ?
+            WHERE product_id = ? AND reference_id = 'pending' AND created_at = ?
+          `).bind(responseData.data.invoice_id, item.metadata.productId, now)
+        );
+        await c.env.DB.batch(updateLogQueries);
+        console.log('✅ Updated inventory logs with invoice ID');
+      } catch (error) {
+        console.warn('⚠️  Failed to update inventory log reference_id (non-critical):', error);
+      }
+    }
+
+    // 7. Store order AND line items in D1 database (orders + order_items tables)
     // Webhooks will update order to 'open' when finalized, and 'paid' when paid
     try {
       const orderInternalId = crypto.randomUUID(); // Our internal ID
@@ -220,7 +377,7 @@ invoices.post('/', async (c) => {
       // Extract shipping address from request metadata
       const shippingAddr = body.metadata?.shippingAddress;
 
-      // 6a. Store order record (status: 'draft')
+      // 7a. Store order record (status: 'draft')
       await c.env.DB.prepare(`
         INSERT INTO orders (
           id, user_id, stripe_invoice_id, status, stripe_status,
@@ -254,7 +411,7 @@ invoices.post('/', async (c) => {
 
       console.log(`✅ Stored order ${orderInternalId} with Stripe invoice ${responseData.data.invoice_id} in D1`);
 
-      // 6b. Store order line items for historical pricing/product details
+      // 7b. Store order line items for historical pricing/product details
       const lineItems = responseData.data.product_line_items || [];
       
       if (lineItems.length > 0) {
@@ -297,7 +454,7 @@ invoices.post('/', async (c) => {
       console.error('⚠️  Failed to store order/line items in D1 (non-critical):', dbError);
     }
 
-    // 7. Return invoice details matching Firebase Functions format (camelCase for frontend)
+    // 8. Return invoice details matching Firebase Functions format (camelCase for frontend)
     console.log(`✅ Invoice created successfully via gateway: ${responseData.data.invoice_id} for user ${userId}`);
     
     return c.json({

@@ -1,8 +1,6 @@
 # Wrangler ignore file for Cloudflare Pages
 # This tells Wrangler which files/directories to ignore during deployment
 
-# Ignore Firebase Functions (they're not Cloudflare Functions)
-functions/
 
 # Ignore development files
 node_modules/
@@ -24,10 +22,7 @@ deploy-*.sh
 *.yaml
 *.yml
 
-# Ignore Firebase files
-firebase.json
-firestore.rules
-.firebaserc
+
 
 # Ignore other project files
 package*.json

@@ -41,6 +41,9 @@ export interface Env {
   STRIPE_SERVICE: StripeService;
   SHOPIFY_SYNC_SERVICE: ShopifySyncService;
   
+  // Queue Bindings (for async email processing)
+  EMAIL_QUEUE: Queue;
+  
   // D1 Database binding (for invoice persistence)
   DB: D1Database;
   

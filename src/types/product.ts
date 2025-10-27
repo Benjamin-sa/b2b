@@ -1,3 +1,17 @@
+// Product Inventory data (from product_inventory table)
+export interface ProductInventory {
+  product_id: string;
+  total_stock: number;
+  b2b_stock: number;
+  b2c_stock: number;
+  shopify_product_id: string | null;
+  shopify_variant_id: string | null;
+  shopify_inventory_item_id: string | null;
+  sync_enabled: number;
+  last_synced_at: string | null;
+}
+
+
 // Product related types
 // Matches backend API response exactly (snake_case) - no transformation needed!
 export interface Product {
@@ -8,17 +22,17 @@ export interface Product {
   original_price: number | null
   image_url: string | null
   category_id: string | null
-  in_stock: number // SQLite boolean (0 or 1) - use truthy check: product.in_stock === 1
+  in_stock: number // DEPRECATED - use inventory.b2b_stock > 0 instead
   coming_soon: number // SQLite boolean (0 or 1)
-  stock: number
+  stock: number // DEPRECATED - use inventory.total_stock instead
   brand: string | null
   part_number: string | null
   unit: string | null
   min_order_quantity: number
   max_order_quantity: number | null
   weight: number | null
-  shopify_product_id: string | null
-  shopify_variant_id: string | null
+  shopify_product_id: string | null // DEPRECATED - use inventory.shopify_product_id instead
+  shopify_variant_id: string | null // DEPRECATED - use inventory.shopify_variant_id instead
   stripe_product_id: string | null
   stripe_price_id: string | null
   created_at: string
@@ -29,6 +43,8 @@ export interface Product {
   specifications?: Array<{ key: string; value: string }> // Normalized from ProductSpecification[]
   tags?: string[]
   dimensions?: ProductDimension | null
+  // ✅ CRITICAL: Single source of truth for stock/inventory
+  inventory?: ProductInventory
 }
 
 export interface ProductImage {
@@ -77,4 +93,33 @@ export interface PaginationResult<T> {
   currentPage: number
   hasNextPage: boolean
   hasPreviousPage: boolean
+}
+
+
+// Types
+export interface ProductInventory {
+  product_id: string;
+  total_stock: number;
+  b2b_stock: number;
+  b2c_stock: number;
+  shopify_product_id: string | null;
+  shopify_variant_id: string | null;
+  shopify_inventory_item_id: string | null;
+  sync_enabled: number;
+  last_synced_at: string | null;
+}
+
+export interface ProductWithInventory {
+  id: string;
+  name: string;
+  part_number: string | null;
+  image_url: string | null;
+  inventory?: ProductInventory;
+}
+
+export interface StockUpdate {
+  totalStock: number;
+  b2bStock: number;
+  b2cStock: number;
+  shopifyInventoryItemId?: string | null;
 }

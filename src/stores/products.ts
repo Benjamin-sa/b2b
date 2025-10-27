@@ -1,8 +1,7 @@
 // src/stores/productStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Product, ProductFilter, PaginationResult } from '../types/product';
-import { appCache } from '../services/cache';
+import type { Product, ProductFilter } from '../types/product';
 import { useAuthStore } from './auth';
 import { useNotificationStore } from './notifications';
 import { useI18n } from 'vue-i18n';
@@ -75,19 +74,6 @@ export const useProductStore = defineStore('products', () => {
       // Determine which page to fetch
       const page = loadMore ? currentPage.value + 1 : (filters.page || 1);
 
-      // Check cache first
-      const cacheKey = appCache.generateKey({ type: 'products', ...filters, page });
-      const cached = appCache.get<{ items: Product[], currentPage: number, totalItems: number, totalPages: number, hasNextPage: boolean, hasPreviousPage: boolean }>(cacheKey);
-      
-      if (cached && !loadMore) {
-        products.value = cached.items;
-        currentPage.value = cached.currentPage;
-        totalItems.value = cached.totalItems;
-        totalPages.value = cached.totalPages;
-        hasMoreProducts.value = cached.hasNextPage;
-        return;
-      }
-
       // Build query parameters (using backend field names directly)
       const params = new URLSearchParams();
       params.append('page', page.toString());
@@ -128,17 +114,6 @@ export const useProductStore = defineStore('products', () => {
       totalItems.value = data.pagination.totalItems;
       totalPages.value = data.pagination.totalPages;
       hasMoreProducts.value = data.pagination.hasNextPage;
-
-      // Cache the result
-      appCache.set(cacheKey, {
-        items: fetchedProducts,
-        currentPage: data.pagination.currentPage,
-        totalItems: data.pagination.totalItems,
-        totalPages: data.pagination.totalPages,
-        hasNextPage: data.pagination.hasNextPage,
-        hasPreviousPage: data.pagination.hasPreviousPage,
-      });
-
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch products';
       notificationStore.addNotification({
@@ -157,12 +132,6 @@ export const useProductStore = defineStore('products', () => {
       isLoading.value = true;
       error.value = null;
 
-      // Check cache first
-      const cacheKey = appCache.generateKey({ type: 'product', id });
-      const cached = appCache.get<Product>(cacheKey);
-      if (cached) {
-        return cached;
-      }
 
       // Fetch from API Gateway
       const response = await fetch(`${PRODUCTS_API_URL}/${id}`);
@@ -177,8 +146,6 @@ export const useProductStore = defineStore('products', () => {
       const data = await response.json();
       const product = normalizeProduct(data);
 
-      // Cache the result
-      appCache.set(cacheKey, product);
 
       return product;
     } catch (err: any) {
@@ -223,11 +190,10 @@ export const useProductStore = defineStore('products', () => {
       // Add to local state
       products.value.unshift(newProduct);
 
-      // Invalidate cache
-      appCache.invalidate();
-
+     
       notificationStore.addNotification({
         type: 'success',
+        title: t('products.createSuccessTitle') || 'Success',
         message: t('products.createSuccess') || 'Product created successfully',
       });
 
@@ -236,7 +202,8 @@ export const useProductStore = defineStore('products', () => {
       error.value = err.message || 'Failed to create product';
       notificationStore.addNotification({
         type: 'error',
-        message: t('products.createError') || error.value,
+        title: t('products.createErrorTitle') || 'Error',
+        message: t('products.createError') || error.value || 'Failed to create product',
       });
       console.error('Error creating product:', err);
       throw err;
@@ -281,11 +248,10 @@ export const useProductStore = defineStore('products', () => {
         products.value[index] = updatedProduct;
       }
 
-      // Invalidate cache
-      appCache.invalidate();
 
       notificationStore.addNotification({
         type: 'success',
+        title: t('products.updateSuccessTitle') || 'Success',
         message: t('products.updateSuccess') || 'Product updated successfully',
       });
 
@@ -294,7 +260,8 @@ export const useProductStore = defineStore('products', () => {
       error.value = err.message || 'Failed to update product';
       notificationStore.addNotification({
         type: 'error',
-        message: t('products.updateError') || error.value,
+        title: t('products.updateErrorTitle') || 'Error',
+        message: t('products.updateError') || error.value || 'Failed to update product',
       });
       console.error('Error updating product:', err);
       throw err;
@@ -328,18 +295,18 @@ export const useProductStore = defineStore('products', () => {
       // Remove from local state
       products.value = products.value.filter(p => p.id !== id);
 
-      // Invalidate cache
-      appCache.invalidate();
 
       notificationStore.addNotification({
         type: 'success',
+        title: t('products.deleteSuccessTitle') || 'Success',
         message: t('products.deleteSuccess') || 'Product deleted successfully',
       });
     } catch (err: any) {
       error.value = err.message || 'Failed to delete product';
       notificationStore.addNotification({
         type: 'error',
-        message: t('products.deleteError') || error.value,
+        title: t('products.deleteErrorTitle') || 'Error',
+        message: t('products.deleteError') || error.value || 'Failed to delete product',
       });
       console.error('Error deleting product:', err);
       throw err;
@@ -408,11 +375,10 @@ export const useProductStore = defineStore('products', () => {
         products.value[index] = updatedProduct;
       }
 
-      // Invalidate cache
-      appCache.invalidate();
 
       notificationStore.addNotification({
         type: 'success',
+        title: t('products.stockUpdateSuccessTitle') || 'Success',
         message: t('products.stockUpdateSuccess') || 'Stock updated successfully',
       });
 
@@ -421,7 +387,8 @@ export const useProductStore = defineStore('products', () => {
       error.value = err.message || 'Failed to update stock';
       notificationStore.addNotification({
         type: 'error',
-        message: t('products.stockUpdateError') || error.value,
+        title: t('products.stockUpdateErrorTitle') || 'Error',
+        message: t('products.stockUpdateError') || error.value || 'Failed to update stock',
       });
       console.error('Error updating stock:', err);
       throw err;
@@ -436,14 +403,6 @@ export const useProductStore = defineStore('products', () => {
     try {
       isLoading.value = true;
       error.value = null;
-
-      // Check cache first
-      const cacheKey = appCache.generateKey('products-by-category', categoryId);
-      const cached = appCache.get<Product[]>(cacheKey);
-      if (cached) {
-        return cached;
-      }
-
       // Fetch from API Gateway using category filter
       const response = await fetch(`${PRODUCTS_API_URL}/category/${categoryId}`);
       
@@ -453,9 +412,6 @@ export const useProductStore = defineStore('products', () => {
 
       const data = await response.json();
       const categoryProducts = data.items.map(normalizeProduct);
-
-      // Cache the result
-      appCache.set(cacheKey, categoryProducts);
 
       return categoryProducts;
     } catch (err: any) {
@@ -469,12 +425,7 @@ export const useProductStore = defineStore('products', () => {
 
   const getCategories = async (): Promise<string[]> => {
     try {
-      // Check cache first
-      const cacheKey = appCache.generateKey('categories');
-      const cached = appCache.get<string[]>(cacheKey);
-      if (cached) {
-        return cached;
-      }
+
 
       // For now, extract unique categories from products
       // TODO: Replace with dedicated categories endpoint when available
@@ -487,17 +438,14 @@ export const useProductStore = defineStore('products', () => {
       const data = await response.json();
       const allProducts = data.items; // No transformation needed
       
-      const categories = Array.from(
+      const categories: string[] = Array.from(
         new Set(
           allProducts
             .map((p: Product) => p.category_id)
             .filter((c: string | null | undefined): c is string => !!c)
         )
       );
-
-      // Cache the result
-      appCache.set(cacheKey, categories);
-
+      
       return categories;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch categories';

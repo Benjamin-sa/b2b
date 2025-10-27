@@ -2,7 +2,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Category, CategoryFilter, CategoryWithChildren } from '../types/category'
-import { appCache } from '../services/cache'
 
 // Normalize API Gateway URL to ensure it ends with /
 const API_GATEWAY_URL = (import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787')
@@ -54,13 +53,6 @@ export const useCategoryStore = defineStore('categories', () => {
 
   // --- Actions ---
   const fetchCategories = async (filters: CategoryFilter = {}) => {
-    const cacheKey = appCache.generateKey(filters)
-    const cachedCategories = appCache.get<Category[]>(cacheKey)
-    
-    if (cachedCategories) {
-      categories.value = cachedCategories
-      return
-    }
 
     isLoading.value = true
     error.value = null
@@ -93,7 +85,6 @@ export const useCategoryStore = defineStore('categories', () => {
       const fetchedCategories = data.categories.map(mapCategory)
 
       categories.value = fetchedCategories
-      appCache.set(cacheKey, fetchedCategories)
 
     } catch (err) {
       console.error('Error fetching categories:', err)
@@ -104,12 +95,6 @@ export const useCategoryStore = defineStore('categories', () => {
   }
 
   const fetchCategoriesTree = async () => {
-    const cacheKey = 'categories_tree'
-    const cachedTree = appCache.get<CategoryWithChildren[]>(cacheKey)
-    
-    if (cachedTree) {
-      return cachedTree
-    }
 
     try {
       const response = await fetch(`${API_GATEWAY_URL}api/categories/tree`)
@@ -121,7 +106,6 @@ export const useCategoryStore = defineStore('categories', () => {
       const data = await response.json()
       const tree = data.categories.map((cat: any) => mapCategoryWithChildren(cat))
       
-      appCache.set(cacheKey, tree)
       return tree
     } catch (err) {
       console.error('Error fetching category tree:', err)
@@ -137,11 +121,7 @@ export const useCategoryStore = defineStore('categories', () => {
   }
 
   const getCategoryById = async (id: string): Promise<Category | null> => {
-    const cacheKey = `category_${id}`
-    const cachedCategory = appCache.get<Category>(cacheKey)
     
-    if (cachedCategory) return cachedCategory
-
     try {
       const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`)
       
@@ -152,7 +132,6 @@ export const useCategoryStore = defineStore('categories', () => {
 
       const data = await response.json()
       const category = mapCategory(data)
-      appCache.set(cacheKey, category)
       return category
     } catch (err) {
       console.error('Error fetching category:', err)
@@ -208,7 +187,6 @@ export const useCategoryStore = defineStore('categories', () => {
       
       // Update local state
       categories.value.push(category)
-      appCache.invalidate()
       
       return category
     } catch (err) {
@@ -251,7 +229,6 @@ export const useCategoryStore = defineStore('categories', () => {
         categories.value[index] = category
       }
       
-      appCache.invalidate()
     } catch (err) {
       console.error('Error updating category:', err)
       throw err
@@ -274,7 +251,6 @@ export const useCategoryStore = defineStore('categories', () => {
       
       // Update local state
       categories.value = categories.value.filter(cat => cat.id !== id)
-      appCache.invalidate()
     } catch (err) {
       console.error('Error deleting category:', err)
       throw err
@@ -305,7 +281,6 @@ export const useCategoryStore = defineStore('categories', () => {
         }
       })
       
-      appCache.invalidate()
     } catch (err) {
       console.error('Error reordering categories:', err)
       throw err

@@ -78,7 +78,7 @@ export async function syncToShopify(
       return { success: false, error: 'Product not found in inventory' };
     }
 
-    if (!inventory.sync_enabled || !inventory.shopify_inventory_item_id) {
+    if (!inventory.shopify_inventory_item_id) {
       return { success: false, error: 'Product not configured for Shopify sync' };
     }
 

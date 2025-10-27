@@ -123,11 +123,74 @@
       "products": "Producten",
       "categories": "Categorieën",
       "users": "Gebruikers",
-      "orders": "Bestellingen"
+      "orders": "Bestellingen",
+      "stock": "Voorraadbeheer"
     },
     "orders": {
       "title": "Bestellingenbeheer",
       "comingSoon": "Bestellingenbeheer binnenkort beschikbaar..."
+    },
+    "stock": {
+      "title": "Voorraadbeheer",
+      "refresh": "Vernieuwen",
+      "loading": "Voorraad laden...",
+      "errorLoading": "Voorraad laden mislukt",
+      "errorUpdating": "Voorraad bijwerken mislukt",
+      "retry": "Opnieuw proberen",
+      "noProducts": "Geen producten gevonden die aan uw filters voldoen",
+      "filters": {
+        "search": "Zoeken",
+        "searchPlaceholder": "Zoek op naam of artikelnummer...",
+        "stockStatus": "Voorraadstatus",
+        "shopifySync": "Shopify Sync",
+        "all": "Alle",
+        "inStock": "Op Voorraad",
+        "lowStock": "Lage Voorraad (≤10)",
+        "outOfStock": "Uitverkocht",
+        "synced": "Gesynchroniseerd",
+        "notSynced": "Niet Gesynchroniseerd"
+      },
+      "table": {
+        "product": "Product",
+        "totalStock": "Totale Voorraad",
+        "b2bStock": "B2B Voorraad",
+        "b2cStock": "B2C Voorraad",
+        "reserved": "Gereserveerd",
+        "shopifySync": "Shopify",
+        "actions": "Acties"
+      },
+      "shopify": {
+        "synced": "Gesynchroniseerd",
+        "notSynced": "Niet Gesynchroniseerd",
+        "syncedTooltip": "Product is gesynchroniseerd met Shopify",
+        "notSyncedTooltip": "Product is niet gekoppeld aan Shopify"
+      },
+      "actions": {
+        "edit": "Voorraad Bewerken"
+      },
+      "modal": {
+        "title": "Voorraad Bijwerken",
+        "currentTotal": "Huidige Totaal",
+        "currentB2B": "Huidige B2B",
+        "currentB2C": "Huidige B2C",
+        "reserved": "Gereserveerd",
+        "action": "Actie",
+        "actions": {
+          "add": "Voorraad Toevoegen",
+          "remove": "Voorraad Verwijderen",
+          "set": "Voorraad Instellen",
+          "reallocate": "B2B/B2C Herverdelen"
+        },
+        "quantity": "Aantal",
+        "newB2BStock": "Nieuwe B2B Voorraad",
+        "newB2CStock": "Nieuwe B2C Voorraad",
+        "reallocationError": "Totale toewijzing (max {total}) kan beschikbare voorraad niet overschrijden",
+        "syncToShopify": "Wijzigingen synchroniseren naar Shopify",
+        "notes": "Notities (Optioneel)",
+        "notesPlaceholder": "Reden voor voorraadwijziging...",
+        "cancel": "Annuleren",
+        "update": "Voorraad Bijwerken"
+      }
     },
     "categories": {
       "category": "Categorie",

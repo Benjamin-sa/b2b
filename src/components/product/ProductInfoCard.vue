@@ -52,11 +52,6 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                         <!-- Left Column -->
                         <div class="space-y-1">
-                            <div v-if="product.category" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
-                                <span class="text-sm font-medium text-gray-600 col-span-1">{{
-                                    $t('products.info.labels.category') }}</span>
-                                <span class="text-sm text-gray-900 col-span-2">{{ product.category }}</span>
-                            </div>
                             <div v-if="product.brand" class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
                                 <span class="text-sm font-medium text-gray-600 col-span-1">{{
                                     $t('products.info.labels.brand') }}</span>
@@ -84,18 +79,18 @@
                                         product.dimensions.height }} cm
                                 </span>
                             </div>
-                            <div v-if="product.minOrderQuantity"
+                            <div v-if="product.min_order_quantity"
                                 class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
                                 <span class="text-sm font-medium text-gray-600 col-span-1">{{
                                     $t('products.info.labels.minOrder') }}</span>
-                                <span class="text-sm text-gray-900 col-span-2">{{ product.minOrderQuantity }} {{
+                                <span class="text-sm text-gray-900 col-span-2">{{ product.min_order_quantity }} {{
                                     product.unit || $t('products.info.labels.pieces') }}</span>
                             </div>
-                            <div v-if="product.maxOrderQuantity"
+                            <div v-if="product.max_order_quantity"
                                 class="grid grid-cols-3 gap-3 py-2 border-b border-gray-100">
                                 <span class="text-sm font-medium text-gray-600 col-span-1">{{
                                     $t('products.info.labels.maxOrder') }}</span>
-                                <span class="text-sm text-gray-900 col-span-2">{{ product.maxOrderQuantity }} {{
+                                <span class="text-sm text-gray-900 col-span-2">{{ product.max_order_quantity }} {{
                                     product.unit || $t('products.info.labels.pieces') }}</span>
                             </div>
                         </div>
@@ -143,13 +138,12 @@ const tabs = [
 
 const hasAnyDetails = computed(() => {
     return !!(
-        props.product.category ||
         props.product.brand ||
         props.product.weight ||
         props.product.unit ||
         props.product.dimensions ||
-        props.product.minOrderQuantity ||
-        props.product.maxOrderQuantity
+        props.product.min_order_quantity ||
+        props.product.max_order_quantity
     );
 });
 </script>

@@ -114,8 +114,9 @@ export async function createInvoiceWithItems(
         price: item.stripe_price_id,
         quantity: item.quantity,
         metadata: {
-          shopifyVariantId: item.metadata.shopify_variant_id || '',
-          productName: item.metadata.product_name || '',
+          product_id: item.metadata.product_id,
+          shopify_variant_id: item.metadata.shopify_variant_id || '',
+          product_name: item.metadata.product_name || '',
         },
       });
 

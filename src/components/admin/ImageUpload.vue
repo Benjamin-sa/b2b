@@ -247,7 +247,9 @@ const removeImage = async (index: number) => {
 const setPrimaryImage = (index: number) => {
     if (index > 0) {
         const [primaryImage] = images.value.splice(index, 1)
-        images.value.unshift(primaryImage)
+        if (primaryImage) {
+            images.value.unshift(primaryImage)
+        }
     }
 }
 

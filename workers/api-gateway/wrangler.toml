@@ -28,6 +28,15 @@ service = "b2b-stripe-service"
 binding = "SHOPIFY_SYNC_SERVICE"
 service = "b2b-shopify-sync-service"
 
+[[services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service"
+
+# Queue Binding for Email Service
+[[queues.producers]]
+queue = "b2b-email-queue"
+binding = "EMAIL_QUEUE"
+
 # D1 Database binding (for invoice queries)
 [[d1_databases]]
 binding = "DB"
@@ -64,6 +73,11 @@ service = "b2b-stripe-service-dev"
 [[env.dev.services]]
 binding = "SHOPIFY_SYNC_SERVICE"
 service = "b2b-shopify-sync-service-dev"
+
+# Queue Binding for Email Service (dev)
+[[env.dev.queues.producers]]
+queue = "b2b-email-queue-dev"
+binding = "EMAIL_QUEUE"
 
 # D1 Database binding (dev)
 [[env.dev.d1_databases]]

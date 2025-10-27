@@ -99,13 +99,13 @@ const loadProducts = async () => {
         const filters: ProductFilter = {
             ...props.filters,
             limit: 8, // Show 8 products in carousel
-            sortBy: 'createdAt', // Sort by newest first
-            sortOrder: 'desc'
+            sort_by: 'created_at', // Sort by newest first
+            sort_order: 'desc'
         }
 
         // Add comingSoon filter if specified
         if (props.comingSoonOnly) {
-            filters.comingSoon = true
+            filters.coming_soon = true
         }
 
         await productStore.fetchProducts(filters)

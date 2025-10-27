@@ -88,7 +88,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
-                                        <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name"
+                                        <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
                                             class="h-10 w-10 rounded-lg object-cover" />
                                         <div v-else
                                             class="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
@@ -102,34 +102,34 @@
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
                                         <div class="text-sm text-gray-500 html-content"
-                                            v-html="truncateHtml(product.description, 60)">
+                                            v-html="truncateHtml(product.description || '', 60)">
                                         </div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.category || $t('admin.products.noCategory') }}
+                                {{ product.category_id || $t('admin.products.noCategory') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 €{{ product.price.toFixed(2) }}
-                                <span v-if="product.originalPrice && product.originalPrice > product.price"
+                                <span v-if="product.original_price && product.original_price > product.price"
                                     class="text-xs text-gray-500 line-through ml-1">
-                                    €{{ product.originalPrice.toFixed(2) }}
+                                    €{{ product.original_price.toFixed(2) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span :class="[
-                                    product.inStock
+                                    (product.inventory?.b2b_stock ?? 0) > 0
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800',
                                     'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                 ]">
-                                    {{ product.inStock ? $t('admin.products.inStock') : $t('admin.products.outOfStock')
+                                    {{ (product.inventory?.b2b_stock ?? 0) > 0 ? $t('admin.products.inStock') : $t('admin.products.outOfStock')
                                     }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.shopifyVariantId || '-' }}
+                                {{ product.inventory?.shopify_variant_id || '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900 mr-3">

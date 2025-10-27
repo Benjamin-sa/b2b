@@ -130,17 +130,17 @@
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ product.name }}</h3>
                                 <div class="text-gray-600 mt-1 html-content"
-                                    v-html="truncateHtml(product.description, 150)"></div>
+                                    v-html="truncateHtml(product.description || '', 150)"></div>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
-                                    <button :disabled="product.comingSoon || !product.inStock" :class="[
-                                            product.comingSoon || !product.inStock
+                                    <button :disabled="product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0" :class="[
+                                            product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0
                                                 ? 'bg-gray-300 cursor-not-allowed'
                                                 : 'bg-blue-600 hover:bg-blue-700',
                                             'px-4 py-2 text-white rounded-md'
                                         ]">
-                                        <span v-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
-                                        <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                                        <span v-if="product.coming_soon === 1">{{ $t('products.card.comingSoon') }}</span>
+                                        <span v-else-if="(product.inventory?.b2b_stock ?? 0) <= 0">{{ $t('products.card.outOfStock') }}</span>
                                         <span v-else>{{ $t('products.card.addToCart') }}</span>
                                     </button>
                                 </div>
@@ -199,11 +199,10 @@ const categoryIdFromRoute = computed(() => route.params.categoryId as string || 
 // --- Local State for Filters ---
 const filters = reactive<ProductFilter>({
     search_term: '',
-    categoryId: '',
-    category: '',
-    inStock: undefined,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    category_id: '',
+    in_stock: undefined,
+    sort_by: 'name',
+    sort_order: 'asc',
     limit: 12, // How many items to fetch per page
 });
 
@@ -212,17 +211,16 @@ const categories = ref<string[]>([]);
 // Watch for route changes to update category filter
 watch(categoryIdFromRoute, (newCategoryId) => {
     if (newCategoryId) {
-        filters.category_id_id = newCategoryId;
-        filters.category_id = ''; // Clear old category filter
+        filters.category_id = newCategoryId;
     } else {
-        filters.category_id_id = '';
+        filters.category_id = '';
     }
 }, { immediate: true });
 
 // Get current category info for display
 const currentCategory = computed(() => {
-    if (!filters.category_id_id) return null;
-    return categoryStore.categories.find(cat => cat.id === filters.category_id_id);
+    if (!filters.category_id) return null;
+    return categoryStore.categories.find(cat => cat.id === filters.category_id);
 });
 
 // --- Event Handlers ---
@@ -232,7 +230,6 @@ const handleSearch = (searchTerm: string) => {
 
 const handleCategoryChange = (category: string) => {
     filters.category_id = category;
-    filters.category_id_id = ''; // Clear categoryId when using old category filter
 };
 
 const handleStockFilterChange = (inStock: boolean) => {
@@ -240,7 +237,7 @@ const handleStockFilterChange = (inStock: boolean) => {
 };
 
 const handleSortChange = (sortBy: string) => {
-    filters.sort_by = sort_by as 'name' | 'price' | 'createdAt' | 'updatedAt';
+    filters.sort_by = sortBy as 'name' | 'price' | 'created_at' | 'updated_at' | 'stock';
 };
 
 const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -298,8 +295,7 @@ const loadMore = () => {
 
 const clearFilters = () => {
     filters.search_term = '';
-    filters.category_id = '';
-    filters.category_id_id = categoryIdFromRoute.value || ''; // Keep category from route
+    filters.category_id = categoryIdFromRoute.value || ''; // Keep category from route
     filters.in_stock = undefined;
     filters.min_price = undefined;
     filters.max_price = undefined;

@@ -35,6 +35,21 @@ export async function getInventoryByShopifyVariantId(
 }
 
 /**
+ * Get product inventory by Shopify inventory item ID
+ */
+export async function getInventoryByInventoryItemId(
+  db: D1Database,
+  inventoryItemId: string
+): Promise<ProductInventory | null> {
+  const result = await db
+    .prepare('SELECT * FROM product_inventory WHERE shopify_inventory_item_id = ?')
+    .bind(inventoryItemId)
+    .first<ProductInventory>();
+
+  return result || null;
+}
+
+/**
  * Get all products with sync enabled
  */
 export async function getAllSyncEnabledProducts(
@@ -67,6 +82,8 @@ export async function updateLastSyncTime(
 
 /**
  * Update B2C stock from Shopify webhook
+ * This automatically adjusts total_stock to accommodate the new B2C stock level
+ * while keeping B2B stock unchanged
  */
 export async function updateB2CStock(
   db: D1Database,
@@ -83,18 +100,23 @@ export async function updateB2CStock(
 
   // Calculate changes
   const b2cChange = newB2CStock - current.b2c_stock;
-  const totalChange = b2cChange; // Total stock changes by same amount
+  const newTotalStock = current.b2b_stock + newB2CStock; // B2B stays same, total = B2B + new B2C
 
-  // Update inventory
+  console.log(`📊 Stock update for ${productId}:`);
+  console.log(`   B2C: ${current.b2c_stock} → ${newB2CStock} (${b2cChange > 0 ? '+' : ''}${b2cChange})`);
+  console.log(`   B2B: ${current.b2b_stock} (unchanged)`);
+  console.log(`   Total: ${current.total_stock} → ${newTotalStock}`);
+
+  // Update inventory - set new totals directly
   await db
     .prepare(
       `UPDATE product_inventory 
        SET 
-         total_stock = total_stock + ?,
+         total_stock = ?,
          b2c_stock = ?,
          updated_at = ?
        WHERE product_id = ?`
     )
-    .bind(b2cChange, newB2CStock, now, productId)
+    .bind(newTotalStock, newB2CStock, now, productId)
     .run();
 }

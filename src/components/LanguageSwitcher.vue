@@ -1,7 +1,7 @@
 <template>
     <div class="relative">
         <button @click="isOpen = !isOpen" class="flex items-center space-x-2">
-            <span class="text-sm font-medium text-gray-700">{{ currentLanguage.name }}</span>
+            <span class="text-sm font-medium text-gray-700">{{ currentLanguage?.name || 'Language' }}</span>
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>

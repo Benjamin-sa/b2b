@@ -530,6 +530,98 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // ============================================================================
+  // ADMIN METHODS
+  // ============================================================================
+
+  /**
+   * Get all users (admin only)
+   */
+  const getAllUsers = async (): Promise<UserProfile[]> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users')
+      }
+
+      const data = await response.json()
+      return data.users || []
+    } catch (err: any) {
+      console.error('Error fetching users:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  /**
+   * Update user verification status (admin only)
+   */
+  const updateUserVerification = async (userId: string, isVerified: boolean): Promise<void> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/verification`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isVerified })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update user verification status')
+      }
+
+      await notificationStore.success(
+        t('admin.userUpdated'),
+        t('admin.userVerificationUpdated', `User verification status has been ${isVerified ? 'enabled' : 'disabled'}.`)
+      )
+    } catch (err: any) {
+      console.error('Error updating user verification:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  /**
+   * Update user active status (admin only)
+   */
+  const updateUserStatus = async (userId: string, isActive: boolean): Promise<void> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update user status')
+      }
+
+      await notificationStore.success(
+        t('admin.userUpdated'),
+        t('admin.userStatusUpdated', `User account has been ${isActive ? 'activated' : 'deactivated'}.`)
+      )
+    } catch (err: any) {
+      console.error('Error updating user status:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  // ============================================================================
   // INITIALIZATION
   // ============================================================================
 
@@ -599,5 +691,10 @@ export const useAuthStore = defineStore('auth', () => {
     refreshAccessToken,
     authenticatedFetch,
     clearError,
+    
+    // Admin methods
+    getAllUsers,
+    updateUserVerification,
+    updateUserStatus,
   }
 })

@@ -135,11 +135,74 @@
       "products": "Products",
       "categories": "Categories",
       "users": "Users",
-      "orders": "Orders"
+      "orders": "Orders",
+      "stock": "Stock Management"
     },
     "orders": {
       "title": "Orders Management",
       "comingSoon": "Orders management coming soon..."
+    },
+    "stock": {
+      "title": "Stock Management",
+      "refresh": "Refresh",
+      "loading": "Loading inventory...",
+      "errorLoading": "Failed to load inventory",
+      "errorUpdating": "Failed to update stock",
+      "retry": "Try Again",
+      "noProducts": "No products found matching your filters",
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Search by name or SKU...",
+        "stockStatus": "Stock Status",
+        "shopifySync": "Shopify Sync",
+        "all": "All",
+        "inStock": "In Stock",
+        "lowStock": "Low Stock (≤10)",
+        "outOfStock": "Out of Stock",
+        "synced": "Synced",
+        "notSynced": "Not Synced"
+      },
+      "table": {
+        "product": "Product",
+        "totalStock": "Total Stock",
+        "b2bStock": "B2B Stock",
+        "b2cStock": "B2C Stock",
+        "reserved": "Reserved",
+        "shopifySync": "Shopify",
+        "actions": "Actions"
+      },
+      "shopify": {
+        "synced": "Synced",
+        "notSynced": "Not Synced",
+        "syncedTooltip": "Product is synced with Shopify",
+        "notSyncedTooltip": "Product is not linked to Shopify"
+      },
+      "actions": {
+        "edit": "Edit Stock"
+      },
+      "modal": {
+        "title": "Update Stock",
+        "currentTotal": "Current Total",
+        "currentB2B": "Current B2B",
+        "currentB2C": "Current B2C",
+        "reserved": "Reserved",
+        "action": "Action",
+        "actions": {
+          "add": "Add Stock",
+          "remove": "Remove Stock",
+          "set": "Set Stock",
+          "reallocate": "Reallocate B2B/B2C"
+        },
+        "quantity": "Quantity",
+        "newB2BStock": "New B2B Stock",
+        "newB2CStock": "New B2C Stock",
+        "reallocationError": "Total allocation ({total} max) cannot exceed available stock",
+        "syncToShopify": "Sync changes to Shopify",
+        "notes": "Notes (Optional)",
+        "notesPlaceholder": "Reason for stock change...",
+        "cancel": "Cancel",
+        "update": "Update Stock"
+      }
     },
     "categories": {
       "category": "Category",

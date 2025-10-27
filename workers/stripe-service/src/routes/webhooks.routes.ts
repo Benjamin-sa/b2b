@@ -76,8 +76,8 @@ webhooks.post('/', async (c) => {
 
     try {
       switch (event.type) {
-        case 'invoice.finalized':
-          await handleInvoiceFinalized(c.env, event.data.object as Stripe.Invoice);
+        case 'invoice.created':
+          await handleInvoiceCreated(c.env, event.data.object as Stripe.Invoice);
           break;
         
         case 'invoice.paid':
@@ -131,14 +131,16 @@ webhooks.post('/', async (c) => {
 });
 
 /**
- * Handle invoice.finalized event
+ * Handle invoice.created event
  * 
- * Fired when Stripe finalizes an invoice (makes it immutable).
- * Updates order stripe_status from 'draft' to 'open' and adds URLs for customer access.
+ * Fired when Stripe creates an invoice.
+ * Updates order stripe_status and adds URLs for customer access.
  * Also fetches and stores line items with full product/pricing details if not already stored.
+ * 
+ * NOTE: Stock reduction happens during invoice creation in API Gateway, not here.
  */
-async function handleInvoiceFinalized(env: Env, invoice: Stripe.Invoice) {
-  console.log(`[Webhook] 📄 Processing invoice.finalized: ${invoice.id}`);
+async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
+  console.log(`[Webhook] 📄 Processing invoice.created: ${invoice.id}`);
 
   // Check if order exists in D1 (linked by stripe_invoice_id)
   const existing = await env.DB.prepare(
@@ -299,6 +301,8 @@ async function handleInvoicePaid(env: Env, invoice: Stripe.Invoice) {
  * 
  * Fired when invoice is manually voided (cancelled).
  * Updates status and records void timestamp.
+ * 
+ * INVENTORY: Increases B2B stock for each product (order cancelled, stock returned)
  */
 async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
   console.log(`[Webhook] 🚫 Processing invoice.voided: ${invoice.id}`);
@@ -313,23 +317,28 @@ async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
     return;
   }
 
+  const orderInternalId = (existing as any).id;
+
   await env.DB.prepare(`
     UPDATE orders
     SET 
       stripe_status = ?,
       status = ?,
-      voided_at = ?,
       updated_at = ?
     WHERE stripe_invoice_id = ?
   `).bind(
     'void',
     'cancelled', // Update order status to cancelled when voided
     new Date().toISOString(),
-    new Date().toISOString(),
     invoice.id
   ).run();
 
   console.log(`[Webhook] ✅ Voided order with invoice ${invoice.id}`);
+
+  // ============================================================================
+  // INCREASE B2B STOCK (Invoice voided = order cancelled)
+  // ============================================================================
+  await increaseB2BStockFromInvoice(env, invoice, orderInternalId);
 }
 
 /**
@@ -343,6 +352,128 @@ async function handleInvoicePaymentFailed(env: Env, invoice: Stripe.Invoice) {
   
   // Per requirements: "2) no" - we don't track failed payments
   // Just log it for debugging purposes
+}
+
+// ============================================================================
+// INVENTORY STOCK MANAGEMENT HELPERS
+// ============================================================================
+
+/**
+ * Increase B2B stock when invoice is voided (order cancelled)
+ * 
+ * Reverses stock reduction by returning products to B2B inventory.
+ * Uses productId from metadata (works for both Shopify-linked and standalone products).
+ * Logs all changes to inventory_sync_log for audit trail.
+ */
+async function increaseB2BStockFromInvoice(
+  env: Env,
+  invoice: Stripe.Invoice,
+  orderInternalId: string
+) {
+  if (!invoice.lines?.data || invoice.lines.data.length === 0) {
+    console.log(`[Webhook] ℹ️  No line items in invoice ${invoice.id}, skipping stock increase`);
+    return;
+  }
+
+  console.log(`[Webhook] 📈 Increasing B2B stock for ${invoice.lines.data.length} line items`);
+
+  const now = new Date().toISOString();
+  const stockUpdates: D1PreparedStatement[] = [];
+  const logEntries: D1PreparedStatement[] = [];
+
+  for (const line of invoice.lines.data) {
+    // Skip non-product items (e.g., shipping with metadata.type = 'shipping')
+    if (line.metadata?.type === 'shipping') {
+      continue;
+    }
+
+    const productId = line.metadata?.product_id;
+    const quantity = line.quantity || 1;
+
+    if (!productId) {
+      console.warn(`[Webhook] ⚠️  Line item ${line.id} has no product_id in metadata, skipping stock update`);
+      continue;
+    }
+
+    // Verify product exists in database
+    const product = await env.DB.prepare(
+      'SELECT id FROM products WHERE id = ?'
+    ).bind(productId).first();
+
+    if (!product) {
+      console.warn(`[Webhook] ⚠️  Product ${productId} not found in database`);
+      continue;
+    }
+
+    // Get current inventory
+    const currentInventory = await env.DB.prepare(
+      'SELECT total_stock, b2b_stock, b2c_stock FROM product_inventory WHERE product_id = ?'
+    ).bind(productId).first();
+
+    if (!currentInventory) {
+      console.warn(`[Webhook] ⚠️  No inventory record for product ${productId}`);
+      continue;
+    }
+
+    const currentB2BStock = (currentInventory as any).b2b_stock;
+    const currentB2CStock = (currentInventory as any).b2c_stock;
+    const currentTotalStock = (currentInventory as any).total_stock;
+
+    const newB2BStock = currentB2BStock + quantity;
+    const newTotalStock = currentTotalStock + quantity;
+
+    // Prepare stock update
+    stockUpdates.push(
+      env.DB.prepare(`
+        UPDATE product_inventory
+        SET 
+          total_stock = ?,
+          b2b_stock = ?,
+          updated_at = ?
+        WHERE product_id = ?
+      `).bind(newTotalStock, newB2BStock, now, productId)
+    );
+
+    // Prepare audit log entry
+    logEntries.push(
+      env.DB.prepare(`
+        INSERT INTO inventory_sync_log (
+          id, product_id, action, source,
+          total_change, b2b_change, b2c_change,
+          total_stock_after, b2b_stock_after, b2c_stock_after,
+          reference_id, reference_type, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(),
+        productId,
+        'b2b_order_void',
+        'stripe_webhook',
+        quantity,  // Total increased
+        quantity,  // B2B increased
+        0,         // B2C unchanged
+        newTotalStock,
+        newB2BStock,
+        currentB2CStock,
+        invoice.id,
+        'stripe_invoice_voided',
+        now
+      )
+    );
+
+    console.log(`[Webhook] 📈 Product ${productId}: B2B stock ${currentB2BStock} → ${newB2BStock} (+${quantity})`);
+  }
+
+  if (stockUpdates.length > 0) {
+    try {
+      await env.DB.batch([...stockUpdates, ...logEntries]);
+      console.log(`[Webhook] ✅ Increased B2B stock for ${stockUpdates.length} products`);
+    } catch (error: any) {
+      console.error(`[Webhook] ❌ Failed to increase stock:`, error);
+      throw error;
+    }
+  } else {
+    console.log(`[Webhook] ℹ️  No stock updates needed for invoice ${invoice.id}`);
+  }
 }
 
 export default webhooks;

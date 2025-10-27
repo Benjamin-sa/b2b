@@ -35,18 +35,6 @@ export function validatePrice(price: any): void {
   }
 }
 
-/**
- * Validate stock is a non-negative integer
- */
-export function validateStock(stock: any): void {
-  if (
-    typeof stock !== 'number' ||
-    stock < 0 ||
-    !Number.isInteger(stock)
-  ) {
-    throw errors.validationError('Stock must be a non-negative integer');
-  }
-}
 
 /**
  * Validate pagination parameters
