@@ -12,6 +12,11 @@ binding = "DB"
 database_name = "b2b-prod"
 database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
 
+# Service bindings
+[[services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service"
+
 [vars]
 ENVIRONMENT = "production"
 STRIPE_API_VERSION = "2024-06-20"
@@ -35,6 +40,11 @@ name = "b2b-stripe-service-dev"
 binding = "DB"
 database_name = "b2b-dev"
 database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
+
+# Service bindings (dev)
+[[env.dev.services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service-dev"
 
 [env.dev.vars]
 ENVIRONMENT = "development"

@@ -31,6 +31,11 @@ export interface ShopifySyncService extends Fetcher {
   fetch: (request: Request) => Promise<Response>;
 }
 
+export interface TelegramService extends Fetcher {
+  // Telegram notification service is callable via service binding
+  fetch: (request: Request) => Promise<Response>;
+}
+
 export interface Env {
   ENVIRONMENT: 'development' | 'production';
   
@@ -40,6 +45,7 @@ export interface Env {
   INVENTORY_SERVICE: InventoryService;
   STRIPE_SERVICE: StripeService;
   SHOPIFY_SYNC_SERVICE: ShopifySyncService;
+  TELEGRAM_SERVICE: TelegramService;
   
   // Queue Bindings (for async email processing)
   EMAIL_QUEUE: Queue;
@@ -52,6 +58,15 @@ export interface Env {
   
   // Rate limiting (optional KV namespace)
   RATE_LIMIT?: KVNamespace;
+}
+
+// Context variables that can be set in middleware
+export type ContextVariables = {
+  user: {
+    userId: string;
+    email: string;
+    stripeCustomerId: string | null;
+  };
 }
 
 export interface ProxyOptions {

@@ -108,7 +108,17 @@
                             </h3>
                         </div>
                         <div class="px-4">
-                            <LanguageSwitcher />
+                            <!-- Language Selector Button -->
+                            <button @click="openLanguageModal" class="mobile-nav-link group w-full">
+                                <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                </svg>
+                                <span class="flex-1 text-left">{{ currentLanguageName }}</span>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -127,10 +137,58 @@
             </div>
         </div>
     </Transition>
+
+    <!-- Language Selection Modal -->
+    <Transition name="language-modal">
+        <div v-if="showLanguageModal" class="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" @click="closeLanguageModal"></div>
+            
+            <!-- Modal Content -->
+            <div class="relative w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-2xl max-h-[80vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-2xl md:rounded-t-2xl">
+                    <h3 class="text-lg font-semibold text-gray-900">{{ $t('navigation.selectLanguage') || 'Select Language' }}</h3>
+                    <button @click="closeLanguageModal" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Scrollable Language List -->
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="space-y-2">
+                        <button v-for="lang in languages" :key="lang.code" @click="selectLanguage(lang.code)"
+                            :class="[
+                                'w-full flex items-center justify-between px-4 py-3.5 rounded-lg transition-all duration-200',
+                                currentLocale === lang.code 
+                                    ? 'bg-blue-50 text-blue-700 border-2 border-blue-300 shadow-sm' 
+                                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-200 hover:bg-blue-50'
+                            ]">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">{{ lang.flag }}</span>
+                                <div class="text-left">
+                                    <div class="font-medium">{{ lang.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ lang.nativeName }}</div>
+                                </div>
+                            </div>
+                            <svg v-if="currentLocale === lang.code" class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
 </template>
 
 <script setup lang="ts">
-import LanguageSwitcher from './LanguageSwitcher.vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { locale } = useI18n()
 
 // Props
 defineProps<{
@@ -146,6 +204,40 @@ const emit = defineEmits<{
     'admin-toggle': []
     logout: []
 }>()
+
+// Language modal state
+const showLanguageModal = ref(false)
+
+// Language management - Expandable list with flags and native names
+const languages = [
+    { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+    { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
+    { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+    { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+
+    // Add more languages as needed
+]
+
+const currentLocale = computed(() => locale.value)
+
+const currentLanguageName = computed(() => {
+    const lang = languages.find(l => l.code === locale.value)
+    return lang ? `${lang.flag} ${lang.name}` : 'Language'
+})
+
+const openLanguageModal = () => {
+    showLanguageModal.value = true
+}
+
+const closeLanguageModal = () => {
+    showLanguageModal.value = false
+}
+
+const selectLanguage = (langCode: string) => {
+    locale.value = langCode
+    localStorage.setItem('language', langCode)
+    closeLanguageModal()
+}
 
 // Event handlers
 const handleLinkClick = () => {
@@ -248,16 +340,46 @@ const handleLogout = () => {
     }
 }
 
+/* Language Modal Transitions */
+.language-modal-enter-active {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.language-modal-leave-active {
+    transition: all 0.25s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.language-modal-enter-from,
+.language-modal-leave-to {
+    opacity: 0;
+}
+
+.language-modal-enter-from .bg-white,
+.language-modal-leave-to .bg-white {
+    transform: translateY(100%);
+}
+
+@media (min-width: 768px) {
+    .language-modal-enter-from .bg-white,
+    .language-modal-leave-to .bg-white {
+        transform: translateY(0) scale(0.95);
+    }
+}
+
 /* Reduced motion support for mobile menu */
 @media (prefers-reduced-motion: reduce) {
 
     .mobile-menu-enter-active,
-    .mobile-menu-leave-active {
+    .mobile-menu-leave-active,
+    .language-modal-enter-active,
+    .language-modal-leave-active {
         transition: opacity 0.2s ease !important;
     }
 
     .mobile-menu-enter-from .mobile-menu-overlay>div:last-child,
-    .mobile-menu-leave-to .mobile-menu-overlay>div:last-child {
+    .mobile-menu-leave-to .mobile-menu-overlay>div:last-child,
+    .language-modal-enter-from .bg-white,
+    .language-modal-leave-to .bg-white {
         transform: none !important;
     }
 

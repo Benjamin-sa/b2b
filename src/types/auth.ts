@@ -28,16 +28,16 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string
   password: string
-  confirmPassword: string
-  companyName: string
-  firstName: string
-  lastName: string
+  confirm_password: string
+  company_name: string
+  first_name: string
+  last_name: string
   phone?: string
-  btwNumber: string
+  btw_number: string
   address: {
     street: string
-    houseNumber: string
-    postalCode: string
+    house_number: string
+    postal_code: string
     city: string
     country: string
   }

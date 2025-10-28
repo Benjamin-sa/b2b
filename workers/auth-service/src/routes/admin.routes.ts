@@ -14,6 +14,35 @@ import { hashPassword, validatePassword } from '../utils/password';
 
 const admin = new Hono<{ Bindings: Env }>();
 
+// Helper function to transform DB user to frontend UserProfile format
+function transformUserToProfile(user: User) {
+  // Build address object if any address fields exist
+  const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
+    ? {
+        street: user.address_street || '',
+        houseNumber: user.address_house_number || '',
+        postalCode: user.address_postal_code || '',
+        city: user.address_city || '',
+        country: user.address_country || '',
+      }
+    : undefined;
+
+  return {
+    uid: user.id,
+    email: user.email,
+    role: user.role,
+    companyName: user.company_name || '',
+    firstName: user.first_name || '',
+    lastName: user.last_name || '',
+    phone: user.phone || undefined,
+    btwNumber: user.btw_number || '',
+    address,
+    isVerified: user.is_verified === 1,
+    isActive: user.is_active === 1,
+    createdAt: user.created_at,
+  };
+}
+
 // Error handler middleware
 admin.onError((err, c) => {
   console.error('Admin Error:', err);
@@ -104,8 +133,11 @@ admin.get('/users', async (c) => {
       .bind(...params)
       .first<{ count: number }>();
 
+    // Transform users to frontend format (camelCase)
+    const transformedUsers = (users.results || []).map(transformUserToProfile);
+
     return c.json({
-      users: users.results || [],
+      users: transformedUsers,
       total: countResult?.count || 0,
       limit,
       offset,
@@ -137,7 +169,10 @@ admin.get('/users/:userId', async (c) => {
       throw createAuthError('USER_NOT_FOUND');
     }
 
-    return c.json({ user });
+    // Transform user to frontend format (camelCase)
+    const transformedUser = transformUserToProfile(user);
+
+    return c.json({ user: transformedUser });
   } catch (error) {
     throw error;
   }

@@ -17,7 +17,7 @@
  * 
  */
 import { Hono } from 'hono';
-import type { Env } from './types';
+import type { Env, ContextVariables } from './types';
 import { corsMiddleware } from './middleware/cors';
 import { loggingMiddleware } from './middleware/logging';
 import { rateLimitMiddleware } from './middleware/rateLimit';
@@ -25,8 +25,9 @@ import authOrchestration from './routes/auth.orchestration';
 import productsOrchestration from './routes/products.orchestration';
 import categoriesOrchestration from './routes/categories.orchestration';
 import invoicesOrchestration from './routes/invoices.orchestration';
+import adminOrchestration from './routes/admin.orchestration';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
 // ============================================================================
 // GLOBAL MIDDLEWARE
@@ -111,18 +112,10 @@ app.all('/api/shopify/*', async (c) => {
 });
 
 // ============================================================================
-// ADMIN ROUTES → Auth Service (Direct Binding)
+// ADMIN ROUTES → Auth Service (via Orchestration)
 // ============================================================================
-// Admin operations don't need orchestration - direct service binding
-app.all('/admin/*', async (c) => {
-  const request = new Request(c.req.url.replace('/admin', '/admin'), {
-    method: c.req.method,
-    headers: c.req.raw.headers,
-    body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
-  });
-  
-  return c.env.AUTH_SERVICE.fetch(request);
-});
+// Admin routes with orchestration (user verification + email)
+app.route('/admin', adminOrchestration);
 
 // ============================================================================
 // ERROR HANDLING

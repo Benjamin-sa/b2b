@@ -3,8 +3,8 @@
         <!-- Header with Add Product Button -->
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900">{{ $t('admin.products.managementTitle') }}</h2>
-                <p class="mt-1 text-sm text-gray-500">{{ $t('admin.products.managementSubtitle') }}</p>
+                <h2 class="text-2xl font-bold text-gray-900">Product Management</h2>
+                <p class="mt-1 text-sm text-gray-500">Manage your product catalog</p>
             </div>
             <button @click="showAddForm = true"
                 class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -12,7 +12,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                {{ $t('admin.products.addProduct') }}
+                Add Product
             </button>
         </div>
 
@@ -27,22 +27,22 @@
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
                         <input v-model="searchTerm" @input="searchProducts" type="text"
-                            :placeholder="$t('admin.products.searchPlaceholder')"
+                            placeholder="Search products..."
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div class="flex gap-2">
                         <select v-model="selectedCategory" @change="filterProducts"
                             class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">{{ $t('admin.products.allCategories') }}</option>
+                            <option value="">All Categories</option>
                             <option v-for="category in categories" :key="category" :value="category">
                                 {{ category }}
                             </option>
                         </select>
                         <select v-model="stockFilter" @change="filterProducts"
                             class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">{{ $t('admin.products.allStock') }}</option>
-                            <option value="true">{{ $t('admin.products.inStock') }}</option>
-                            <option value="false">{{ $t('admin.products.outOfStock') }}</option>
+                            <option value="">All Stock Status</option>
+                            <option value="true">In Stock</option>
+                            <option value="false">Out of Stock</option>
                         </select>
                     </div>
                 </div>
@@ -54,34 +54,34 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.product') }}
+                                Product
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.category') }}
+                                Category
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.price') }}
+                                Price
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.stock') }}
+                                Stock
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.sku') }}
+                                SKU
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.actions') }}
+                                Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-if="productStore.isLoading">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.products.loading') }}
+                                Loading products...
                             </td>
                         </tr>
                         <tr v-else-if="productStore.products.length === 0">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.products.noProducts') }}
+                                No products found
                             </td>
                         </tr>
                         <tr v-else v-for="product in productStore.products" :key="product.id" class="hover:bg-gray-50">
@@ -108,7 +108,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.category_id || $t('admin.products.noCategory') }}
+                                {{ product.category_id || 'No Category' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 €{{ product.price.toFixed(2) }}
@@ -124,8 +124,7 @@
                                         : 'bg-red-100 text-red-800',
                                     'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                 ]">
-                                    {{ (product.inventory?.b2b_stock ?? 0) > 0 ? $t('admin.products.inStock') : $t('admin.products.outOfStock')
-                                    }}
+                                    {{ (product.inventory?.b2b_stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -133,10 +132,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900 mr-3">
-                                    {{ $t('admin.products.edit') }}
+                                    Edit
                                 </button>
                                 <button @click="confirmDelete(product)" class="text-red-600 hover:text-red-900">
-                                    {{ $t('admin.products.delete') }}
+                                    Delete
                                 </button>
                             </td>
                         </tr>
@@ -151,18 +150,18 @@
             <div class="absolute inset-0 bg-black bg-opacity-50"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full" @click.stop>
                 <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('admin.products.deleteTitle') }}</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Product</h3>
                     <p class="text-sm text-gray-500 mb-4">
-                        {{ $t('admin.products.deleteMessage', { productName: productToDelete.name }) }}
+                        Are you sure you want to delete "{{ productToDelete.name }}"? This action cannot be undone.
                     </p>
                     <div class="flex justify-end space-x-4">
                         <button @click="productToDelete = null"
                             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                            {{ $t('common.actions.cancel') }}
+                            Cancel
                         </button>
                         <button @click="deleteProduct"
                             class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
-                            {{ $t('admin.products.delete') }}
+                            Delete
                         </button>
                     </div>
                 </div>
@@ -176,10 +175,8 @@ import { ref, onMounted } from 'vue'
 import { useProductStore } from '../../../stores/products'
 import type { Product } from '../../../types'
 import ProductForm from '../ProductForm.vue'
-import { useI18n } from 'vue-i18n'
 import { truncateHtml } from '../../../utils/htmlUtils'
 
-const { t } = useI18n()
 const productStore = useProductStore()
 
 const showAddForm = ref(false)
@@ -222,7 +219,7 @@ const deleteProduct = async () => {
             productToDelete.value = null
         } catch (error) {
             console.error('Error deleting product:', error)
-            alert(t('admin.products.deleteFailed'))
+            alert('Failed to delete product. Please try again.')
         }
     }
 }

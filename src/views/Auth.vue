@@ -14,6 +14,44 @@
                     </div>
                 </div>
 
+                <!-- Language Toggler -->
+                <div class="relative">
+                    <button @click="toggleLanguageMenu" 
+                        class="flex items-center space-x-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700">{{ currentLanguage?.name }}</span>
+                        <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" 
+                            :class="{ 'rotate-180': isLanguageMenuOpen }"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    
+                    <!-- Language Dropdown -->
+                    <Transition name="dropdown">
+                        <div v-if="isLanguageMenuOpen" 
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 overflow-hidden">
+                            <button v-for="lang in languages" 
+                                :key="lang.code" 
+                                @click="setLanguage(lang.code)"
+                                :class="[
+                                    'w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center justify-between',
+                                    locale === lang.code 
+                                        ? 'bg-blue-50 text-blue-700 font-medium' 
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                ]">
+                                <span>{{ lang.name }}</span>
+                                <svg v-if="locale === lang.code" class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </Transition>
+                </div>
+
             </div>
         </header>
 
@@ -25,7 +63,11 @@
                     <!-- Header -->
                     <div class="px-8 pt-8 pb-6 text-center">
                         <Transition name="fade" mode="out-in">
-                            <div v-if="isLoginMode" key="login-header">
+                            <div v-if="isPasswordResetMode" key="reset-header">
+                                <h2 class="text-3xl font-bold text-gray-900 mb-3">{{ $t('auth.resetYourPassword') }}</h2>
+                                <p class="text-gray-600">{{ $t('auth.resetPasswordInstruction') }}</p>
+                            </div>
+                            <div v-else-if="isLoginMode" key="login-header">
                                 <h2 class="text-3xl font-bold text-gray-900 mb-3">{{ $t('auth.welcomeBack') }}</h2>
                                 <p class="text-gray-600">{{ $t('auth.signInToB2B') }}</p>
                             </div>
@@ -40,8 +82,13 @@
                     <div class="px-8 pb-8">
                         <!-- Forms with transition -->
                         <Transition name="fade" mode="out-in">
+                            <!-- Password Reset Form -->
+                            <PasswordResetForm v-if="isPasswordResetMode" key="reset-form" 
+                                :resetToken="resetToken"
+                                @back-to-login="handleBackToLogin" />
+
                             <!-- Login Form -->
-                            <LoginForm v-if="isLoginMode" key="login-form" :loading="authStore.loading"
+                            <LoginForm v-else-if="isLoginMode" key="login-form" :loading="authStore.loading"
                                 @login="handleLogin" />
 
                             <!-- Register Form -->
@@ -53,7 +100,7 @@
                     </div>
 
                     <!-- Footer -->
-                    <div class="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                    <div v-if="!isPasswordResetMode" class="px-8 py-6 bg-gray-50 border-t border-gray-100">
                         <p class="text-center text-sm text-gray-600">
                             {{ isLoginMode ? $t('auth.dontHaveAccount') : $t('auth.alreadyHaveAccount') }}
                             <button @click="toggleMode"
@@ -79,31 +126,89 @@
                 </div>
             </div>
         </main>
-
-        <!-- Footer -->
-        <footer class="w-full px-6 py-4 border-t border-gray-200">
-            <div class="max-w-7xl mx-auto text-center text-sm text-gray-500">
-                {{ $t('auth.copyright') }}
-            </div>
-        </footer>
     </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import LoginForm from '../components/auth/LoginForm.vue'
 import RegisterForm from '../components/auth/RegisterForm.vue'
+import PasswordResetForm from '../components/auth/PasswordResetForm.vue'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notifications'
 import { validateVATNumber, type VATValidationResult } from '../utils/vatValidation'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const isLoginMode = ref(true)
+
+// Password reset mode detection
+const isPasswordResetMode = ref(false)
+const resetToken = ref('')
+
+// Check URL query params on mount
+onMounted(() => {
+    // Check for password reset mode
+    if (route.query.mode === 'resetPassword' && route.query.token) {
+        isPasswordResetMode.value = true
+        resetToken.value = route.query.token as string
+        isLoginMode.value = false
+    }
+})
+
+// Handle back to login from password reset
+const handleBackToLogin = () => {
+    isPasswordResetMode.value = false
+    resetToken.value = ''
+    isLoginMode.value = true
+    // Clear query params
+    router.replace('/auth')
+}
+
+// Language toggler state
+const isLanguageMenuOpen = ref(false)
+
+const languages = [
+    { code: 'nl', name: 'Nederlands' },
+    { code: 'en', name: 'English' },
+    { code: 'fr', name: 'Français' },
+    { code: 'de', name: 'Deutsch' },
+]
+
+const currentLanguage = computed(() => {
+    return languages.find(lang => lang.code === locale.value) || languages[0]
+})
+
+const toggleLanguageMenu = () => {
+    isLanguageMenuOpen.value = !isLanguageMenuOpen.value
+}
+
+const setLanguage = (langCode: string) => {
+    locale.value = langCode
+    localStorage.setItem('language', langCode)
+    isLanguageMenuOpen.value = false
+}
+
+// Close language menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    if (!target.closest('.relative') && isLanguageMenuOpen.value) {
+        isLanguageMenuOpen.value = false
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+})
 
 // Redirect if already authenticated
 onMounted(() => {
@@ -201,17 +306,23 @@ const handleRegister = async () => {
     try {
         console.log('Attempting registration...')
         
-        // Prepare registration data as a single object
+        // Prepare registration data as a single object with snake_case
         const registrationData = {
             email: registerForm.value.email,
             password: registerForm.value.password,
-            confirmPassword: registerForm.value.confirmPassword,
-            companyName: registerForm.value.companyName,
-            firstName: registerForm.value.firstName,
-            lastName: registerForm.value.lastName,
-            btwNumber: registerForm.value.btwNumber.replace(/\s/g, '').toUpperCase(),
+            confirm_password: registerForm.value.confirmPassword,
+            company_name: registerForm.value.companyName,
+            first_name: registerForm.value.firstName,
+            last_name: registerForm.value.lastName,
+            btw_number: registerForm.value.btwNumber.replace(/\s/g, '').toUpperCase(),
             phone: registerForm.value.phone,
-            address: registerForm.value.address
+            address: {
+                street: registerForm.value.address.street,
+                house_number: registerForm.value.address.houseNumber,
+                postal_code: registerForm.value.address.postalCode,
+                city: registerForm.value.address.city,
+                country: registerForm.value.address.country
+            }
         }
         
         await authStore.register(registrationData)
@@ -260,6 +371,25 @@ const handleRegister = async () => {
     opacity: 0;
 }
 
+/* Dropdown transition for language menu */
+.dropdown-enter-active {
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dropdown-leave-active {
+    transition: all 0.15s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.dropdown-enter-from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+}
+
+.dropdown-leave-to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+}
+
 .slide-up-enter-active {
     transition: all 0.3s ease;
 }
@@ -290,6 +420,21 @@ select:focus {
         min-height: 100vh;
         min-height: 100dvh;
         /* Dynamic viewport height for mobile */
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .dropdown-enter-active,
+    .dropdown-leave-active,
+    .fade-enter-active,
+    .fade-leave-active {
+        transition: opacity 0.2s ease !important;
+    }
+
+    .dropdown-enter-from,
+    .dropdown-leave-to {
+        transform: none !important;
     }
 }
 </style>

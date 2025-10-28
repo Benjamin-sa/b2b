@@ -9,7 +9,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    {{ $t('admin.tabs.products') }}
+                    Products
                 </button>
                 <button @click="activeTab = 'categories'" :class="[
                     activeTab === 'categories'
@@ -17,7 +17,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    {{ $t('admin.tabs.categories') }}
+                    Categories
                 </button>
                 <button @click="activeTab = 'users'" :class="[
                     activeTab === 'users'
@@ -25,7 +25,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    {{ $t('admin.tabs.users') }}
+                    Users
                 </button>
                 <button @click="activeTab = 'stock'" :class="[
                     activeTab === 'stock'
@@ -33,7 +33,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    {{ $t('admin.tabs.stock') }}
+                    Stock Management
                 </button>
                 <button @click="activeTab = 'orders'" :class="[
                     activeTab === 'orders'
@@ -41,7 +41,7 @@
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                 ]">
-                    {{ $t('admin.tabs.orders') }}
+                    Orders
                 </button>
             </nav>
         </div>
@@ -70,10 +70,7 @@
 
             <!-- Orders Tab -->
             <div v-if="activeTab === 'orders'">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('admin.orders.title') }}</h3>
-                    <p class="text-gray-500">{{ $t('admin.orders.comingSoon') }}</p>
-                </div>
+                <OrdersManagement />
             </div>
         </div>
     </div>
@@ -85,6 +82,7 @@ import { useAuthStore } from '../stores/auth'
 import ProductsManagement from '../components/admin/management/ProductsManagement.vue'
 import CategoriesManagement from '../components/admin/management/CategoriesManagement.vue'
 import UsersManagement from '../components/admin/management/UsersManagement.vue'
+import OrdersManagement from '../components/admin/management/OrdersManagement.vue'
 import StockManagement from '../components/admin/StockManagement.vue'
 
 const authStore = useAuthStore()

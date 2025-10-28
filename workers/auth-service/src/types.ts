@@ -103,15 +103,15 @@ export interface AuthResponse {
 export interface RegisterRequest {
   email: string;
   password: string;
-  companyName: string;
-  firstName: string;
-  lastName: string;
+  company_name: string;
+  first_name: string;
+  last_name: string;
   phone?: string;
-  btwNumber?: string;
+  btw_number?: string;
   address?: {
     street: string;
-    houseNumber: string;
-    postalCode: string;
+    house_number: string;
+    postal_code: string;
     city: string;
     country: string;
   };

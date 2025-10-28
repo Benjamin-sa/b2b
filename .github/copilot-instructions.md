@@ -694,3 +694,7 @@ wrangler tail
 
 **Last Updated**: October 24, 2025  
 **Questions?**: Check worker-specific README.md files in `/workers/<service>/`
+
+
+
+**DO NOT CREATE SUMMARY DOCUMENTATION. ONLY RETURN THE CODE SNIPPET REQUESTED. ONLY DOCUMENTATION WHEN ASKED**

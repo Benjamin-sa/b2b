@@ -32,6 +32,7 @@ interface AuthResponse {
 interface PasswordResetResponse {
   message: string;
   resetToken?: string; // Only in development
+  firstName?: string | null; // User's first name for email personalization
 }
 
 /**
@@ -91,7 +92,33 @@ authOrchestration.post("/register", async (c) => {
     await c.env.EMAIL_QUEUE.send(emailMessage);
     console.log("✅ [Gateway] Welcome email queued successfully");
 
-    // Step 3: Return success immediately (don't wait for email)
+    // Step 3: Send Telegram notification to admins (NON-BLOCKING)
+    console.log("📱 [Gateway] Sending Telegram notification for new user registration");
+    
+    try {
+      const telegramRequest = new Request('https://dummy/notifications/user/registered', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: authResult.user.uid,
+          userData: {
+            firstName: authResult.user.firstName,
+            lastName: authResult.user.lastName,
+            companyName: authResult.user.companyName,
+            email: authResult.user.email,
+            // phone and btwNumber would be added here if available in authResult
+          }
+        })
+      });
+
+      await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
+      console.log("✅ [Gateway] Telegram notification sent successfully");
+    } catch (telegramError) {
+      // Log Telegram error but don't fail the request
+      console.error("⚠️  [Gateway] Failed to send Telegram notification:", telegramError);
+    }
+
+    // Step 4: Return success immediately (don't wait for notifications)
     console.log("🎉 [Gateway] Registration orchestration completed");
     return c.json(authResult, 201);
   } catch (error: any) {
@@ -201,6 +228,7 @@ authOrchestration.post("/password-reset/request", async (c) => {
       type: "password-reset",
       email: data.email,
       resetToken: authResult.resetToken, // Only in dev
+      firstName: authResult.firstName, // User's first name for personalization
       timestamp: new Date().toISOString(),
     };
 

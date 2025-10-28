@@ -1,6 +1,5 @@
-import type { Environment, WelcomeEmailRequest, EmailResponse } from '../types/email';
+import type { Environment, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, jsonResponse, corsHeaders } from '../utils/validators';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -141,7 +140,12 @@ If you didn't create this account, please contact us immediately.
       to,
       'Welcome to 4Tparts B2B Platform',
       htmlContent,
-      textContent
+      textContent,
+      {
+        clickTracking: true, // Can track clicks for marketing purposes
+        emailType: 'welcome',
+        categories: ['b2b-transactional', 'welcome']
+      }
     );
     
     return result;
@@ -152,56 +156,5 @@ If you didn't create this account, please contact us immediately.
       success: false, 
       error: error instanceof Error ? error.message : 'Internal server error' 
     };
-  }
-}
-
-/**
- * HTTP Handler - wraps core logic with HTTP request/response handling
- */
-export async function handleWelcomeEmail(request: Request, env: Environment): Promise<Response> {
-  const origin = request.headers.get('Origin');
-  const cors = corsHeaders(env, origin || undefined);
-  
-  // Handle OPTIONS request for CORS
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: cors });
-  }
-  
-  if (request.method !== 'POST') {
-    return jsonResponse(
-      { success: false, error: 'Method not allowed' }, 
-      405, 
-      cors
-    );
-  }
-  
-  try {
-    const body: WelcomeEmailRequest = await request.json();
-    
-    // Validate request
-    const validation = validateRequest(body, ['to', 'userName', 'companyName']);
-    if (!validation.valid) {
-      return jsonResponse(
-        { success: false, error: validation.error }, 
-        400, 
-        cors
-      );
-    }
-    
-    // Call core email sending function
-    const result = await sendWelcomeEmail(env, body.to, body.userName, body.companyName);
-    
-    return jsonResponse(result, result.success ? 200 : 500, cors);
-    
-  } catch (error) {
-    console.error('Welcome email handler error:', error);
-    return jsonResponse(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
-      500, 
-      cors
-    );
   }
 }

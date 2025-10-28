@@ -13,6 +13,7 @@
 import type Stripe from 'stripe';
 import type { Env, CustomerInput, CustomerUpdateInput } from '../types';
 import { getStripeClient, handleStripeError, validateRequired } from '../utils/stripe.utils';
+import { getCountryCode } from '../utils/country-codes';
 
 /**
  * Build Stripe customer data from input
@@ -21,6 +22,9 @@ import { getStripeClient, handleStripeError, validateRequired } from '../utils/s
 function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
   // Build individual name
   const individualName = `${input.first_name || ''} ${input.last_name || ''}`.trim();
+  
+  // Convert country name to ISO code for Stripe (e.g., "Belgium" -> "BE")
+  const countryCode = getCountryCode(input.address_country);
   
   const customerData: Stripe.CustomerCreateParams = {
     email: input.email,
@@ -35,8 +39,8 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
       source: 'b2b_stripe_service',
       createdAt: new Date().toISOString(),
     },
-    preferred_locales: input.address_country 
-      ? [input.address_country.toLowerCase()] 
+    preferred_locales: countryCode 
+      ? [countryCode.toLowerCase()] 
       : undefined,
   };
 
@@ -49,8 +53,12 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
         : undefined,
       city: input.address_city || undefined,
       postal_code: input.address_postal_code || undefined,
-      country: input.address_country || undefined, // ISO 3166-1 alpha-2
+      country: countryCode, // ISO 3166-1 alpha-2 (e.g., "BE")
     };
+    
+    if (!countryCode && input.address_country) {
+      console.warn(`⚠️ Unknown country name: "${input.address_country}". Tax calculation may fail.`);
+    }
   }
 
   // Handle BTW/VAT number with EU reverse charge mechanism

@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <ProductsHeader :search-term="filters.search_term" :active-category="filters.category_id"
+        <ProductsHeader :search-term="filters.search_term" :active-category="currentCategory?.name || ''"
             :in-stock-only="filters.in_stock" :sort-by="filters.sort_by" :is-loading="productStore.isLoading"
             :product-count="productStore.products.length" :total-count="productStore.products.length"
             :view-mode="viewMode" :price-range="priceRange" :has-advanced-filters="showAdvancedFilters"
@@ -49,7 +49,7 @@
                         <select v-model="filters.category_id"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
-                            <option v-for="category in categories" :key="category" :value="category">{{ category }}
+                            <option v-for="category in categoryStore.categories" :key="category.id" :value="category.name">{{ category.name }}
                             </option>
                         </select>
                     </div>
@@ -180,6 +180,8 @@ const viewMode = ref<'grid' | 'list'>('grid');
 const showAdvancedFilters = ref(false);
 const priceRange = ref('');
 
+// Remove legacy categories array - we now use categoryStore.categories directly
+
 // Simple debounce implementation
 const debounce = (func: Function, wait: number) => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -205,8 +207,6 @@ const filters = reactive<ProductFilter>({
     sort_order: 'asc',
     limit: 12, // How many items to fetch per page
 });
-
-const categories = ref<string[]>([]);
 
 // Watch for route changes to update category filter
 watch(categoryIdFromRoute, (newCategoryId) => {
@@ -312,8 +312,5 @@ onMounted(async () => {
 
     // Initial fetch when the component loads
     applyFiltersAndFetch(false);
-
-    // Fetch available categories for the dropdown (legacy support)
-    categories.value = await productStore.getCategories();
 });
 </script>

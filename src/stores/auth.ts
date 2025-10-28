@@ -241,7 +241,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Login failed')
+        // Create structured error with code from API
+        const err = new Error(errorData.message || errorData.error || 'Login failed')
+        ;(err as any).code = errorData.code
+        throw err
       }
 
       const data = await response.json()
@@ -291,7 +294,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Registration failed')
+        // Create structured error with code from API
+        const err = new Error(errorData.message || errorData.error || 'Registration failed')
+        ;(err as any).code = errorData.code
+        throw err
       }
 
       const responseData = await response.json()
@@ -383,7 +389,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Password reset request failed')
+        const err = new Error(errorData.message || errorData.error || 'Password reset request failed')
+        ;(err as any).code = errorData.code
+        throw err
       }
 
       await notificationStore.success(
@@ -422,7 +430,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Password reset confirmation failed')
+        const err = new Error(errorData.message || errorData.error || 'Password reset confirmation failed')
+        ;(err as any).code = errorData.code
+        throw err
       }
 
       await notificationStore.success(
@@ -446,63 +456,89 @@ export const useAuthStore = defineStore('auth', () => {
   // ============================================================================
 
   /**
-   * Get error message for display
+   * Get error message for display based on error code from auth service
    */
   const getErrorMessage = (error: any): { title: string; message: string } => {
-    const errorMessage = error.message?.toLowerCase() || ''
+    const errorCode = error.code || ''
+    const errorMessage = error.message || ''
     
-    if (errorMessage.includes('invalid credentials') || errorMessage.includes('Invalid password')) {
-      return {
-        title: t('auth.loginFailed'),
-        message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')
-      }
-    }
-    
-    if (errorMessage.includes('account disabled') || errorMessage.includes('user inactive')) {
-      return {
-        title: t('auth.loginFailed'),
-        message: t('auth.errors.accountDisabled', 'Your account has been disabled. Please contact support.')
-      }
-    }
-    
-    if (errorMessage.includes('too many requests') || errorMessage.includes('rate limit')) {
-      return {
-        title: t('auth.loginFailed'),
-        message: t('auth.errors.tooManyAttempts', 'Too many failed attempts. Please try again later.')
-      }
-    }
-    
-    if (errorMessage.includes('email already exists') || errorMessage.includes('already in use')) {
-      return {
-        title: t('auth.registrationFailed'),
-        message: t('auth.errors.emailInUse', 'An account with this email already exists.')
-      }
-    }
-    
-    if (errorMessage.includes('weak password') || errorMessage.includes('password too short')) {
-      return {
-        title: t('auth.registrationFailed'),
-        message: t('auth.errors.weakPassword', 'Password must be at least 8 characters long.')
-      }
-    }
-    
-    if (errorMessage.includes('invalid email')) {
-      return {
-        title: t('auth.error'),
-        message: t('auth.errors.invalidEmail', 'Please enter a valid email address.')
-      }
-    }
-    
-    if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      return {
-        title: t('auth.error'),
-        message: t('auth.errors.networkError', 'Network error. Please check your connection.')
-      }
-    }
-    
-    return {
-      title: t('auth.error', 'Authentication Error'),
-      message: error.message || t('auth.errors.unexpected', 'An unexpected error occurred.')
+    // Map auth service error codes to user-friendly messages
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.invalidEmail', 'Please enter a valid email address.')
+        }
+      
+      case 'auth/user-not-found':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')
+        }
+      
+      case 'auth/wrong-password':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')
+        }
+      
+      case 'auth/email-already-in-use':
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.emailInUse', 'An account with this email already exists.')
+        }
+      
+      case 'auth/weak-password':
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.weakPassword', 'Password must be at least 8 characters long.')
+        }
+      
+      case 'auth/too-many-requests':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.tooManyAttempts', 'Too many failed attempts. Please try again later.')
+        }
+      
+      case 'auth/user-disabled':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.accountDisabled', 'Your account has been disabled. Please contact support.')
+        }
+      
+      case 'auth/user-not-verified':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.notVerified', 'Your account has not been verified yet. Please contact support.')
+        }
+      
+      case 'auth/invalid-token':
+      case 'auth/token-expired':
+      case 'auth/session-expired':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.sessionExpired', 'Your session has expired. Please login again.')
+        }
+      
+      case 'auth/missing-fields':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.missingFields', 'Please fill in all required fields.')
+        }
+      
+      case 'auth/database-error':
+      case 'auth/internal-error':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.serverError', 'A server error occurred. Please try again later.')
+        }
+      
+      default:
+        // Fallback: use error message from API or generic message
+        return {
+          title: t('auth.error', 'Authentication Error'),
+          message: errorMessage || t('auth.errors.unexpected', 'An unexpected error occurred.')
+        }
     }
   }
 
@@ -559,6 +595,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Update user verification status (admin only)
+   * This calls the admin orchestration endpoint which verifies the user and sends an email
    */
   const updateUserVerification = async (userId: string, isVerified: boolean): Promise<void> => {
     if (!isAdmin.value) {
@@ -566,22 +603,44 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/verification`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isVerified })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update user verification status')
-      }
+      if (isVerified) {
+        // POST /admin/users/:userId/verify - orchestrates verification + email
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to verify user')
+        }
 
-      await notificationStore.success(
-        t('admin.userUpdated'),
-        t('admin.userVerificationUpdated', `User verification status has been ${isVerified ? 'enabled' : 'disabled'}.`)
-      )
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userVerificationUpdated', 'User has been verified and notified via email.')
+        )
+      } else {
+        // For unverifying, we use PUT /admin/users/:userId with is_verified: 0
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_verified: 0 })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to update user verification status')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userVerificationUpdated', 'User verification has been removed.')
+        )
+      }
     } catch (err: any) {
       console.error('Error updating user verification:', err)
       await handleAuthError(err, 'general')
@@ -598,22 +657,41 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isActive })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update user status')
-      }
+      if (!isActive) {
+        // DELETE /admin/users/:userId - soft deletes (deactivates) the user
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to deactivate user')
+        }
 
-      await notificationStore.success(
-        t('admin.userUpdated'),
-        t('admin.userStatusUpdated', `User account has been ${isActive ? 'activated' : 'deactivated'}.`)
-      )
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userStatusUpdated', 'User account has been deactivated.')
+        )
+      } else {
+        // For activating, we use PUT /admin/users/:userId with is_active: 1
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_active: 1 })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to activate user')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userStatusUpdated', 'User account has been activated.')
+        )
+      }
     } catch (err: any) {
       console.error('Error updating user status:', err)
       await handleAuthError(err, 'general')

@@ -14,6 +14,7 @@ export interface Env {
   STRIPE_API_VERSION: string;
   STRIPE_WEBHOOK_SECRET: string; // Webhook signature verification
   DB: D1Database; // D1 database binding for invoice persistence
+  TELEGRAM_SERVICE: Fetcher; // Service binding to telegram-service
 }
 
 // ============================================================================
@@ -93,11 +94,11 @@ export interface InvoiceInput {
   notes?: string;
   shipping_address?: {
     company?: string;
-    contactPerson?: string;
+    contact_person?: string;
     street?: string;
     city?: string;
     state?: string;
-    zipCode?: string;
+    zip_code?: string;
     country?: string;
     phone?: string;
   };

@@ -294,6 +294,11 @@ async function handleInvoicePaid(env: Env, invoice: Stripe.Invoice) {
   ).run();
 
   console.log(`[Webhook] ✅ Marked order with invoice ${invoice.id} as PAID (€${(invoice.amount_paid / 100).toFixed(2)})`);
+
+  // ============================================================================
+  // SEND TELEGRAM NOTIFICATION
+  // ============================================================================
+  await sendInvoicePaidNotification(env, invoice);
 }
 
 /**
@@ -339,6 +344,11 @@ async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
   // INCREASE B2B STOCK (Invoice voided = order cancelled)
   // ============================================================================
   await increaseB2BStockFromInvoice(env, invoice, orderInternalId);
+
+  // ============================================================================
+  // SEND TELEGRAM NOTIFICATION
+  // ============================================================================
+  await sendInvoiceVoidedNotification(env, invoice);
 }
 
 /**
@@ -473,6 +483,74 @@ async function increaseB2BStockFromInvoice(
     }
   } else {
     console.log(`[Webhook] ℹ️  No stock updates needed for invoice ${invoice.id}`);
+  }
+}
+
+// ============================================================================
+// TELEGRAM NOTIFICATION HELPERS
+// ============================================================================
+
+/**
+ * Send invoice paid notification to Telegram
+ * Uses service binding to telegram-service
+ */
+async function sendInvoicePaidNotification(env: Env, invoice: Stripe.Invoice) {
+  try {
+    console.log(`[Webhook] 📬 Sending invoice paid notification for ${invoice.id}`);
+    
+    const telegramRequest = new Request('https://dummy/notifications/invoice/paid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: invoice.id,
+        number: invoice.number,
+        amount_due: invoice.amount_due,
+        amount_paid: invoice.amount_paid,
+        currency: invoice.currency,
+        customer_name: invoice.customer_name,
+        customer_email: invoice.customer_email,
+        status_transitions: invoice.status_transitions,
+        metadata: invoice.metadata,
+        lines: invoice.lines,
+      }),
+    });
+
+    await env.TELEGRAM_SERVICE.fetch(telegramRequest);
+    console.log(`[Webhook] ✅ Invoice paid notification sent for ${invoice.id}`);
+  } catch (error) {
+    // Log error but don't fail the webhook (notifications are not critical)
+    console.error(`[Webhook] ⚠️  Failed to send invoice paid notification:`, error);
+  }
+}
+
+/**
+ * Send invoice voided notification to Telegram
+ * Uses service binding to telegram-service
+ */
+async function sendInvoiceVoidedNotification(env: Env, invoice: Stripe.Invoice) {
+  try {
+    console.log(`[Webhook] 📬 Sending invoice voided notification for ${invoice.id}`);
+    
+    const telegramRequest = new Request('https://dummy/notifications/invoice/voided', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: invoice.id,
+        number: invoice.number,
+        amount_due: invoice.amount_due,
+        currency: invoice.currency,
+        customer_name: invoice.customer_name,
+        customer_email: invoice.customer_email,
+        metadata: invoice.metadata,
+        lines: invoice.lines,
+      }),
+    });
+
+    await env.TELEGRAM_SERVICE.fetch(telegramRequest);
+    console.log(`[Webhook] ✅ Invoice voided notification sent for ${invoice.id}`);
+  } catch (error) {
+    // Log error but don't fail the webhook (notifications are not critical)
+    console.error(`[Webhook] ⚠️  Failed to send invoice voided notification:`, error);
   }
 }
 

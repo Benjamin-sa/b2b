@@ -23,4 +23,7 @@ export default defineConfig({
             external: (id) => id.includes('workers/') || id.includes('workers\\')
         }
     },
+    server: {
+        port: 5174
+    }
 });

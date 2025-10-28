@@ -23,6 +23,7 @@ export interface WelcomeEmailMessage extends BaseEmailMessage {
 export interface PasswordResetEmailMessage extends BaseEmailMessage {
   type: 'password-reset';
   resetToken?: string; // Only in development
+  firstName?: string | null; // User's first name for personalization
   // In production, token is stored in KV and sent via SendGrid
 }
 
@@ -34,11 +35,19 @@ export interface VerificationEmailMessage extends BaseEmailMessage {
   verificationToken: string;
 }
 
+// Account verified email message (sent by admin after account approval)
+export interface AccountVerifiedEmailMessage extends BaseEmailMessage {
+  type: 'account-verified';
+  firstName?: string;
+  companyName?: string;
+}
+
 // Discriminated union of all email message types
 export type EmailQueueMessage =
   | WelcomeEmailMessage
   | PasswordResetEmailMessage
-  | VerificationEmailMessage;
+  | VerificationEmailMessage
+  | AccountVerifiedEmailMessage;
 
 // Type guard functions
 export function isWelcomeEmail(message: EmailQueueMessage): message is WelcomeEmailMessage {
@@ -51,4 +60,8 @@ export function isPasswordResetEmail(message: EmailQueueMessage): message is Pas
 
 export function isVerificationEmail(message: EmailQueueMessage): message is VerificationEmailMessage {
   return message.type === 'verification';
+}
+
+export function isAccountVerifiedEmail(message: EmailQueueMessage): message is AccountVerifiedEmailMessage {
+  return message.type === 'account-verified';
 }

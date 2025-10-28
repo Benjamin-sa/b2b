@@ -12,7 +12,12 @@ export class SendGridClient {
     to: string,
     subject: string,
     htmlContent: string,
-    textContent?: string
+    textContent?: string,
+    options?: {
+      clickTracking?: boolean;
+      emailType?: string;
+      categories?: string[];
+    }
   ): Promise<EmailResponse> {
     try {
       const emailData = {
@@ -44,7 +49,7 @@ export class SendGridClient {
         // Tracking settings for better analytics
         tracking_settings: {
           click_tracking: {
-            enable: true,
+            enable: options?.clickTracking ?? true,
             enable_text: false
           },
           open_tracking: {
@@ -62,10 +67,10 @@ export class SendGridClient {
           }
         },
         // Categories for analytics and organization
-        categories: ['b2b-transactional', 'welcome-email'],
+        categories: options?.categories || ['b2b-transactional'],
         // Custom args for internal tracking
         custom_args: {
-          email_type: 'welcome',
+          email_type: options?.emailType || 'transactional',
           platform: '4tparts-b2b'
         }
       };

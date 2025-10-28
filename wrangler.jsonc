@@ -14,7 +14,7 @@
 		"enabled": true
 	},
      "dev": {
-        "port": 3000
+        "port": 5173
     }
 	/**
 	 * Smart Placement

@@ -1,6 +1,5 @@
-import type { Environment, PasswordResetRequest, EmailResponse } from '../types/email';
+import type { Environment, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, jsonResponse, corsHeaders } from '../utils/validators';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -136,7 +135,12 @@ If you didn't request this, please contact support immediately.
       to,
       'Password Reset - 4Tparts B2B',
       htmlContent,
-      textContent
+      textContent,
+      {
+        clickTracking: false, // CRITICAL: Disable click tracking to preserve reset URL
+        emailType: 'password-reset',
+        categories: ['b2b-transactional', 'password-reset']
+      }
     );
     
     return result;
@@ -150,50 +154,3 @@ If you didn't request this, please contact support immediately.
   }
 }
 
-/**
- * HTTP Handler - wraps core logic with HTTP request/response handling
- */
-export async function handlePasswordResetEmail(request: Request, env: Environment): Promise<Response> {
-  const origin = request.headers.get('Origin');
-  const cors = corsHeaders(env, origin || undefined);
-  
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: cors });
-  }
-  
-  if (request.method !== 'POST') {
-    return jsonResponse(
-      { success: false, error: 'Method not allowed' }, 
-      405, 
-      cors
-    );
-  }
-  
-  try {
-    const body: PasswordResetRequest = await request.json();
-    
-    const validation = validateRequest(body, ['to', 'userName', 'resetToken', 'resetUrl']);
-    if (!validation.valid) {
-      return jsonResponse(
-        { success: false, error: validation.error }, 
-        400, 
-        cors
-      );
-    }
-    
-    const result = await sendPasswordResetEmail(env, body.to, body.userName, body.resetToken, body.resetUrl);
-    
-    return jsonResponse(result, result.success ? 200 : 500, cors);
-    
-  } catch (error) {
-    console.error('Password reset email handler error:', error);
-    return jsonResponse(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
-      500, 
-      cors
-    );
-  }
-}

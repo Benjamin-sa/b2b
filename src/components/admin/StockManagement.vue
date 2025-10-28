@@ -2,7 +2,7 @@
   <div class="max-w-[1400px] mx-auto p-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
-      <h2 class="text-3xl font-semibold text-gray-900">{{ t('admin.stock.title') }}</h2>
+      <h2 class="text-3xl font-semibold text-gray-900">Stock Management</h2>
       <button 
         @click="refreshData" 
         class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -21,44 +21,44 @@
           <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
         </svg>
         <span v-else class="inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full animate-spin"></span>
-        {{ t('admin.stock.refresh') }}
+        Refresh
       </button>
     </div>
 
     <!-- Filters -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-6 bg-gray-50 rounded-lg">
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">{{ t('admin.stock.filters.search') }}</label>
+        <label class="text-sm font-medium text-gray-600">Search</label>
         <input
           v-model="searchTerm"
           type="text"
-          :placeholder="t('admin.stock.filters.searchPlaceholder')"
+          placeholder="Search products..."
           class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
         />
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">{{ t('admin.stock.filters.stockStatus') }}</label>
+        <label class="text-sm font-medium text-gray-600">Stock Status</label>
         <select 
           v-model="stockFilter" 
           class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
         >
-          <option value="all">{{ t('admin.stock.filters.all') }}</option>
-          <option value="in-stock">{{ t('admin.stock.filters.inStock') }}</option>
-          <option value="low-stock">{{ t('admin.stock.filters.lowStock') }}</option>
-          <option value="out-of-stock">{{ t('admin.stock.filters.outOfStock') }}</option>
+          <option value="all">All Products</option>
+          <option value="in-stock">In Stock</option>
+          <option value="low-stock">Low Stock</option>
+          <option value="out-of-stock">Out of Stock</option>
         </select>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">{{ t('admin.stock.filters.shopifySync') }}</label>
+        <label class="text-sm font-medium text-gray-600">Shopify Sync</label>
         <select 
           v-model="syncFilter" 
           class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
         >
-          <option value="all">{{ t('admin.stock.filters.all') }}</option>
-          <option value="synced">{{ t('admin.stock.filters.synced') }}</option>
-          <option value="not-synced">{{ t('admin.stock.filters.notSynced') }}</option>
+          <option value="all">All Products</option>
+          <option value="synced">Synced to Shopify</option>
+          <option value="not-synced">Not Synced</option>
         </select>
       </div>
     </div>
@@ -66,7 +66,7 @@
     <!-- Loading State -->
     <div v-if="loading && products.length === 0" class="flex flex-col items-center justify-center py-16 gap-4 text-gray-500">
       <div class="w-12 h-12 border-3 border-current border-r-transparent rounded-full animate-spin"></div>
-      <p>{{ t('admin.stock.loading') }}</p>
+      <p>Loading products...</p>
     </div>
 
     <!-- Error State -->
@@ -78,7 +78,7 @@
       </svg>
       <p>{{ error }}</p>
       <button @click="refreshData" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-        {{ t('admin.stock.retry') }}
+        Try Again
       </button>
     </div>
 
@@ -88,23 +88,22 @@
         <thead class="bg-gray-50 border-b-2 border-gray-200">
           <tr>
             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.product') }}
+              Product
             </th>
             <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.totalStock') }}
+              Total Stock
             </th>
             <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.b2bStock') }}
+              B2B Stock
             </th>
             <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.b2cStock') }}
-            </th>
-
-            <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.shopifySync') }}
+              B2C Stock
             </th>
             <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              {{ t('admin.stock.table.actions') }}
+              Shopify Sync
+            </th>
+            <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Actions
             </th>
           </tr>
         </thead>
@@ -163,19 +162,19 @@
                 <span
                   v-if="product.inventory?.shopify_variant_id"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
-                  :title="t('admin.stock.shopify.syncedTooltip')"
+                  title="Product synced to Shopify"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  {{ t('admin.stock.shopify.synced') }}
+                  Synced
                 </span>
-                <span v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium" :title="t('admin.stock.shopify.notSyncedTooltip')">
+                <span v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium" title="Not synced to Shopify">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
-                  {{ t('admin.stock.shopify.notSynced') }}
+                  Not Synced
                 </span>
               </div>
             </td>
@@ -185,7 +184,7 @@
               <button
                 @click="openEditModal(product)"
                 class="inline-flex items-center justify-center w-8 h-8 bg-transparent text-gray-500 rounded-md transition-all hover:bg-gray-100 hover:text-blue-600"
-                :title="t('admin.stock.actions.edit')"
+                title="Edit stock"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -205,7 +204,7 @@
                   <line x1="9" y1="9" x2="9.01" y2="9"/>
                   <line x1="15" y1="9" x2="15.01" y2="9"/>
                 </svg>
-                <p>{{ t('admin.stock.noProducts') }}</p>
+                <p>No products found</p>
               </div>
             </td>
           </tr>
@@ -217,7 +216,7 @@
     <div v-if="editingProduct" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeEditModal">
       <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div class="flex justify-between items-center px-6 py-6 border-b border-gray-200">
-          <h3 class="text-xl font-semibold text-gray-900">{{ t('admin.stock.modal.title') }}</h3>
+          <h3 class="text-xl font-semibold text-gray-900">Update Stock Levels</h3>
           <button @click="closeEditModal" class="flex items-center justify-center w-8 h-8 bg-transparent text-gray-500 rounded-md transition-all hover:bg-gray-100">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -245,7 +244,7 @@
           <form @submit.prevent="updateStock" class="flex flex-col gap-4">
             <!-- Total Stock -->
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">{{ t('admin.stock.modal.currentTotal') }}</label>
+              <label class="text-sm font-medium text-gray-700">Total Stock</label>
               <input
                 v-model.number="stockUpdate.totalStock"
                 type="number"
@@ -257,7 +256,7 @@
 
             <!-- B2B Stock -->
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">{{ t('admin.stock.modal.currentB2B') }}</label>
+              <label class="text-sm font-medium text-gray-700">B2B Stock (Available for B2B Platform)</label>
               <input
                 v-model.number="stockUpdate.b2bStock"
                 type="number"
@@ -270,7 +269,7 @@
 
             <!-- B2C Stock -->
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">{{ t('admin.stock.modal.currentB2C') }}</label>
+              <label class="text-sm font-medium text-gray-700">B2C Stock (Allocated to Shopify)</label>
               <input
                 v-model.number="stockUpdate.b2cStock"
                 type="number"
@@ -286,17 +285,17 @@
               {{ validationError }}
             </div>
 
-         
+            <!-- Actions -->
             <div class="flex gap-4 justify-end mt-6 pt-6 border-t border-gray-200">
               <button type="button" @click="closeEditModal" class="px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-                {{ t('admin.stock.modal.cancel') }}
+                Cancel
               </button>
               <button 
                 type="submit" 
                 class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                 :disabled="submitting || !!validationError"
               >
-                <span v-if="!submitting">{{ t('admin.stock.modal.update') }}</span>
+                <span v-if="!submitting">Update Stock</span>
                 <span v-else class="inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full animate-spin"></span>
               </button>
             </div>
@@ -309,17 +308,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '../../stores/auth';
 import type { ProductWithInventory, StockUpdate } from '../../types';
 
-const { t } = useI18n();
 const authStore = useAuthStore();
 
 // API Configuration
 const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5174';
-
-
 
 // State
 const products = ref<ProductWithInventory[]>([]);
@@ -379,7 +374,7 @@ const reallocationError = computed(() => {
   const sum = stockUpdate.value.b2bStock + stockUpdate.value.b2cStock;
   
   if (sum > total) {
-    return t('admin.stock.modal.reallocationError', { total });
+    return `B2B + B2C stock (${sum}) cannot exceed total stock (${total})`;
   }
   
   return null;
@@ -401,7 +396,6 @@ const refreshData = async () => {
   error.value = null;
 
   try {
-    // Fetch products with inventory data from API Gateway
     const response = await fetch(`${API_GATEWAY_URL}/api/products?limit=100`);
     
     if (!response.ok) {
@@ -409,11 +403,9 @@ const refreshData = async () => {
     }
     
     const data = await response.json();
-    
-    // Products now include inventory data from product_inventory table
     products.value = data.items;
   } catch (err: any) {
-    error.value = err.message || t('admin.stock.errorLoading');
+    error.value = err.message || 'Failed to load products';
   } finally {
     loading.value = false;
   }
@@ -445,7 +437,6 @@ const updateStock = async () => {
   submitting.value = true;
 
   try {
-    // Make API call to update stock in product_inventory table
     const response = await fetch(`${API_GATEWAY_URL}/api/products/inventory/${editingProduct.value.id}/stock`, {
       method: 'POST',
       headers: {
@@ -462,7 +453,6 @@ const updateStock = async () => {
 
     const updatedProduct = await response.json();
 
-    // Update local state with server response
     const index = products.value.findIndex(p => p.id === editingProduct.value!.id);
     if (index !== -1) {
       products.value[index] = updatedProduct;
@@ -470,7 +460,7 @@ const updateStock = async () => {
 
     closeEditModal();
   } catch (err: any) {
-    error.value = err.message || t('admin.stock.errorUpdating');
+    error.value = err.message || 'Failed to update stock';
   } finally {
     submitting.value = false;
   }
@@ -481,4 +471,3 @@ onMounted(() => {
   refreshData();
 });
 </script>
-

@@ -1,6 +1,5 @@
-import type { Environment, VerificationEmailRequest, EmailResponse } from '../types/email';
+import type { Environment, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, jsonResponse, corsHeaders } from '../utils/validators';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -134,9 +133,14 @@ You're receiving this because your account was recently approved.
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
       to,
-      'Account Approved - 4Tparts B2B',
+      'Verify Your Email - 4Tparts B2B',
       htmlContent,
-      textContent
+      textContent,
+      {
+        clickTracking: false, // CRITICAL: Disable click tracking to preserve verification URL
+        emailType: 'email-verification',
+        categories: ['b2b-transactional', 'email-verification']
+      }
     );
     
     return result;
@@ -150,50 +154,3 @@ You're receiving this because your account was recently approved.
   }
 }
 
-/**
- * HTTP Handler - wraps core logic with HTTP request/response handling
- */
-export async function handleVerificationEmail(request: Request, env: Environment): Promise<Response> {
-  const origin = request.headers.get('Origin');
-  const cors = corsHeaders(env, origin || undefined);
-  
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: cors });
-  }
-  
-  if (request.method !== 'POST') {
-    return jsonResponse(
-      { success: false, error: 'Method not allowed' }, 
-      405, 
-      cors
-    );
-  }
-  
-  try {
-    const body: VerificationEmailRequest = await request.json();
-    
-    const validation = validateRequest(body, ['to', 'userName', 'companyName', 'verificationUrl']);
-    if (!validation.valid) {
-      return jsonResponse(
-        { success: false, error: validation.error }, 
-        400, 
-        cors
-      );
-    }
-    
-    const result = await sendVerificationEmail(env, body.to, body.userName, body.companyName, body.verificationUrl);
-    
-    return jsonResponse(result, result.success ? 200 : 500, cors);
-    
-  } catch (error) {
-    console.error('Verification email handler error:', error);
-    return jsonResponse(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
-      500, 
-      cors
-    );
-  }
-}

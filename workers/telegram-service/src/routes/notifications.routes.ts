@@ -3,6 +3,7 @@ import type { Env, InvoiceNotification, UserRegistrationNotification } from '../
 import {
   notifyInvoiceCreated,
   notifyInvoicePaymentSucceeded,
+  notifyInvoiceVoided,
   notifyNewUserRegistration,
   sendCustomMessage,
 } from '../services/notification.service';
@@ -78,6 +79,44 @@ notifications.post('/invoice/paid', async (c) => {
     });
   } catch (error) {
     console.error('[Telegram] Invoice payment notification error:', error);
+    return c.json(
+      {
+        error: 'Notification Failed',
+        code: 'telegram/notification-failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
+  }
+});
+
+/**
+ * POST /notifications/invoice/voided
+ * Send invoice voided notification
+ */
+notifications.post('/invoice/voided', async (c) => {
+  try {
+    const invoice = await c.req.json<InvoiceNotification>();
+    
+    if (!invoice.id || !invoice.currency) {
+      return c.json(
+        {
+          error: 'Validation Error',
+          code: 'telegram/invalid-invoice-data',
+          message: 'Missing required invoice fields',
+        },
+        400
+      );
+    }
+
+    await notifyInvoiceVoided(c.env, invoice);
+
+    return c.json({
+      success: true,
+      message: 'Invoice voided notification sent',
+    });
+  } catch (error) {
+    console.error('[Telegram] Invoice voided notification error:', error);
     return c.json(
       {
         error: 'Notification Failed',

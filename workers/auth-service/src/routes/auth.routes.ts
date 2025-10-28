@@ -62,7 +62,7 @@ auth.post('/register', async (c) => {
     const data = await c.req.json<RegisterRequest>();
 
     // Validate required fields
-    if (!data.email || !data.password || !data.companyName || !data.firstName || !data.lastName) {
+    if (!data.email || !data.password || !data.company_name || !data.first_name || !data.last_name) {
       throw createAuthError('MISSING_FIELDS', 'Email, password, company name, first name, and last name are required');
     }
 
@@ -202,29 +202,18 @@ auth.post('/validate', async (c) => {
     }
 
     // Step 1: Verify JWT signature and decode payload
-    console.log('[Auth Validate] Step 1: Verifying JWT signature...');
     const payload = await verifyAccessToken(data.accessToken, c.env.JWT_SECRET);
-    console.log('[Auth Validate] ✅ JWT verified. Payload:', {
-      uid: payload.uid,
-      email: payload.email,
-      role: payload.role,
-      sessionId: payload.sessionId
-    });
+   
 
-    // Step 2: Check if session is still active
-    // This is how we achieve instant revocation!
-    console.log('[Auth Validate] Step 2: Checking session in KV...');
+
     const session = await getSession(c.env.SESSIONS, payload.sessionId);
     
     if (!session) {
       console.log('[Auth Validate] ❌ Session not found or expired:', payload.sessionId);
       throw createAuthError('SESSION_EXPIRED', 'Session has been revoked or expired');
     }
-    console.log('[Auth Validate] ✅ Session found and valid');
 
-    // Step 3: Fetch FRESH user data from D1
-    // This ensures we always have the latest user state (isVerified, role, etc.)
-    console.log('[Auth Validate] Step 3: Fetching user from D1...');
+
     const user = await c.env.DB.prepare(`
       SELECT 
         id, email, role, company_name, first_name, last_name, phone, btw_number,
@@ -287,9 +276,6 @@ auth.post('/validate', async (c) => {
       validatedAt: new Date().toISOString(),
     };
 
-    console.log('[Auth Validate] ✅ Validation successful for:', user.email);
-    console.log('[Auth Validate] === REQUEST END ===');
-    
     return c.json(validationResponse);
   } catch (error) {
     // Log the error details
@@ -323,9 +309,9 @@ auth.post('/password-reset/request', async (c) => {
     }
 
     // Check if user exists
-    const user = await c.env.DB.prepare('SELECT id, email FROM users WHERE email = ?')
+    const user = await c.env.DB.prepare('SELECT id, email, first_name FROM users WHERE email = ?')
       .bind(data.email.toLowerCase())
-      .first<{ id: string; email: string }>();
+      .first<{ id: string; email: string; first_name: string | null }>();
 
     // Always return success even if user doesn't exist (security best practice)
     if (user) {
@@ -335,17 +321,18 @@ auth.post('/password-reset/request', async (c) => {
       // Store in KV with 1 hour TTL
       await storePasswordResetToken(c.env.SESSIONS, user.email, resetToken, 3600);
 
-      // TODO: Send email with reset link
-      // For now, return the token (in production, this should be emailed)
-      if (c.env.ENVIRONMENT === 'development') {
-        return c.json({
-          message: 'Password reset email sent',
-          resetToken, // Only in development
-        });
-      }
+      // Return token and firstName for email service
+      // Note: This endpoint is only called by API Gateway, not directly by frontend
+      return c.json({
+        message: 'Password reset email will be sent',
+        resetToken, // Always return token for email service
+        firstName: user.first_name, // Include for email personalization
+      });
     }
 
-    return c.json({ message: 'If the email exists, a password reset link has been sent' });
+    return c.json({ 
+      message: 'Password reset email will be sent' 
+    });
   } catch (error) {
     throw error;
   }

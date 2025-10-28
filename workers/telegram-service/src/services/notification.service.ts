@@ -183,6 +183,88 @@ Status: <b>✅ PAID</b>
 }
 
 /**
+ * Send invoice voided notification to Telegram
+ */
+export async function notifyInvoiceVoided(
+  env: Env,
+  invoice: InvoiceNotification
+): Promise<void> {
+  try {
+    const amount = formatCurrency(invoice.amount_due, invoice.currency);
+
+    let customerInfo = invoice.customer_name || invoice.customer_email || 'Unknown';
+    let itemsInfo = '';
+
+    // Parse order metadata if available
+    if (invoice.metadata?.orderMetadata) {
+      try {
+        const orderMetadata: OrderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+
+        // Use customer info from order metadata
+        if (orderMetadata.userInfo) {
+          const { companyName, contactPerson, email } = orderMetadata.userInfo;
+          customerInfo = contactPerson || companyName || email || 'Unknown';
+          if (companyName && contactPerson) {
+            customerInfo = `${contactPerson} (${companyName})`;
+          }
+        }
+
+        // Format order items (show fewer items for voided notifications)
+        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
+          const items = orderMetadata.orderItems
+            .slice(0, 2)
+            .map((item) => `• ${item.productName} (${item.quantity}x)`)
+            .join('\n');
+
+          itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+
+          if (orderMetadata.orderItems.length > 2) {
+            itemsInfo += `\n... and ${orderMetadata.orderItems.length - 2} more items`;
+          }
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse order metadata for voided notification:', parseError);
+      }
+    }
+
+    // Fallback to line items from invoice if no order metadata
+    if (!itemsInfo && invoice.lines?.data && invoice.lines.data.length > 0) {
+      const items = invoice.lines.data
+        .slice(0, 2)
+        .map((item) => `• ${item.description} (${item.quantity}x)`)
+        .join('\n');
+
+      itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
+
+      if (invoice.lines.data.length > 2) {
+        itemsInfo += `\n... and ${invoice.lines.data.length - 2} more items`;
+      }
+    }
+
+    const message = `
+🚫 <b>Invoice Voided/Cancelled</b>
+
+Amount: <b>${amount}</b>
+Customer: <code>${customerInfo}</code>
+Invoice #: <code>${invoice.number || invoice.id}</code>
+Voided: ${formatDateTime(Date.now() / 1000)}${itemsInfo}
+
+Status: <b>❌ VOIDED</b>
+
+<i>Stock has been returned to B2B inventory.</i>
+    `.trim();
+
+    await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, {
+      message,
+      parseMode: 'HTML',
+    });
+  } catch (error) {
+    console.error('❌ Failed to send invoice voided notification:', error);
+    // Don't throw - we don't want to fail the caller because of notification issues
+  }
+}
+
+/**
  * Send new user registration notification to Telegram
  */
 export async function notifyNewUserRegistration(

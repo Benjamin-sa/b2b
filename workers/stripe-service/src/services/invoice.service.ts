@@ -14,6 +14,7 @@
 import type Stripe from 'stripe';
 import type { Env, InvoiceInput, CreateInvoiceResponse } from '../types';
 import { getStripeClient, handleStripeError, validateRequired } from '../utils/stripe.utils';
+import { getCountryCode } from '../utils/country-codes';
 
 /**
  * Create invoice with items
@@ -57,17 +58,20 @@ export async function createInvoiceWithItems(
     if (input.shipping_address) {
       const addr = input.shipping_address;
       
+      // Convert country name to ISO code (e.g., "Belgium" -> "BE")
+      const countryCode = getCountryCode(addr.country);
+      
       // Build Stripe shipping object (different structure than billing address)
       const shippingData: any = {
-        name: addr.company || addr.contactPerson || 'Customer',
+        name: addr.company || addr.contact_person || 'Customer',
         address: {},
       };
       
       if (addr.street) shippingData.address.line1 = addr.street;
       if (addr.city) shippingData.address.city = addr.city;
       if (addr.state) shippingData.address.state = addr.state;
-      if (addr.zipCode) shippingData.address.postal_code = addr.zipCode;
-      if (addr.country) shippingData.address.country = addr.country;
+      if (addr.zip_code) shippingData.address.postal_code = addr.zip_code;
+      if (countryCode) shippingData.address.country = countryCode; // ISO code (e.g., "BE")
       if (addr.phone) shippingData.phone = addr.phone;
 
       // Only update if we have at least country (minimum requirement for tax)

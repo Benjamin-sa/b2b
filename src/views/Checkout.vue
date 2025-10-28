@@ -67,33 +67,66 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $t('checkout.shipping.companyName') }}
+                                    <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.shippingAddress.company" type="text" required :class="[
-                                    'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                    isAutoFilled && form.shippingAddress.company ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                ]" :placeholder="$t('checkout.shipping.companyPlaceholder')" />
+                                <input 
+                                    v-model="form.shippingAddress.company" 
+                                    type="text" 
+                                    required 
+                                    :class="[
+                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                        !form.shippingAddress.company?.trim() ? 'border-red-300 bg-red-50' : 
+                                        isAutoFilled && form.shippingAddress.company ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                    ]" 
+                                    :placeholder="$t('checkout.shipping.companyPlaceholder')" 
+                                />
+                                <p v-if="!form.shippingAddress.company?.trim()" class="mt-1 text-xs text-red-600">
+                                    {{ $t('checkout.validation.required') }}
+                                </p>
                             </div>
 
                             <!-- Contact Person -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $t('checkout.shipping.contactPerson') }}
+                                    <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.shippingAddress.contactPerson" type="text" required :class="[
-                                    'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                    isAutoFilled && form.shippingAddress.contactPerson ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                ]" :placeholder="$t('checkout.shipping.contactPlaceholder')" />
+                                <input 
+                                    v-model="form.shippingAddress.contactPerson" 
+                                    type="text" 
+                                    required 
+                                    :class="[
+                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                        !form.shippingAddress.contactPerson?.trim() ? 'border-red-300 bg-red-50' : 
+                                        isAutoFilled && form.shippingAddress.contactPerson ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                    ]" 
+                                    :placeholder="$t('checkout.shipping.contactPlaceholder')" 
+                                />
+                                <p v-if="!form.shippingAddress.contactPerson?.trim()" class="mt-1 text-xs text-red-600">
+                                    {{ $t('checkout.validation.required') }}
+                                </p>
                             </div>
 
                             <!-- Street Address -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $t('checkout.shipping.streetAddress') }}
+                                    <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.shippingAddress.street" type="text" required :class="[
-                                    'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                    isAutoFilled && form.shippingAddress.street ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                ]" :placeholder="$t('checkout.shipping.streetPlaceholder')" />
+                                <input 
+                                    v-model="form.shippingAddress.street" 
+                                    type="text" 
+                                    required 
+                                    :class="[
+                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                        !form.shippingAddress.street.trim() ? 'border-red-300 bg-red-50' : 
+                                        isAutoFilled && form.shippingAddress.street ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                    ]" 
+                                    :placeholder="$t('checkout.shipping.streetPlaceholder')" 
+                                />
+                                <p v-if="!form.shippingAddress.street.trim()" class="mt-1 text-xs text-red-600">
+                                    {{ $t('checkout.validation.required') }}
+                                </p>
                             </div>
 
                             <!-- City, State, Zip -->
@@ -101,11 +134,22 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         {{ $t('checkout.shipping.city') }}
+                                        <span class="text-red-500">*</span>
                                     </label>
-                                    <input v-model="form.shippingAddress.city" type="text" required :class="[
-                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                        isAutoFilled && form.shippingAddress.city ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                    ]" :placeholder="$t('checkout.shipping.cityPlaceholder')" />
+                                    <input 
+                                        v-model="form.shippingAddress.city" 
+                                        type="text" 
+                                        required 
+                                        :class="[
+                                            'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                            !form.shippingAddress.city.trim() ? 'border-red-300 bg-red-50' : 
+                                            isAutoFilled && form.shippingAddress.city ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                        ]" 
+                                        :placeholder="$t('checkout.shipping.cityPlaceholder')" 
+                                    />
+                                    <p v-if="!form.shippingAddress.city.trim()" class="mt-1 text-xs text-red-600">
+                                        {{ $t('checkout.validation.required') }}
+                                    </p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -118,11 +162,22 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         {{ $t('checkout.shipping.zip') }}
+                                        <span class="text-red-500">*</span>
                                     </label>
-                                    <input v-model="form.shippingAddress.zipCode" type="text" required :class="[
-                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                        isAutoFilled && form.shippingAddress.zipCode ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                    ]" :placeholder="$t('checkout.shipping.zipPlaceholder')" />
+                                    <input 
+                                        v-model="form.shippingAddress.zipCode" 
+                                        type="text" 
+                                        required 
+                                        :class="[
+                                            'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                            !form.shippingAddress.zipCode.trim() ? 'border-red-300 bg-red-50' : 
+                                            isAutoFilled && form.shippingAddress.zipCode ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                        ]" 
+                                        :placeholder="$t('checkout.shipping.zipPlaceholder')" 
+                                    />
+                                    <p v-if="!form.shippingAddress.zipCode.trim()" class="mt-1 text-xs text-red-600">
+                                        {{ $t('checkout.validation.required') }}
+                                    </p>
                                 </div>
                             </div>
 
@@ -130,11 +185,17 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $t('checkout.shipping.country') }}
+                                    <span class="text-red-500">*</span>
                                 </label>
-                                <select v-model="form.shippingAddress.country" required :class="[
-                                    'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                                    isAutoFilled && form.shippingAddress.country ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                                ]">
+                                <select 
+                                    v-model="form.shippingAddress.country" 
+                                    required 
+                                    :class="[
+                                        'w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                                        !form.shippingAddress.country ? 'border-red-300 bg-red-50' : 
+                                        isAutoFilled && form.shippingAddress.country ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                                    ]"
+                                >
                                     <option value="">{{ $t('checkout.shipping.selectCountry') }}</option>
                                     <option value="NL">{{ $t('checkout.countries.NL') }}</option>
                                     <option value="BE">{{ $t('checkout.countries.BE') }}</option>
@@ -147,6 +208,9 @@
                                     <option value="CH">{{ $t('checkout.countries.CH') }}</option>
                                     <option value="US">{{ $t('checkout.countries.US') }}</option>
                                 </select>
+                                <p v-if="!form.shippingAddress.country" class="mt-1 text-xs text-red-600">
+                                    {{ $t('checkout.validation.required') }}
+                                </p>
                             </div>
 
                             <!-- Phone -->
@@ -247,8 +311,16 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <button @click="handleSubmit" :disabled="!isFormValid || orderStore.isLoading"
-                            class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center">
+                        <button 
+                            @click="handleSubmit" 
+                            :disabled="!isFormValid || orderStore.isLoading || cartStore.itemCount === 0"
+                            :class="[
+                                'w-full py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center font-medium',
+                                isFormValid && !orderStore.isLoading && cartStore.itemCount > 0
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            ]"
+                        >
                             <svg v-if="orderStore.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                                 fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -260,6 +332,20 @@
                             <span v-if="orderStore.isLoading">{{ $t('checkout.summary.creatingInvoice') }}</span>
                             <span v-else>{{ $t('checkout.summary.placeOrder') }}</span>
                         </button>
+
+                        <!-- Validation Message -->
+                        <div v-if="!isFormValid && !orderStore.isLoading" class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                            <div class="flex">
+                                <svg class="flex-shrink-0 w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <div class="ml-3">
+                                    <p class="text-sm text-orange-800">
+                                        {{ $t('checkout.validation.fillRequired') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Error Message -->
                         <div v-if="orderStore.error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -378,15 +464,16 @@ onMounted(() => {
     fillFromProfile()
 })
 
-// Form validation
+// Enhanced form validation
 const isFormValid = computed(() => {
     const addr = form.value.shippingAddress
-    return addr.company &&
-        addr.contactPerson &&
-        addr.street &&
-        addr.city &&
-        addr.zipCode &&
-        addr.country
+    return addr.company?.trim() &&
+        addr.contactPerson?.trim() &&
+        addr.street?.trim() &&
+        addr.city?.trim() &&
+        addr.zipCode?.trim() &&
+        addr.country &&
+        cartStore.itemCount > 0
 })
 
 const formatPrice = (price: number) => {
@@ -394,7 +481,10 @@ const formatPrice = (price: number) => {
 }
 
 const handleSubmit = async () => {
-    if (!isFormValid.value || cartStore.itemCount === 0) return
+    // Prevent submission if form is invalid
+    if (!isFormValid.value || orderStore.isLoading) {
+        return
+    }
 
     orderStore.clearError()
 

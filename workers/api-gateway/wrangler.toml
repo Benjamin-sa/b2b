@@ -46,7 +46,7 @@ database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
 # Production vars (used when no --env specified)
 [vars]
 ENVIRONMENT = "production"
-ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,https://4tparts.com"
+ALLOWED_ORIGINS = "http://localhost:5174,http://localhost:4173,https://4tparts.com"
 
 # ============================================================================
 # DEVELOPMENT ENVIRONMENT
@@ -73,6 +73,10 @@ service = "b2b-stripe-service-dev"
 [[env.dev.services]]
 binding = "SHOPIFY_SYNC_SERVICE"
 service = "b2b-shopify-sync-service-dev"
+
+[[env.dev.services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service-dev"
 
 # Queue Binding for Email Service (dev)
 [[env.dev.queues.producers]]
