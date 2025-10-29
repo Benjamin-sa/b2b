@@ -52,7 +52,7 @@ export const useProductStore = defineStore('products', () => {
   
   // For pagination
   const currentPage = ref(1);
-  const pageSize = ref(20);
+  const pageSize = ref(30);
   const totalItems = ref(0);
   const totalPages = ref(0);
   const hasMoreProducts = ref(true);

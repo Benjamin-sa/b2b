@@ -55,9 +55,9 @@
 
                 <!-- Product Details -->
                 <div class="space-y-1 mb-4 flex-grow">
-                    <div v-if="product.category_id" class="flex items-center text-sm text-gray-600">
+                    <div v-if="categoryName" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.category') }}:</span>
-                        <span class="ml-1">{{ product.category_id }}</span>
+                        <span class="ml-1">{{ categoryName }}</span>
                     </div>
                     <div v-if="product.shopify_variant_id" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.sku') }}:</span>
@@ -124,6 +124,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCartStore } from '../../stores/cart'
+import { useCategoryStore } from '../../stores/categories'
 import { useNotificationStore } from '../../stores/notifications'
 import { truncateHtml } from '../../utils/htmlUtils'
 import type { Product, CartItem } from '../../types'
@@ -142,10 +143,18 @@ const emit = defineEmits<{
 }>()
 
 const cartStore = useCartStore()
+const categoryStore = useCategoryStore()
 const notificationStore = useNotificationStore()
 const { t } = useI18n()
 
 const minOrder = computed(() => props.product.min_order_quantity || 1)
+
+// Get category name from category_id
+const categoryName = computed(() => {
+    if (!props.product.category_id) return null
+    const category = categoryStore.categories.find(cat => cat.id === props.product.category_id)
+    return category?.name || props.product.category_id
+})
 
 const remainingCapacity = computed(() => cartStore.getRemainingQuantity(props.product))
 

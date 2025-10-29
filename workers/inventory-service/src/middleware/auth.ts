@@ -34,13 +34,15 @@ function extractBearerToken(authHeader: string | undefined): string | null {
  */
 async function validateToken(
   token: string,
-  authService: any
+  authService: any,
+  serviceSecret: string
 ): Promise<AuthValidationResponse> {
   // Create request for service binding
   const request = new Request('http://internal/auth/validate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Service-Token': serviceSecret,
     },
     body: JSON.stringify({ accessToken: token }),
   });
@@ -76,7 +78,7 @@ export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
     }
 
     // Validate token with auth-service via service binding
-    const validation = await validateToken(token, c.env.AUTH_SERVICE);
+    const validation = await validateToken(token, c.env.AUTH_SERVICE, c.env.SERVICE_SECRET);
 
     if (!validation.valid) {
       throw createError('INVALID_TOKEN', 'Token validation failed', 401);
@@ -161,7 +163,7 @@ export async function optionalAuth(c: Context<{ Bindings: Env }>, next: Next) {
     const token = extractBearerToken(authHeader);
 
     if (token) {
-      const validation = await validateToken(token, c.env.AUTH_SERVICE);
+      const validation = await validateToken(token, c.env.AUTH_SERVICE, c.env.SERVICE_SECRET);
 
       if (validation.valid) {
         c.set('user', {

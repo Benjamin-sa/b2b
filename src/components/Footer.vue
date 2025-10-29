@@ -56,12 +56,12 @@
                     © {{ currentYear }} {{ $t('footer.bottom.copyright') }}
                 </p>
                 <div class="flex space-x-6 mt-4 sm:mt-0">
-                    <a href="#" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                    <router-link to="/privacy" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
                         {{ $t('footer.bottom.privacy') }}
-                    </a>
-                    <a href="#" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                    </router-link>
+                    <router-link to="/terms" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">
                         {{ $t('footer.bottom.terms') }}
-                    </a>
+                    </router-link>
                 </div>
             </div>
         </div>

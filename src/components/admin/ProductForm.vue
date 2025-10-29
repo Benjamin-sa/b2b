@@ -561,6 +561,7 @@ import { useProductStore } from '../../stores/products'
 import { useCategoryStore } from '../../stores/categories'
 import type { Product } from '../../types'
 import ImageUpload from './ImageUpload.vue'
+import { nanoid } from 'nanoid'
 
 interface Props {
     product?: Product | null
@@ -791,11 +792,19 @@ const onDescriptionChange = () => {
 }
 
 
-// Generate a random product SKU for standalone products
+// Generate a short product SKU in format: 4T-XXXX (guaranteed unique)
 const generateRandomSKU = () => {
-    const timestamp = Date.now().toString(36)
-    const randomString = Math.random().toString(36).substring(2, 8)
-    return `SKU-${timestamp}-${randomString}`.toUpperCase()
+    
+    // Use nanoid with custom alphabet (uppercase + numbers) and length 4
+    const id = nanoid(4) // Generates 4-character unique ID
+    
+    // Convert to uppercase to ensure consistency
+    const uniqueCode = id.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    
+    // Fallback: if somehow non-alphanumeric chars remain, pad with random chars
+    const paddedCode = (uniqueCode + nanoid(4).toUpperCase()).substring(0, 4)
+    
+    return `4T-${paddedCode}`
 }
 
 const loadInventoryInfo = async (shopifyVariantId: string) => {

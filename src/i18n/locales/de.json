@@ -31,7 +31,7 @@
     "contact": {
       "title": "Kontakt",
       "email": "E-Mail: info{'@'}4Tparts.com",
-      "phone": "Telefon: +31 (0) 20 123 4567"
+      "phone": "Telefon: +32 (0) 47 21 2118"
     },
     "bottom": {
       "copyright": "B2B-Plattform. Alle Rechte vorbehalten.",
@@ -193,6 +193,7 @@
       "advanced": "Erweiterte Filter",
       "allProducts": "Alle Produkte",
       "category": "Kategorie",
+      "category_id": "Kategorie",
       "availability": "Verfügbarkeit",
       "priceRange": "Preisspanne",
       "apply": "Filter anwenden",
@@ -202,6 +203,7 @@
       "all": "Alle Produkte",
       "allCategories": "Alle Kategorien",
       "inStockOnly": "Nur auf Lager",
+      "in_stockOnly": "Nur auf Lager",
       "anyPrice": "Jeder Preis",
       "hideFilters": "Filter ausblenden"
     },
@@ -477,6 +479,10 @@
       "AT": "Österreich",
       "CH": "Schweiz",
       "US": "Vereinigte Staaten"
+    },
+    "validation": {
+      "required": "Dieses Feld ist erforderlich",
+      "fillRequired": "Bitte füllen Sie alle Pflichtfelder aus, um fortzufahren"
     }
   },
   "orders": {

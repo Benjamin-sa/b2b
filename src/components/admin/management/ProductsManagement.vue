@@ -142,6 +142,78 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Controls -->
+            <div v-if="productStore.totalPages > 1" class="px-6 py-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing {{ ((productStore.currentPage - 1) * productStore.pageSize) + 1 }} to
+                        {{ Math.min(productStore.currentPage * productStore.pageSize, productStore.totalItems) }} of
+                        {{ productStore.totalItems }} products
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- First Page -->
+                        <button @click="goToPage(1)" :disabled="productStore.currentPage === 1" :class="[
+                            productStore.currentPage === 1
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-white text-gray-700 hover:bg-gray-50',
+                            'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                        ]">
+                            First
+                        </button>
+
+                        <!-- Previous Page -->
+                        <button @click="goToPage(productStore.currentPage - 1)"
+                            :disabled="productStore.currentPage === 1" :class="[
+                                productStore.currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Previous
+                        </button>
+
+                        <!-- Page Numbers -->
+                        <div class="flex items-center space-x-1">
+                            <template v-for="page in visiblePages" :key="page">
+                                <!-- Ellipsis -->
+                                <span v-if="page === -1" class="px-2 text-gray-500">...</span>
+                                <!-- Page Button -->
+                                <button v-else @click="goToPage(page)" :class="[
+                                    page === productStore.currentPage
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300',
+                                    'px-3 py-1 border rounded-md text-sm font-medium'
+                                ]">
+                                    {{ page }}
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Next Page -->
+                        <button @click="goToPage(productStore.currentPage + 1)"
+                            :disabled="productStore.currentPage === productStore.totalPages" :class="[
+                                productStore.currentPage === productStore.totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Next
+                        </button>
+
+                        <!-- Last Page -->
+                        <button @click="goToPage(productStore.totalPages)"
+                            :disabled="productStore.currentPage === productStore.totalPages" :class="[
+                                productStore.currentPage === productStore.totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Last
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Delete Confirmation Modal -->
@@ -171,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useProductStore } from '../../../stores/products'
 import type { Product } from '../../../types'
 import ProductForm from '../ProductForm.vue'
@@ -186,6 +258,59 @@ const searchTerm = ref('')
 const selectedCategory = ref('')
 const stockFilter = ref('')
 const categories = ref<string[]>([])
+
+// Computed property for visible page numbers
+const visiblePages = computed(() => {
+    const current = productStore.currentPage
+    const total = productStore.totalPages
+    const pages: number[] = []
+
+    if (total <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= total; i++) {
+            pages.push(i)
+        }
+    } else {
+        // Always show first page
+        pages.push(1)
+
+        // Calculate range around current page
+        let start = Math.max(2, current - 1)
+        let end = Math.min(total - 1, current + 1)
+
+        // Adjust if we're near the start
+        if (current <= 3) {
+            start = 2
+            end = 5
+        }
+
+        // Adjust if we're near the end
+        if (current >= total - 2) {
+            start = total - 4
+            end = total - 1
+        }
+
+        // Add ellipsis if needed
+        if (start > 2) {
+            pages.push(-1) // -1 represents ellipsis
+        }
+
+        // Add middle pages
+        for (let i = start; i <= end; i++) {
+            pages.push(i)
+        }
+
+        // Add ellipsis if needed
+        if (end < total - 1) {
+            pages.push(-1) // -1 represents ellipsis
+        }
+
+        // Always show last page
+        pages.push(total)
+    }
+
+    return pages
+})
 
 onMounted(async () => {
     await productStore.fetchProducts()
@@ -232,18 +357,40 @@ const filterProducts = () => {
     const filters: any = {}
 
     if (selectedCategory.value) {
-        filters.category = selectedCategory.value
+        filters.category_id = selectedCategory.value
     }
 
     if (stockFilter.value !== '') {
-        filters.inStock = stockFilter.value === 'true'
+        filters.in_stock = stockFilter.value === 'true'
     }
 
     if (searchTerm.value.trim()) {
-        filters.searchTerm = searchTerm.value
+        filters.search_term = searchTerm.value
     }
 
     // Always call fetchProducts with filters (empty object will fetch all)
+    productStore.fetchProducts(filters)
+}
+
+const goToPage = (page: number) => {
+    if (page < 1 || page > productStore.totalPages || page === productStore.currentPage) {
+        return
+    }
+
+    const filters: any = { page }
+
+    if (selectedCategory.value) {
+        filters.category_id = selectedCategory.value
+    }
+
+    if (stockFilter.value !== '') {
+        filters.in_stock = stockFilter.value === 'true'
+    }
+
+    if (searchTerm.value.trim()) {
+        filters.search_term = searchTerm.value
+    }
+
     productStore.fetchProducts(filters)
 }
 </script>

@@ -31,7 +31,7 @@
     "contact": {
       "title": "Contact",
       "email": "E-mail: info{'@'}4Tparts.com",
-      "phone": "Telefoon: +31 (0) 20 123 4567"
+      "phone": "Telefoon: +32 (0) 47 21 2118"
     },
     "bottom": {
       "copyright": "B2B Platform. Alle rechten voorbehouden.",
@@ -193,6 +193,7 @@
       "advanced": "Geavanceerde Filters",
       "allProducts": "Alle Producten",
       "category": "Categorie",
+      "category_id": "Categorie",
       "availability": "Beschikbaarheid",
       "priceRange": "Prijsklasse",
       "apply": "Filters Toepassen",
@@ -202,6 +203,7 @@
       "all": "Alle Producten",
       "allCategories": "Alle Categorieën",
       "inStockOnly": "Alleen op Voorraad",
+      "in_stockOnly": "Alleen op Voorraad",
       "anyPrice": "Elke Prijs",
       "hideFilters": "Filters Verbergen"
     },
@@ -477,6 +479,10 @@
       "AT": "Oostenrijk",
       "CH": "Zwitserland",
       "US": "Verenigde Staten"
+    },
+    "validation": {
+      "required": "Dit veld is verplicht",
+      "fillRequired": "Vul alle verplichte velden in om door te gaan"
     }
   },
   "orders": {
@@ -581,5 +587,185 @@
     "tryAgain": "Probeer opnieuw",
     "noProducts": "Geen producten beschikbaar",
     "viewAll": "Bekijk alle {title}"
+  },
+  "privacy": {
+    "title": "Privacybeleid",
+    "lastUpdated": "Laatst bijgewerkt: {date}",
+    "introduction": {
+      "title": "Inleiding",
+      "content": "4Tparts B2B Platform ('wij', 'ons' of 'onze') is toegewijd aan het beschermen van uw privacy. Dit Privacybeleid legt uit hoe wij uw informatie verzamelen, gebruiken, openbaar maken en beschermen wanneer u ons B2B e-commerce platform gebruikt."
+    },
+    "dataCollection": {
+      "title": "Informatie die Wij Verzamelen",
+      "personal": {
+        "title": "Persoonlijke Informatie",
+        "content": "Wij verzamelen informatie die u direct aan ons verstrekt, waaronder: naam, e-mailadres, bedrijfsnaam, BTW-nummer, bedrijfsadres, telefoonnummer en betalingsinformatie."
+      },
+      "automatic": {
+        "title": "Automatisch Verzamelde Informatie",
+        "content": "Wanneer u toegang krijgt tot ons platform, verzamelen we automatisch bepaalde informatie over uw apparaat, waaronder informatie over uw webbrowser, IP-adres, tijdzone en cookies die op uw apparaat zijn geïnstalleerd."
+      },
+      "business": {
+        "title": "Bedrijfsinformatie",
+        "content": "Als B2B-platform verzamelen wij bedrijfsgerelateerde informatie zoals bedrijfsregistratiegegevens, BTW-nummers, bestelgeschiedenis en transactiegegevens die nodig zijn voor factuurgeneratie en naleving van belastingwetgeving."
+      }
+    },
+    "dataUse": {
+      "title": "Hoe Wij Uw Informatie Gebruiken",
+      "purposes": {
+        "title": "Wij gebruiken de verzamelde informatie om:",
+        "item1": "Uw bestellingen en facturen te verwerken en uit te voeren",
+        "item2": "Uw bedrijfsgegevens en BTW-registratie te verifiëren",
+        "item3": "Met u te communiceren over producten, diensten en promoties",
+        "item4": "Ons platform te verbeteren en optimaliseren",
+        "item5": "Te voldoen aan wettelijke verplichtingen en belastingvereisten",
+        "item6": "Fraude te voorkomen en de platformbeveiliging te handhaven"
+      }
+    },
+    "dataSharing": {
+      "title": "Informatie Delen en Openbaarmaking",
+      "intro": "Wij kunnen uw informatie delen in de volgende omstandigheden:",
+      "service": "Met dienstverleners die diensten namens ons uitvoeren (betalingsverwerkers, verzendende bedrijven, e-maildiensten)",
+      "legal": "Wanneer vereist door de wet of om te reageren op juridische processen",
+      "business": "In verband met een bedrijfsoverdracht, fusie of overname",
+      "consent": "Met uw toestemming of op uw verzoek"
+    },
+    "gdpr": {
+      "title": "AVG-Naleving",
+      "intro": "Als Europees bedrijf voldoen wij aan de Algemene Verordening Gegevensbescherming (AVG). U heeft het recht om:",
+      "access": "Toegang te krijgen tot uw persoonlijke gegevens",
+      "rectify": "Onjuiste persoonlijke gegevens te rectificeren",
+      "erase": "Verwijdering van uw persoonlijke gegevens te verzoeken",
+      "restrict": "Verwerking van uw persoonlijke gegevens te beperken",
+      "portability": "Gegevensoverdraagbaarheid",
+      "object": "Bezwaar te maken tegen verwerking van uw persoonlijke gegevens",
+      "contact": "Om deze rechten uit te oefenen, neem contact met ons op via privacy@4Tparts.com"
+    },
+    "cookies": {
+      "title": "Cookies en Tracking",
+      "content": "Wij gebruiken cookies en vergelijkbare trackingtechnologieën om activiteit op ons platform te volgen. U kunt uw browser instrueren om alle cookies te weigeren of aan te geven wanneer een cookie wordt verzonden. Als u echter geen cookies accepteert, kunt u mogelijk sommige delen van ons platform niet gebruiken."
+    },
+    "security": {
+      "title": "Gegevensbeveiliging",
+      "content": "Wij implementeren passende technische en organisatorische maatregelen om uw persoonlijke gegevens te beschermen tegen ongeoorloofde of onwettige verwerking, onopzettelijk verlies, vernietiging of schade. Geen enkele methode van verzending via internet is echter 100% veilig."
+    },
+    "retention": {
+      "title": "Gegevensbewaring",
+      "content": "Wij bewaren uw persoonlijke gegevens zolang als nodig is om de doeleinden in dit Privacybeleid te vervullen, tenzij een langere bewaartermijn wettelijk vereist is (bijv. belasting- en boekhoudvereisten)."
+    },
+    "contact": {
+      "title": "Contact",
+      "content": "Als u vragen heeft over dit Privacybeleid, neem dan contact met ons op via:",
+      "email": "E-mail: privacy@4Tparts.com",
+      "phone": "Telefoon: +32 (0) 47 21 2118"
+    }
+  },
+  "terms": {
+    "title": "Servicevoorwaarden",
+    "lastUpdated": "Laatst bijgewerkt: {date}",
+    "introduction": {
+      "title": "Inleiding",
+      "content": "Welkom bij 4Tparts B2B Platform. Deze Servicevoorwaarden ('Voorwaarden') regelen uw toegang tot en gebruik van ons B2B e-commerce platform. Door toegang te krijgen tot of gebruik te maken van ons platform, stemt u ermee in gebonden te zijn aan deze Voorwaarden."
+    },
+    "eligibility": {
+      "title": "Geschiktheid",
+      "content": "Ons platform is uitsluitend bedoeld voor business-to-business transacties. U moet een geregistreerde bedrijfsentiteit zijn met een geldig BTW-nummer om onze diensten te gebruiken. U verklaart dat u de bevoegdheid heeft om uw bedrijf aan deze Voorwaarden te binden."
+    },
+    "account": {
+      "title": "Accountregistratie",
+      "verification": {
+        "title": "Verificatie",
+        "content": "Alle accounts zijn onderhevig aan verificatie. Wij behouden ons het recht voor om een account te weigeren of op te schorten als wij uw bedrijfsgegevens of BTW-registratie niet kunnen verifiëren."
+      },
+      "responsibility": {
+        "title": "Accountverantwoordelijkheid",
+        "content": "U bent verantwoordelijk voor het handhaven van de vertrouwelijkheid van uw accountgegevens en voor alle activiteiten die onder uw account plaatsvinden. U moet ons onmiddellijk op de hoogte stellen van ongeoorloofd gebruik."
+      }
+    },
+    "orders": {
+      "title": "Bestellingen en Prijzen",
+      "placement": {
+        "title": "Bestelling Plaatsen",
+        "content": "Alle bestellingen zijn onderhevig aan acceptatie door ons. Wij behouden ons het recht voor om een bestelling om welke reden dan ook te weigeren of te annuleren, waaronder productbeschikbaarheid, fouten in prijzen of productinformatie, of fraudezorgen."
+      },
+      "pricing": {
+        "title": "Prijzen",
+        "content": "Alle prijzen zijn vermeld in Euro's (EUR) en exclusief BTW, tenzij anders vermeld. Prijzen kunnen zonder voorafgaande kennisgeving worden gewijzigd. De prijs die van toepassing is op uw bestelling is de prijs die wordt weergegeven op het moment van bestelling."
+      },
+      "minimum": {
+        "title": "Minimale Bestelhoeveelheden",
+        "content": "Bepaalde producten kunnen minimale bestelhoeveelheden hebben. Deze vereisten worden duidelijk aangegeven op de productpagina."
+      }
+    },
+    "payment": {
+      "title": "Betalingsvoorwaarden",
+      "invoice": {
+        "title": "Factuurbetaling",
+        "content": "Betaling geschiedt via factuur met standaard betalingstermijnen van 30 dagen vanaf de factuurdatum, tenzij schriftelijk anders overeengekomen. Te late betalingen kunnen onderhevig zijn aan rentekosten."
+      },
+      "vat": {
+        "title": "BTW en Belastingen",
+        "content": "Als B2B-transactie binnen de EU wordt BTW toegepast volgens de toepasselijke regelgeving. U bent verantwoordelijk voor het verstrekken van nauwkeurige BTW-informatie. Verleggingsregelingen kunnen van toepassing zijn voor intracommunautaire transacties."
+      }
+    },
+    "shipping": {
+      "title": "Verzending en Levering",
+      "policy": {
+        "title": "Verzendbeleid",
+        "content": "Verzendkosten worden berekend op basis van gewicht en bestemming. Levertijden zijn schattingen en niet gegarandeerd. Het risico van verlies gaat over op u bij aflevering aan de vervoerder."
+      },
+      "delay": {
+        "title": "Vertragingen",
+        "content": "Wij zijn niet aansprakelijk voor vertragingen veroorzaakt door omstandigheden buiten onze controle, waaronder maar niet beperkt tot vertragingen van de vervoerder, douaneklaring of overmacht."
+      }
+    },
+    "returns": {
+      "title": "Retourzendingen en Terugbetalingen",
+      "policy": {
+        "title": "Retourbeleid",
+        "content": "Retourzendingen worden geaccepteerd binnen 14 dagen na levering voor defecte of onjuiste producten. Producten moeten ongebruikt zijn en in originele verpakking. Aangepaste bestellingen komen niet in aanmerking voor retourzending."
+      },
+      "process": {
+        "title": "Retourproces",
+        "content": "Om een retourzending te initiëren, neem contact op met ons ondersteuningsteam via support@4Tparts.com. Retourverzendkosten zijn de verantwoordelijkheid van de klant, tenzij de retourzending te wijten is aan onze fout."
+      }
+    },
+    "warranty": {
+      "title": "Garanties en Afwijzingen",
+      "limited": {
+        "title": "Beperkte Garantie",
+        "content": "Producten worden geleverd met fabrieksgaranties waar van toepassing. Wij geven geen aanvullende garanties naast die welke door de fabrikant worden verstrekt."
+      },
+      "disclaimer": {
+        "title": "Disclaimer",
+        "content": "VOOR ZOVER TOEGESTAAN DOOR DE WET, WORDEN ONS PLATFORM EN PRODUCTEN GELEVERD 'AS IS' ZONDER GARANTIES VAN WELKE AARD DAN OOK, EXPLICIET OF IMPLICIET."
+      }
+    },
+    "liability": {
+      "title": "Beperking van Aansprakelijkheid",
+      "content": "VOOR ZOVER TOEGESTAAN DOOR DE WET, ZIJN WIJ NIET AANSPRAKELIJK VOOR INDIRECTE, INCIDENTELE, SPECIALE, GEVOLGSCHADE OF PUNITIEVE SCHADE, OF ENIG VERLIES VAN WINST OF INKOMSTEN. ONZE TOTALE AANSPRAKELIJKHEID ZAL NIET HOGER ZIJN DAN HET BEDRAG DAT DOOR U IS BETAALD VOOR HET SPECIFIEKE PRODUCT OF DE DIENST DIE AANLEIDING GEEFT TOT DE CLAIM."
+    },
+    "intellectual": {
+      "title": "Intellectueel Eigendom",
+      "content": "Alle inhoud op ons platform, waaronder tekst, afbeeldingen, logo's en software, is eigendom van 4Tparts of zijn licentiegevers en wordt beschermd door auteurs- en merkrechten. U mag ons intellectueel eigendom niet gebruiken zonder voorafgaande schriftelijke toestemming."
+    },
+    "termination": {
+      "title": "Beëindiging",
+      "content": "Wij behouden ons het recht voor om uw account op elk moment op te schorten of te beëindigen wegens schending van deze Voorwaarden, frauduleuze activiteit of een andere reden naar eigen goeddunken. Bij beëindiging moet u alle openstaande facturen betalen."
+    },
+    "governing": {
+      "title": "Toepasselijk Recht",
+      "content": "Deze Voorwaarden worden beheerst door de wetten van België. Eventuele geschillen zullen worden opgelost in de rechtbanken van België."
+    },
+    "changes": {
+      "title": "Wijzigingen in Voorwaarden",
+      "content": "Wij behouden ons het recht voor om deze Voorwaarden op elk moment te wijzigen. Wij zullen u op de hoogte stellen van materiële wijzigingen via e-mail. Uw voortgezet gebruik van het platform na wijzigingen vormt acceptatie van de gewijzigde Voorwaarden."
+    },
+    "contact": {
+      "title": "Contactinformatie",
+      "content": "Voor vragen over deze Voorwaarden, neem contact met ons op via:",
+      "email": "E-mail: support@4Tparts.com",
+      "phone": "Telefoon: +32 (0) 47 21 2118"
+    }
   }
 }

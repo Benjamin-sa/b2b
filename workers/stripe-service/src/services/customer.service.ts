@@ -13,7 +13,7 @@
 import type Stripe from 'stripe';
 import type { Env, CustomerInput, CustomerUpdateInput } from '../types';
 import { getStripeClient, handleStripeError, validateRequired } from '../utils/stripe.utils';
-import { getCountryCode } from '../utils/country-codes';
+import { getCountryCode, getPreferredLocale } from '../utils/country-codes';
 
 /**
  * Build Stripe customer data from input
@@ -25,6 +25,9 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
   
   // Convert country name to ISO code for Stripe (e.g., "Belgium" -> "BE")
   const countryCode = getCountryCode(input.address_country);
+  
+  // Get appropriate language code for preferred_locales (e.g., "BE" -> "nl")
+  const languageCode = countryCode ? getPreferredLocale(countryCode) : undefined;
   
   const customerData: Stripe.CustomerCreateParams = {
     email: input.email,
@@ -38,8 +41,10 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
       source: 'b2b_stripe_service',
       createdAt: new Date().toISOString(),
     },
-    preferred_locales: countryCode 
-      ? [countryCode.toLowerCase()] 
+    // Use language code (RFC-4646) NOT country code
+    // e.g., "nl" for Belgium (Dutch), "fr" for France, "de" for Germany
+    preferred_locales: languageCode 
+      ? [languageCode] 
       : undefined,
   };
 

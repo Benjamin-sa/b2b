@@ -151,15 +151,31 @@ const isLoginMode = ref(true)
 const isPasswordResetMode = ref(false)
 const resetToken = ref('')
 
-// Check URL query params on mount
-onMounted(() => {
-    // Check for password reset mode
+// Function to check and set password reset mode
+const checkPasswordResetMode = () => {
     if (route.query.mode === 'resetPassword' && route.query.token) {
+        console.log('Password reset mode detected:', route.query.token)
         isPasswordResetMode.value = true
         resetToken.value = route.query.token as string
         isLoginMode.value = false
+    } else {
+        // Reset if no query params
+        if (isPasswordResetMode.value) {
+            isPasswordResetMode.value = false
+            resetToken.value = ''
+        }
     }
+}
+
+// Check URL query params on mount
+onMounted(() => {
+    checkPasswordResetMode()
 })
+
+// Watch for route changes (in case query params change while component is mounted)
+watch(() => route.query, () => {
+    checkPasswordResetMode()
+}, { deep: true })
 
 // Handle back to login from password reset
 const handleBackToLogin = () => {
@@ -208,13 +224,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
-})
-
-// Redirect if already authenticated
-onMounted(() => {
-    if (authStore.isAuthenticated) {
-        router.push('/')
-    }
 })
 
 // Form data

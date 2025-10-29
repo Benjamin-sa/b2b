@@ -222,12 +222,14 @@ invoicesRoutes.get('/:id', async (c) => {
     }
 
     // Get order items
+    // Note: Uses LEFT JOIN because product_id can be NULL if product was deleted
+    // Falls back to denormalized data in order_items (product_name, image_url, etc.)
     const items = await c.env.DB.prepare(`
       SELECT 
         oi.*,
-        p.name as product_name,
-        p.sku as product_sku,
-        p.image_url as product_image
+        COALESCE(p.name, oi.product_name) as product_name,
+        COALESCE(p.part_number, oi.product_sku) as product_sku,
+        COALESCE(p.image_url, oi.image_url) as product_image
       FROM order_items oi
       LEFT JOIN products p ON oi.product_id = p.id
       WHERE oi.order_id = ?

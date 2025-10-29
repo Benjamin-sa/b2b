@@ -233,9 +233,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
-                                    {{ invoice.company_name || 'N/A' }}
+                                    {{ invoice.customer_company || 'N/A' }}
                                 </div>
-                                <div class="text-sm text-gray-500">{{ invoice.email }}</div>
+                                <div class="text-sm text-gray-500">{{ invoice.customer_email }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ formatDate(invoice.created_at) }}
@@ -244,8 +244,8 @@
                                 <div class="text-sm font-medium text-gray-900">
                                     €{{ invoice.total_amount }}
                                 </div>
-                                <div v-if="invoice.tax_amount > 0" class="text-xs text-gray-500">
-                                    Tax: €{{ invoice.tax_amount}}
+                                <div v-if="invoice.tax > 0" class="text-xs text-gray-500">
+                                    Tax: €{{ invoice.tax }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -330,8 +330,8 @@
         </div>
 
         <!-- Invoice Details Modal -->
-        <div v-if="selectedInvoice" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeModal">
-            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white" @click.stop>
+        <div v-if="selectedInvoice" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4" @click="closeModal">
+            <div class="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto" @click.stop>
                 <div class="mt-3">
                     <!-- Modal Header -->
                     <div class="flex justify-between items-start border-b pb-4">
@@ -356,11 +356,15 @@
                                 <div class="space-y-2">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Company</label>
-                                        <p class="mt-1 text-sm text-gray-900">{{ selectedInvoice.company_name }}</p>
+                                        <p class="mt-1 text-sm text-gray-900">{{ selectedInvoice.customer_company || 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                                        <p class="mt-1 text-sm text-gray-900">{{ selectedInvoice.customer_first_name }} {{ selectedInvoice.customer_last_name }}</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Email</label>
-                                        <p class="mt-1 text-sm text-gray-900">{{ selectedInvoice.email }}</p>
+                                        <p class="mt-1 text-sm text-gray-900">{{ selectedInvoice.customer_email }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -382,11 +386,32 @@
                                         <label class="block text-sm font-medium text-gray-700">Created At</label>
                                         <p class="mt-1 text-sm text-gray-900">{{ formatDate(selectedInvoice.created_at) }}</p>
                                     </div>
+                                    <div v-if="selectedInvoice.due_date">
+                                        <label class="block text-sm font-medium text-gray-700">Due Date</label>
+                                        <p class="mt-1 text-sm text-gray-900">{{ formatDate(selectedInvoice.due_date) }}</p>
+                                    </div>
                                     <div v-if="selectedInvoice.stripe_invoice_id">
                                         <label class="block text-sm font-medium text-gray-700">Stripe ID</label>
                                         <p class="mt-1 text-sm text-gray-900 font-mono">{{ selectedInvoice.stripe_invoice_id }}</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Shipping Address -->
+                        <div v-if="selectedInvoice.shipping_address_street">
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Shipping Address</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p v-if="selectedInvoice.shipping_address_contact" class="text-sm text-gray-900 font-medium">
+                                    {{ selectedInvoice.shipping_address_contact }}
+                                </p>
+                                <p v-if="selectedInvoice.shipping_address_company" class="text-sm text-gray-900">
+                                    {{ selectedInvoice.shipping_address_company }}
+                                </p>
+                                <p class="text-sm text-gray-900">{{ selectedInvoice.shipping_address_street }}</p>
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedInvoice.shipping_address_city }}, {{ selectedInvoice.shipping_address_country }}
+                                </p>
                             </div>
                         </div>
 
@@ -423,15 +448,15 @@
                                 <div class="w-64 space-y-2">
                                     <div class="flex justify-between text-sm">
                                         <span class="text-gray-600">Subtotal:</span>
-                                        <span class="text-gray-900">€{{ selectedInvoice.subtotal_amount }}</span>
+                                        <span class="text-gray-900">€{{ selectedInvoice.subtotal }}</span>
                                     </div>
-                                    <div class="flex justify-between text-sm">
+                                    <div v-if="selectedInvoice.shipping > 0" class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Shipping:</span>
+                                        <span class="text-gray-900">€{{ selectedInvoice.shipping }}</span>
+                                    </div>
+                                    <div v-if="selectedInvoice.tax > 0" class="flex justify-between text-sm">
                                         <span class="text-gray-600">Tax:</span>
-                                        <span class="text-gray-900">€{{ selectedInvoice.tax_amount }}</span>
-                                    </div>
-                                    <div v-if="selectedInvoice.discount_amount > 0" class="flex justify-between text-sm text-green-600">
-                                        <span>Discount:</span>
-                                        <span>-€{{ selectedInvoice.discount_amount }}</span>
+                                        <span class="text-gray-900">€{{ selectedInvoice.tax }}</span>
                                     </div>
                                     <div class="flex justify-between text-base font-semibold border-t pt-2">
                                         <span class="text-gray-900">Total:</span>
@@ -443,7 +468,31 @@
                     </div>
 
                     <!-- Modal Actions -->
-                    <div class="mt-6 flex justify-end border-t pt-4">
+                    <div class="mt-6 flex justify-between items-center border-t pt-4">
+                        <div class="flex space-x-2">
+                            <a
+                                v-if="selectedInvoice.invoice_url"
+                                :href="selectedInvoice.invoice_url"
+                                target="_blank"
+                                class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                View Invoice
+                            </a>
+                            <a
+                                v-if="selectedInvoice.invoice_pdf"
+                                :href="selectedInvoice.invoice_pdf"
+                                target="_blank"
+                                class="inline-flex items-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Download PDF
+                            </a>
+                        </div>
                         <button
                             @click="closeModal"
                             class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -468,14 +517,28 @@ interface Invoice {
     invoice_number: string | null
     stripe_invoice_id: string | null
     user_id: string
-    email: string
-    company_name: string | null
+    customer_email: string
+    customer_company: string | null
+    customer_first_name: string | null
+    customer_last_name: string | null
     status: string
-    subtotal_amount: number
-    tax_amount: number
-    discount_amount: number
+    stripe_status: string
+    subtotal: number
+    tax: number
+    shipping: number
     total_amount: number
+    order_date: string
     created_at: string
+    updated_at: string
+    paid_at: string | null
+    due_date: string | null
+    invoice_url: string | null
+    invoice_pdf: string | null
+    shipping_address_company: string | null
+    shipping_address_contact: string | null
+    shipping_address_street: string | null
+    shipping_address_city: string | null
+    shipping_address_country: string | null
     items?: InvoiceItem[]
 }
 
@@ -534,7 +597,7 @@ const sorting = ref({
 
 const pagination = ref<PaginationData>({
     page: 1,
-    limit: 25,
+    limit: 100,
     total: 0,
     totalPages: 0,
     hasNextPage: false,
@@ -596,18 +659,13 @@ const loadStats = async () => {
     }
 }
 
-const viewInvoiceDetails = async (invoiceId: string) => {
-    try {
-        const response = await authStore.authenticatedFetch(
-            `${import.meta.env.VITE_API_GATEWAY_URL}/admin/invoices/${invoiceId}`
-        )
-
-        if (!response.ok) throw new Error('Failed to fetch invoice details')
-
-        const data = await response.json()
-        selectedInvoice.value = data.invoice
-    } catch (error) {
-        console.error('Error loading invoice details:', error)
+const viewInvoiceDetails = (invoiceId: string) => {
+    // Find the invoice in the already-loaded invoices array
+    const invoice = invoices.value.find(inv => inv.id === invoiceId)
+    if (invoice) {
+        selectedInvoice.value = invoice
+    } else {
+        console.error('Invoice not found:', invoiceId)
     }
 }
 

@@ -14,6 +14,8 @@ const Orders = () => import('../views/Orders.vue')
 const Profile = () => import('../views/Profile.vue')
 const VerificationPending = () => import('../views/VerificationPending.vue')
 const Categories = () => import('../views/Categories.vue')
+const Privacy = () => import('../views/Privacy.vue')
+const Terms = () => import('../views/Terms.vue')
 
 const routes = [
   {
@@ -135,6 +137,26 @@ const routes = [
       transition: 'fade',
       title: 'Admin Panel'
     }
+  },
+  {
+    path: '/privacy',
+    name: 'Privacy',
+    component: Privacy,
+    meta: { 
+      requiresAuth: false,
+      transition: 'fade',
+      title: 'Privacy Policy'
+    }
+  },
+  {
+    path: '/terms',
+    name: 'Terms',
+    component: Terms,
+    meta: { 
+      requiresAuth: false,
+      transition: 'fade',
+      title: 'Terms of Service'
+    }
   }
 ]
 
@@ -161,11 +183,21 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Redirect to auth page if user is not authenticated
+    // Redirect to auth page if user is not authenticated (preserve query params)
     if (to.path !== '/auth') {
-      next('/auth')
+      next({ path: '/auth', query: to.query })
       return
     }
+  }
+
+  // If authenticated user tries to access auth page, redirect based on verification status
+  if (to.path === '/auth' && authStore.isAuthenticated) {
+    if (authStore.isVerified || authStore.isAdmin) {
+      next('/')
+    } else {
+      next('/verification-pending')
+    }
+    return
   }
 
   // If authenticated but not verified, redirect to verification pending page

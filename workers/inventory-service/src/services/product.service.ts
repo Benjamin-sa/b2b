@@ -85,46 +85,60 @@ export async function getProducts(
   const params: any[] = [];
 
   if (filters.categoryId) {
-    conditions.push('category_id = ?');
+    conditions.push('p.category_id = ?');
     params.push(filters.categoryId);
   }
 
   if (filters.brand) {
-    conditions.push('brand = ?');
+    conditions.push('p.brand = ?');
     params.push(filters.brand);
   }
 
   if (filters.inStock !== undefined) {
-    conditions.push('in_stock = ?');
+    conditions.push('p.in_stock = ?');
     params.push(filters.inStock ? 1 : 0);
   }
 
   if (filters.comingSoon !== undefined) {
-    conditions.push('coming_soon = ?');
+    conditions.push('p.coming_soon = ?');
     params.push(filters.comingSoon ? 1 : 0);
   }
 
   if (filters.minPrice !== undefined) {
-    conditions.push('price >= ?');
+    conditions.push('p.price >= ?');
     params.push(filters.minPrice);
   }
 
   if (filters.maxPrice !== undefined) {
-    conditions.push('price <= ?');
+    conditions.push('p.price <= ?');
     params.push(filters.maxPrice);
   }
 
   if (filters.searchTerm) {
-    conditions.push('(name LIKE ? OR description LIKE ? OR brand LIKE ?)');
+    conditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ?)');
     const searchPattern = `%${filters.searchTerm}%`;
     params.push(searchPattern, searchPattern, searchPattern);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+  // ✅ CRITICAL: When sorting by stock, use product_inventory.b2b_stock (not deprecated products.stock)
+  // Always LEFT JOIN with product_inventory to ensure we can sort by actual inventory
+  let sortField = sortBy;
+  let fromClause = 'FROM products p';
+  
+  if (sortBy === 'stock') {
+    // Join with product_inventory and sort by b2b_stock
+    fromClause = 'FROM products p LEFT JOIN product_inventory i ON p.id = i.product_id';
+    sortField = 'COALESCE(i.b2b_stock, 0)'; // Use b2b_stock, default to 0 if no inventory record
+  } else {
+    // Prefix sort field with table alias for consistency
+    sortField = `p.${sortBy}`;
+  }
+
   // Build queries
-  const baseQuery = `SELECT * FROM products ${whereClause} ORDER BY ${sortBy} ${sortOrder}`;
-  const countQuery = `SELECT COUNT(*) as count FROM products ${whereClause}`;
+  const baseQuery = `SELECT p.* ${fromClause} ${whereClause} ORDER BY ${sortField} ${sortOrder}`;
+  const countQuery = `SELECT COUNT(*) as count ${fromClause} ${whereClause}`;
 
   // Get paginated results
   const result = await getPaginated<Product>(db, baseQuery, countQuery, params, page, limit);

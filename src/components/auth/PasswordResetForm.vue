@@ -19,10 +19,6 @@
 
         <!-- Reset Form -->
         <form v-else @submit.prevent="handleSubmit" class="space-y-6">
-            <div class="text-center mb-6">
-                <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('auth.resetYourPassword') }}</h3>
-                <p class="text-gray-600">{{ $t('auth.resetPasswordInstruction') }}</p>
-            </div>
 
             <!-- Error Display -->
             <div v-if="error" class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm">

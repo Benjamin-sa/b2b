@@ -61,15 +61,38 @@ export function validatePagination(
 }
 
 /**
+ * Map frontend camelCase field names to backend snake_case
+ */
+const FIELD_NAME_MAP: Record<string, string> = {
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  categoryId: 'category_id',
+  partNumber: 'part_number',
+  minOrderQuantity: 'min_order_quantity',
+  maxOrderQuantity: 'max_order_quantity',
+  imageUrl: 'image_url',
+  originalPrice: 'original_price',
+  inStock: 'in_stock',
+  comingSoon: 'coming_soon',
+  popularity: 'created_at', // Map popularity to created_at (newest first) as fallback
+};
+
+/**
  * Validate sort parameters
+ * Supports both camelCase (frontend) and snake_case (database) field names
  */
 export function validateSort(
   sortBy: any,
   sortOrder: any,
   allowedFields: string[]
 ): { sortBy: string; sortOrder: 'asc' | 'desc' } {
-  const field = sortBy || 'created_at';
+  let field = sortBy || 'created_at';
   const order = sortOrder?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+
+  // Map camelCase to snake_case if needed
+  if (FIELD_NAME_MAP[field]) {
+    field = FIELD_NAME_MAP[field];
+  }
 
   if (!allowedFields.includes(field)) {
     throw errors.validationError(
