@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev --env dev --port 8791",
     "deploy": "wrangler deploy --config wrangler.toml",
-    "deploy:dev": "wrangler deploy --env dev",
+    "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
     "test": "vitest",
     "type-check": "tsc --noEmit"
   },

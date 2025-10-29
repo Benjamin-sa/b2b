@@ -60,6 +60,7 @@ authOrchestration.post("/register", async (c) => {
       headers: {
         "Content-Type": "application/json",
         "X-Gateway-Request": "true",
+        "X-Service-Token": c.env.SERVICE_SECRET, // 👈 Pass the secret
       },
       body: JSON.stringify(data),
     });
@@ -93,29 +94,40 @@ authOrchestration.post("/register", async (c) => {
     console.log("✅ [Gateway] Welcome email queued successfully");
 
     // Step 3: Send Telegram notification to admins (NON-BLOCKING)
-    console.log("📱 [Gateway] Sending Telegram notification for new user registration");
-    
+    console.log(
+      "📱 [Gateway] Sending Telegram notification for new user registration"
+    );
+
     try {
-      const telegramRequest = new Request('https://dummy/notifications/user/registered', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: authResult.user.uid,
-          userData: {
-            firstName: authResult.user.firstName,
-            lastName: authResult.user.lastName,
-            companyName: authResult.user.companyName,
-            email: authResult.user.email,
-            // phone and btwNumber would be added here if available in authResult
-          }
-        })
-      });
+      const telegramRequest = new Request(
+        "https://dummy/notifications/user/registered",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Service-Token": c.env.SERVICE_SECRET,
+          },
+          body: JSON.stringify({
+            userId: authResult.user.uid,
+            userData: {
+              firstName: authResult.user.firstName,
+              lastName: authResult.user.lastName,
+              companyName: authResult.user.companyName,
+              email: authResult.user.email,
+              // phone and btwNumber would be added here if available in authResult
+            },
+          }),
+        }
+      );
 
       await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
       console.log("✅ [Gateway] Telegram notification sent successfully");
     } catch (telegramError) {
       // Log Telegram error but don't fail the request
-      console.error("⚠️  [Gateway] Failed to send Telegram notification:", telegramError);
+      console.error(
+        "⚠️  [Gateway] Failed to send Telegram notification:",
+        telegramError
+      );
     }
 
     // Step 4: Return success immediately (don't wait for notifications)
@@ -142,11 +154,12 @@ authOrchestration.post("/register", async (c) => {
 authOrchestration.post("/login", async (c) => {
   const data = await c.req.json();
 
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
   const request = new Request("http://internal/auth/login", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -160,11 +173,12 @@ authOrchestration.post("/login", async (c) => {
 authOrchestration.post("/refresh", async (c) => {
   const data = await c.req.json();
 
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
   const request = new Request("http://internal/auth/refresh", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -178,11 +192,13 @@ authOrchestration.post("/refresh", async (c) => {
 authOrchestration.post("/logout", async (c) => {
   const data = await c.req.json();
 
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
   const request = new Request("http://internal/auth/logout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
+
     body: JSON.stringify(data),
   });
 
@@ -199,14 +215,15 @@ authOrchestration.post("/password-reset/request", async (c) => {
 
     console.log("🎯 [Gateway] Orchestrating password reset for:", data.email);
 
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     // Step 1: Create reset token (BLOCKING)
     const authRequest = new Request(
       "http://internal/auth/password-reset/request",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(data),
       }
     );
@@ -257,11 +274,27 @@ authOrchestration.post("/password-reset/request", async (c) => {
 authOrchestration.post("/password-reset/confirm", async (c) => {
   const data = await c.req.json();
 
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
   const request = new Request("http://internal/auth/password-reset/confirm", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  return c.env.AUTH_SERVICE.fetch(request);
+});
+
+authOrchestration.post("/validate", async (c) => {
+  const data = await c.req.json();
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
+  const request = new Request("http://internal/auth/validate", {
+    method: "POST",
+    headers,
     body: JSON.stringify(data),
   });
 

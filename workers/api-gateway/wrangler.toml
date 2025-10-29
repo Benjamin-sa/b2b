@@ -46,7 +46,7 @@ database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
 # Production vars (used when no --env specified)
 [vars]
 ENVIRONMENT = "production"
-ALLOWED_ORIGINS = "http://localhost:5174,http://localhost:4173,https://4tparts.com"
+ALLOWED_ORIGINS = "https://4tparts.com"
 
 # ============================================================================
 # DEVELOPMENT ENVIRONMENT
@@ -91,4 +91,12 @@ database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
 
 [env.dev.vars]
 ENVIRONMENT = "development"
-ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
+ALLOWED_ORIGINS = "http://localhost:5174,http://localhost:4173"
+
+
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true

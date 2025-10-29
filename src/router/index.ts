@@ -1,22 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Import components
-import home from '../views/Home.vue'
-import Products from '../views/Products.vue'
-import ProductDetail from '../views/ProductDetail.vue'
-import AdminPanel from '../views/Admin.vue'
-import Checkout from '../views/Checkout.vue'
-import Orders from '../views/Orders.vue'
-import Profile from '../views/Profile.vue'
+// Eagerly load only critical routes (Home and Auth)
+import Home from '../views/Home.vue'
 import Auth from '../views/Auth.vue'
-import VerificationPending from '../views/VerificationPending.vue'
+
+// Lazy load all other routes for better code splitting
+const Products = () => import('../views/Products.vue')
+const ProductDetail = () => import('../views/ProductDetail.vue')
+const AdminPanel = () => import('../views/Admin.vue')
+const Checkout = () => import('../views/Checkout.vue')
+const Orders = () => import('../views/Orders.vue')
+const Profile = () => import('../views/Profile.vue')
+const VerificationPending = () => import('../views/VerificationPending.vue')
+const Categories = () => import('../views/Categories.vue')
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: home,
+    component: Home,
     meta: { 
       requiresAuth: true,
       requiresVerified: true,
@@ -70,7 +73,7 @@ const routes = [
   {
     path: '/categories',
     name: 'Categories',
-    component: () => import('../views/Categories.vue'),
+    component: Categories,
     meta: { 
       requiresAuth: true,
       requiresVerified: true,

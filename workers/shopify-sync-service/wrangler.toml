@@ -30,12 +30,12 @@ name = "b2b-shopify-sync-service-dev"
 [[env.dev.d1_databases]]
 binding = "DB"
 database_name = "b2b-dev"
-database_id = "your-dev-db-id"
+database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
 
 [env.dev.vars]
 ENVIRONMENT = "development"
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:8787"
-SHOPIFY_STORE_DOMAIN = "your-dev-store.myshopify.com"
+SHOPIFY_STORE_DOMAIN = "motordashbnl.myshopify.com"
 SHOPIFY_API_VERSION = "2025-10"
 
 # ============================================

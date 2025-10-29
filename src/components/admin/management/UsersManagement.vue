@@ -139,8 +139,17 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ user.companyName }}</div>
-                                <div v-if="user.btwNumber" class="text-xs text-gray-500">
-                                    VAT: {{ user.btwNumber }}
+                                <div v-if="user.btwNumber" class="flex items-center space-x-1 mt-1">
+                                    <span class="text-xs text-gray-500">VAT: {{ user.btwNumber }}</span>
+                                    <svg v-if="user.btwVerification?.isValidated" 
+                                        class="h-3 w-3 text-blue-500" 
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        title="VIES data available">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -265,9 +274,73 @@
                                 </div>
                                 <div v-if="selectedUser.btwNumber">
                                     <label class="block text-sm font-medium text-gray-700">VAT Number</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ selectedUser.btwNumber }}</p>
+                                    <div class="flex items-center space-x-2 mt-1">
+                                        <p class="text-sm text-gray-900">{{ selectedUser.btwNumber }}</p>
+                                        <span v-if="selectedUser.btwVerification?.isValidated"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                            title="VAT number exists in VIES database">
+                                            <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            VIES Check Passed
+                                        </span>
+                                        <span v-else
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            Not Checked
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- BTW Verification Details (if available) -->
+                            <div v-if="selectedUser.btwVerification?.verifiedName || selectedUser.btwVerification?.verifiedAddress"
+                                class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <h5 class="text-sm font-medium text-blue-900">
+                                            VIES Database Information
+                                        </h5>
+                                        <p class="text-xs text-blue-700 mt-1 mb-3">
+                                            This is the official data from the European VAT registry. Please verify it matches the customer-provided information below.
+                                        </p>
+                                        <div class="mt-2 text-sm text-blue-900 space-y-2">
+                                            <div v-if="selectedUser.btwVerification.verifiedName">
+                                                <span class="font-medium">Official Company Name:</span>
+                                                <p class="mt-0.5 text-blue-800">{{ selectedUser.btwVerification.verifiedName }}</p>
+                                            </div>
+                                            <div v-if="selectedUser.btwVerification.verifiedAddress">
+                                                <span class="font-medium">Official Registered Address:</span>
+                                                <p class="mt-0.5 text-blue-800 whitespace-pre-line">{{ selectedUser.btwVerification.verifiedAddress }}</p>
+                                            </div>
+                                            <div v-if="selectedUser.btwVerification.verifiedAt" class="text-xs text-blue-600 pt-2 border-t border-blue-200">
+                                                Retrieved from VIES on {{ formatDate(selectedUser.btwVerification.verifiedAt) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <div v-if="selectedUser.address">
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Customer-Provided Information</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedUser.address.street }} {{ selectedUser.address.houseNumber }}<br>
+                                    {{ selectedUser.address.postalCode }} {{ selectedUser.address.city }}<br>
+                                    {{ selectedUser.address.country }}
+                                </p>
+                            </div>
+                            <p v-if="selectedUser.btwVerification?.verifiedAddress" class="mt-2 text-xs text-gray-500">
+                                ⚠️ Compare this address with the official VIES address above before verifying the account.
+                            </p>
                         </div>
 
                         <!-- Account Status -->

@@ -30,7 +30,7 @@
     },
     "contact": {
       "title": "Contact",
-      "email": "Email: info@4Tparts.com",
+      "email": "Email: info{'@'}4Tparts.com",
       "phone": "Phone: +31 (0) 20 123 4567"
     },
     "bottom": {
@@ -82,7 +82,7 @@
     "emailRequired": "Email Required",
     "emailRequiredMessage": "Please enter your email address first to reset your password.",
     "resetEmailSent": "Reset Email Sent",
-    "resetEmailSentMessage": "Password reset instructions have been sent to {email}. Please check your email and follow the instructions.",
+    "resetEmailSentMessage": "Password reset instructions have been sent to your email. Please check your email and follow the instructions.",
     "resetFailed": "Reset Failed",
     "resetFailedMessage": "Failed to send password reset email. Please try again or contact support if the problem persists.",
     "resetYourPassword": "Reset Your Password",
@@ -144,6 +144,12 @@
       "sessionExpired": "Your session has expired. Please login again.",
       "missingFields": "Please fill in all required fields.",
       "serverError": "A server error occurred. Please try again later."
+    },
+    "validation": {
+      "vatRequired": "VAT/BTW number is required",
+      "vatTooShort": "VAT/BTW number is too short",
+      "vatUnknownCountry": "Unknown country code: {code}. Only EU countries are allowed.",
+      "vatInvalidFormat": "Invalid format for {country}. Expected format: {format}"
     }
   },
   "products": {
@@ -488,8 +494,9 @@
     "invoice": "Invoice",
     "orderPlacedOn": "Order placed on",
     "paidOn": "Paid",
-    "dueOn": "Due",
-    "itemsPurchased": "Items purchased",
+    "dueOn": "Due on",
+    "items": "Items",
+    "itemsPurchased": "Items Purchased",
     "sku": "SKU",
     "orderSummary": "Order Summary",
     "subtotal": "Subtotal",
@@ -553,7 +560,7 @@
     "contactSupport": "If you have any questions or need to update your information, please contact our support team.",
     "signOut": "Sign Out",
     "needHelp": "Need help? Contact support:",
-    "supportEmail": "support@4Tparts.com"
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Subcategories:",

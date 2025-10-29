@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name TEXT NOT NULL,
     phone TEXT,
     btw_number TEXT NOT NULL,
+    btw_number_validated INTEGER DEFAULT 0 CHECK(btw_number_validated IN (0, 1)),
     address_street TEXT NOT NULL,
     address_house_number TEXT NOT NULL,
     address_postal_code TEXT NOT NULL,

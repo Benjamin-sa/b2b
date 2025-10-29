@@ -13,6 +13,7 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import type { Env } from './types';
 import {
   syncToShopify,
@@ -28,6 +29,11 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
+
+// 🔐 Service authentication - blocks direct HTTP access in production
+app.use('*', createServiceAuthMiddleware({
+  allowedPaths: ['/', '/health', '/webhooks/inventory-update'], // Allow Shopify webhooks
+}));
 
 // CORS
 app.use('*', cors({

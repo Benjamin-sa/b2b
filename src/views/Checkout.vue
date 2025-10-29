@@ -442,11 +442,11 @@ const fillFromProfile = () => {
         form.value.shippingAddress = {
             company: profile.companyName || '',
             contactPerson: `${profile.firstName} ${profile.lastName}`.trim() || '',
-            street: addr.street && addr.houseNumber ? `${addr.street} ${addr.houseNumber}` : addr.street || '',
-            city: addr.city || '',
+            street: addr?.street && addr?.houseNumber ? `${addr.street} ${addr.houseNumber}` : addr?.street || '',
+            city: addr?.city || '',
             state: '', // Not stored in profile, leave empty
-            zipCode: addr.postalCode || '',
-            country: addr.country || '',
+            zipCode: addr?.postalCode || '',
+            country: addr?.country || '',
             phone: profile.phone || ''
         }
 

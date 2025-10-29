@@ -299,7 +299,11 @@ const handleRegister = async () => {
     // Extra BTW validatie voor submit
     validateBTW()
     if (!vatValidation.value.isValid) {
-        await notificationStore.error(t('auth.vatValidationFailed'), vatValidation.value.error || t('auth.invalidVatNumber'))
+        // Translate the error message with parameters if available
+        const errorMessage = vatValidation.value.error 
+            ? t(vatValidation.value.error, vatValidation.value.errorParams || {})
+            : t('auth.invalidVatNumber')
+        await notificationStore.error(t('auth.vatValidationFailed'), errorMessage)
         return
     }
 

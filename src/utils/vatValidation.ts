@@ -106,16 +106,19 @@ export interface VATValidationResult {
   countryName?: string
   format?: string
   error?: string
+  errorParams?: Record<string, string> // Parameters for i18n translation
 }
 
 /**
  * Validate EU VAT/BTW number format
+ * Note: Error messages use i18n keys that should be translated in your component
+ * Use the `error` field as the translation key and `errorParams` for placeholders
  */
 export function validateVATNumber(vatNumber: string): VATValidationResult {
   if (!vatNumber || typeof vatNumber !== 'string') {
     return {
       isValid: false,
-      error: 'BTW/VAT nummer is verplicht'
+      error: 'auth.validation.vatRequired'
     }
   }
 
@@ -126,7 +129,7 @@ export function validateVATNumber(vatNumber: string): VATValidationResult {
   if (cleanVAT.length < 4) {
     return {
       isValid: false,
-      error: 'BTW/VAT nummer is te kort'
+      error: 'auth.validation.vatTooShort'
     }
   }
 
@@ -138,7 +141,8 @@ export function validateVATNumber(vatNumber: string): VATValidationResult {
   if (!pattern) {
     return {
       isValid: false,
-      error: `Onbekende landcode: ${countryCode}. Alleen EU landen zijn toegestaan.`
+      error: 'auth.validation.vatUnknownCountry',
+      errorParams: { code: countryCode }
     }
   }
 
@@ -151,7 +155,8 @@ export function validateVATNumber(vatNumber: string): VATValidationResult {
       country: pattern.country,
       countryName: pattern.name,
       format: pattern.example,
-      error: `Ongeldig formaat voor ${pattern.name}. Verwacht formaat: ${pattern.example}`
+      error: 'auth.validation.vatInvalidFormat',
+      errorParams: { country: pattern.name, format: pattern.example }
     }
   }
 

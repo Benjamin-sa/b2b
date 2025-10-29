@@ -23,7 +23,7 @@ export async function createStripeCustomer(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request('http://stripe-service/customers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Service-Token': env.SERVICE_SECRET },
         body: JSON.stringify({
           email: user.email,
           first_name: user.first_name,
@@ -38,7 +38,6 @@ export async function createStripeCustomer(
           address_country: user.address_country,
           user_id: user.id,
           role: user.role,
-          is_verified: user.is_verified === 1,
           ip_address: ipAddress,
         }),
       })
@@ -79,7 +78,7 @@ export async function updateStripeCustomer(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request('http://stripe-service/customers', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Service-Token': env.SERVICE_SECRET },
         body: JSON.stringify({
           stripe_customer_id: stripeCustomerId,
           email: user.email,
@@ -95,7 +94,6 @@ export async function updateStripeCustomer(
           address_country: user.address_country,
           user_id: user.id,
           role: user.role,
-          is_verified: user.is_verified === 1,
           ip_address: ipAddress,
         }),
       })
@@ -187,7 +185,6 @@ export async function getOrCreateStripeCustomer(
           address_country: user.address_country,
           user_id: user.id,
           role: user.role,
-          is_verified: user.is_verified === 1,
           ip_address: ipAddress,
         }),
       })

@@ -30,8 +30,8 @@
     },
     "contact": {
       "title": "Contact",
-      "email": "E-mail : info@4Tparts.com",
-      "phone": "Téléphone : +31 (0) 20 123 4567"
+      "email": "E-mail: info{'@'}4Tparts.com",
+      "phone": "Téléphone: +31 (0) 20 123 4567"
     },
     "bottom": {
       "copyright": "Plateforme B2B. Tous droits réservés.",
@@ -488,7 +488,8 @@
     "invoice": "Facture",
     "orderPlacedOn": "Commande passée le",
     "paidOn": "Payé le",
-    "dueOn": "Date d'échéance",
+    "dueOn": "Échéance",
+    "items": "Articles",
     "itemsPurchased": "Articles achetés",
     "sku": "SKU",
     "orderSummary": "Résumé de la commande",
@@ -552,8 +553,8 @@
     "verificationTime": "<strong>La vérification prend généralement 1 à 2 jours ouvrables.</strong>",
     "contactSupport": "Si vous avez des questions ou si vous devez mettre à jour vos informations, veuillez contacter notre équipe de support.",
     "signOut": "Déconnexion",
-    "needHelp": "Besoin d'aide ? Contactez le support :",
-    "supportEmail": "support@4Tparts.com"
+    "needHelp": "Besoin d'aide ? Contactez le support:",
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Sous-catégories :",

@@ -27,6 +27,9 @@ export interface Env {
   // Service binding for Shopify sync operations
   SHOPIFY_SYNC_SERVICE: Fetcher;
   
+  // Service-to-service authentication secret
+  SERVICE_SECRET: string;
+  
   ALLOWED_ORIGINS: string;
   DEFAULT_PAGE_SIZE: string;
   MAX_PAGE_SIZE: string;

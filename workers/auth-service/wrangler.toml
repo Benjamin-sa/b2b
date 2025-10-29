@@ -90,4 +90,3 @@ ALLOWED_ORIGINS = "https://yourdomain.com"
 # Secrets to set via: wrangler secret put <NAME> --env <dev|prod>
 # - JWT_SECRET (for signing access tokens)
 # - REFRESH_SECRET (for signing refresh tokens)
-# - STRIPE_SECRET_KEY (optional, for Stripe customer sync)

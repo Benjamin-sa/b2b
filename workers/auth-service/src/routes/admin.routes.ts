@@ -27,6 +27,16 @@ function transformUserToProfile(user: User) {
       }
     : undefined;
 
+  // Build BTW verification data if it exists
+  const btwVerification = user.btw_verified_name || user.btw_verified_address
+    ? {
+        verifiedName: user.btw_verified_name || null,
+        verifiedAddress: user.btw_verified_address || null,
+        verifiedAt: user.btw_verified_at || null,
+        isValidated: user.btw_number_validated === 1,
+      }
+    : undefined;
+
   return {
     uid: user.id,
     email: user.email,
@@ -36,6 +46,7 @@ function transformUserToProfile(user: User) {
     lastName: user.last_name || '',
     phone: user.phone || undefined,
     btwNumber: user.btw_number || '',
+    btwVerification,
     address,
     isVerified: user.is_verified === 1,
     isActive: user.is_active === 1,
@@ -112,7 +123,11 @@ admin.get('/users', async (c) => {
     const offset = parseInt(c.req.query('offset') || '0');
     const search = c.req.query('search') || '';
 
-    let query = 'SELECT id, email, role, company_name, first_name, last_name, phone, btw_number, stripe_customer_id, is_active, is_verified, created_at, updated_at FROM users';
+    let query = `SELECT 
+      id, email, role, company_name, first_name, last_name, phone, 
+      btw_number, btw_number_validated, btw_verified_name, btw_verified_address, btw_verified_at,
+      stripe_customer_id, is_active, is_verified, created_at, updated_at 
+      FROM users`;
     let countQuery = 'SELECT COUNT(*) as count FROM users';
     const params: any[] = [];
 
@@ -156,7 +171,8 @@ admin.get('/users/:userId', async (c) => {
     const userId = c.req.param('userId');
 
     const user = await c.env.DB.prepare(`
-      SELECT id, email, role, company_name, first_name, last_name, phone, btw_number,
+      SELECT id, email, role, company_name, first_name, last_name, phone, 
+             btw_number, btw_number_validated, btw_verified_name, btw_verified_address, btw_verified_at,
              address_street, address_house_number, address_postal_code, address_city, address_country,
              stripe_customer_id, is_active, is_verified, created_at, updated_at
       FROM users 
@@ -321,11 +337,6 @@ admin.post('/users/:userId/verify', async (c) => {
     const updatedUser = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
       .bind(userId)
       .first<User>();
-
-    // Update Stripe customer metadata
-    if (updatedUser?.stripe_customer_id) {
-      await updateStripeCustomer(c.env, updatedUser.stripe_customer_id, updatedUser);
-    }
 
     return c.json({
       message: 'User verified successfully',

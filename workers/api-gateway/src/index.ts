@@ -49,12 +49,6 @@ app.get('/', (c) => {
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
     description: 'Orchestrates multi-service workflows using service bindings',
-    services: {
-      auth: 'Available via service binding',
-      email: 'Available via service binding',
-      inventory: 'Available via service binding',
-      stripe: 'Available via service binding',
-    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -101,10 +95,14 @@ app.all('/api/shopify/*', async (c) => {
   const url = new URL(c.req.url);
   const queryString = url.search; // Includes the '?' prefix
   const fullPath = `${path || '/'}${queryString}`;
+
+
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
   
   const request = new Request(`https://dummy${fullPath}`, {
     method: c.req.method,
-    headers: c.req.raw.headers,
+    headers,
     body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
   });
   

@@ -1,34 +1,34 @@
 <template>
     <div class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
         <h2 class="text-2xl font-bold mb-6">
-            {{ isEditing ? $t('admin.products.edit') : $t('admin.products.add') }}
+            {{ isEditing ? 'Edit Product' : 'Add Product' }}
         </h2>
 
         <form @submit.prevent="submitForm" class="space-y-8">
             <!-- Images -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.images') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Images</h3>
                 <ImageUpload v-model="form.images" :max-images="8" :max-file-size="10" />
             </div>
 
             <!-- Basic Information -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.basicInfo') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Basic Information</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Name -->
                     <div class="md:col-span-2">
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.name') }}
+                            Product Name
                         </label>
                         <input id="name" v-model="form.name" type="text" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.namePlaceholder')" />
+                            placeholder="Enter product name" />
                     </div>
 
                     <!-- Description -->
                     <div class="md:col-span-2">
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.description') }}
+                            Description
                         </label>
 
                         <!-- Rich Text Editor Toolbar -->
@@ -53,7 +53,7 @@
                             <div ref="descriptionEditor" contenteditable="true" @input="onDescriptionChange"
                                 @blur="onDescriptionChange" @focus="onEditorFocus"
                                 class="w-full px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                :placeholder="$t('admin.products.descriptionPlaceholder')"
+                                placeholder="Enter product description"
                                 style="white-space: pre-wrap;">
                             </div>
                         </div>
@@ -62,11 +62,11 @@
                     <!-- Category -->
                     <div>
                         <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.category') }}
+                            Category
                         </label>
                         <select id="category" v-model="form.category_id" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">{{ $t('admin.products.selectCategory') }}</option>
+                            <option value="">Select category</option>
                             <option v-for="category in availableCategories" :key="category.id" :value="category.id">
                                 {{ getIndentedCategoryName(category) }}
                             </option>
@@ -76,11 +76,11 @@
                     <!-- Brand -->
                     <div>
                         <label for="brand" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.brand') }}
+                            Brand
                         </label>
                         <input id="brand" v-model="form.brand" type="text"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.brandPlaceholder')" />
+                            placeholder="Enter brand name" />
                     </div>
                     <!-- Shopify Product ID -->
                     <div>
@@ -372,37 +372,37 @@
                     <!-- Part Number -->
                     <div>
                         <label for="partNumber" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.partNumber') }}
+                            Part Number
                         </label>
                         <input id="partNumber" v-model="form.part_number" type="text"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.partNumberPlaceholder')" />
+                            placeholder="Enter part number" />
                     </div>
                 </div>
             </div>
 
             <!-- Pricing -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.pricing') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Pricing</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Price -->
                     <div>
                         <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.price') }}
+                            Price
                         </label>
                         <input id="price" v-model.number="form.price" type="number" step="0.01" min="0" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.pricePlaceholder')" />
+                            placeholder="0.00" />
                     </div>
 
                     <!-- Original Price -->
                     <div>
                         <label for="originalPrice" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.originalPrice') }}
+                            Original Price
                         </label>
                         <input id="originalPrice" v-model.number="form.original_price" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.pricePlaceholder')" />
+                            placeholder="0.00" />
                     </div>
 
                     <!-- Coming Soon Toggle -->
@@ -411,11 +411,10 @@
                             <label class="flex items-center">
                                 <input v-model="form.coming_soon" type="checkbox"
                                     class="mr-2 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded" />
-                                <span class="text-sm font-medium text-gray-800">{{ $t('admin.products.comingSoon')
-                                    }}</span>
+                                <span class="text-sm font-medium text-gray-800">Coming Soon</span>
                             </label>
                             <p class="text-xs text-gray-600">
-                                {{ $t('admin.products.comingSoonHint') }}
+                                Mark this product as coming soon (not yet available for purchase)
                             </p>
                         </div>
                     </div>
@@ -423,97 +422,97 @@
                     <!-- Unit -->
                     <div>
                         <label for="unit" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.unit') }}
+                            Unit
                         </label>
                         <input id="unit" v-model="form.unit" type="text"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.unitPlaceholder')" />
+                            placeholder="e.g., piece, kg, meter" />
                     </div>
 
                     <!-- Min Order Quantity -->
                     <div>
                         <label for="minOrderQuantity" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.minOrder') }}
+                            Minimum Order Quantity
                         </label>
                         <input id="minOrderQuantity" v-model.number="form.min_order_quantity" type="number" min="1"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.minOrderPlaceholder')" />
+                            placeholder="1" />
                     </div>
 
                     <!-- Max Order Quantity -->
                     <div>
                         <label for="maxOrderQuantity" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.maxOrder') }}
+                            Maximum Order Quantity
                         </label>
                         <input id="maxOrderQuantity" v-model.number="form.max_order_quantity" type="number" min="1"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.maxOrderPlaceholder')" />
+                            placeholder="No limit" />
                     </div>
                 </div>
             </div>
 
             <!-- Physical Properties -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.physical') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Physical Properties</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Weight -->
                     <div>
                         <label for="weight" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.weight') }}
+                            Weight (kg)
                         </label>
                         <input id="weight" v-model.number="form.weight" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.weightPlaceholder')" />
+                            placeholder="0.00" />
                     </div>
 
                     <!-- Dimensions -->
                     <div>
                         <label for="length" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.length') }}
+                            Length (cm)
                         </label>
                         <input id="length" v-model.number="form.dimensions.length" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.lengthPlaceholder')" />
+                            placeholder="0.00" />
                     </div>
 
                     <div>
                         <label for="width" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.width') }}
+                            Width (cm)
                         </label>
                         <input id="width" v-model.number="form.dimensions.width" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.widthPlaceholder')" />
+                            placeholder="0.00" />
                     </div>
 
                     <div>
                         <label for="height" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ $t('admin.products.height') }}
+                            Height (cm)
                         </label>
                         <input id="height" v-model.number="form.dimensions.height" type="number" step="0.01" min="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            :placeholder="$t('admin.products.heightPlaceholder')" />
+                            placeholder="0.00" />
                     </div>
                 </div>
             </div>
 
             <!-- Tags -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.tags') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Tags</h3>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ $t('admin.products.productTags') }}
+                        Product Tags
                     </label>
                     <div class="space-y-2">
                         <div v-for="(_, index) in form.tags" :key="index" class="flex gap-2">
-                            <input v-model="form.tags[index]" type="text" :placeholder="$t('admin.products.enterTag')"
+                            <input v-model="form.tags[index]" type="text" placeholder="Enter tag"
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             <button type="button" @click="removeTag(index)"
                                 class="px-3 py-2 text-red-600 hover:text-red-800">
-                                {{ $t('admin.products.remove') }}
+                                Remove
                             </button>
                         </div>
                         <button type="button" @click="addTag" class="text-blue-600 hover:text-blue-800 text-sm">
-                            {{ $t('admin.products.addTag') }}
+                            + Add Tag
                         </button>
                     </div>
                 </div>
@@ -521,22 +520,22 @@
 
             <!-- Specifications -->
             <div>
-                <h3 class="text-lg font-semibold mb-4">{{ $t('admin.products.specifications') }}</h3>
+                <h3 class="text-lg font-semibold mb-4">Specifications</h3>
                 <div class="space-y-2">
                     <div v-for="(spec, index) in form.specifications" :key="index" class="flex gap-2">
                         <input v-model="spec.key" type="text"
-                            :placeholder="$t('admin.products.propertyName')"
+                            placeholder="Property name"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <input v-model="spec.value" type="text"
-                            :placeholder="$t('admin.products.value')"
+                            placeholder="Value"
                             class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <button type="button" @click="removeSpecification(index)"
                             class="px-3 py-2 text-red-600 hover:text-red-800">
-                            {{ $t('admin.products.remove') }}
+                            Remove
                         </button>
                     </div>
                     <button type="button" @click="addSpecification" class="text-blue-600 hover:text-blue-800 text-sm">
-                        {{ $t('admin.products.addSpecification') }}
+                        + Add Specification
                     </button>
                 </div>
             </div>
@@ -545,12 +544,11 @@
             <div class="flex justify-end space-x-4 pt-6 border-t">
                 <button type="button" @click="$emit('cancel')"
                     class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                    {{ $t('common.actions.cancel') }}
+                    Cancel
                 </button>
                 <button type="submit" :disabled="loading || !!stockAllocationError || !!standaloneStockError"
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                    {{ loading ? $t('admin.products.saving') : (isEditing ? $t('admin.products.update') :
-                        $t('admin.products.addProduct')) }}
+                    {{ loading ? 'Saving...' : (isEditing ? 'Update Product' : 'Add Product') }}
                 </button>
             </div>
         </form>

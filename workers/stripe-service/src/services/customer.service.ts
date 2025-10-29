@@ -35,7 +35,6 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
       userId: input.user_id || '',
       role: input.role || 'customer',
       companyName: input.company_name || '',
-      isVerified: input.is_verified ? 'true' : 'false',
       source: 'b2b_stripe_service',
       createdAt: new Date().toISOString(),
     },

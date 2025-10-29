@@ -77,10 +77,10 @@ export const useOrderStore = defineStore('orders', () => {
           invoiceNumber: invoice.invoiceNumber,
           status: invoice.status, // draft, open, paid, void
           stripeStatus: invoice.status,
-          totalAmount: invoice.amount / 100, // Convert cents to euros
-          subtotal: subtotal > 0 ? subtotal : invoice.amount / 100, // Use calculated or fallback
-          tax: totalTax,
-          shipping: 0, // Calculate from items if needed (filter items with type='shipping')
+          totalAmount: invoice.totalAmount || (invoice.amount / 100), // Use totalAmount from DB or convert cents
+          subtotal: invoice.subtotal || subtotal || (invoice.amount / 100), // Use DB subtotal or calculated
+          tax: invoice.tax || totalTax || 0, // Use DB tax or calculated
+          shipping: invoice.shipping || 0, // Use DB shipping value
           currency: invoice.currency || 'EUR',
           invoiceUrl: invoice.hostedInvoiceUrl,
           invoicePdf: invoice.invoicePdf,

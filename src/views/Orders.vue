@@ -164,22 +164,22 @@
                         <div class="border-t border-gray-200 pt-4">
                             <h4 class="text-sm font-medium text-gray-900 mb-3">{{ $t('orders.orderSummary') }}</h4>
                             <div class="space-y-2">
-                                <!-- Subtotal -->
+                                <!-- Subtotal (calculated from line items) -->
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">{{ $t('orders.subtotal') }}</span>
-                                    <span class="text-gray-900">€{{ formatPrice(order.subtotal) }}</span>
-                                </div>
-                                
-                                <!-- Tax -->
-                                <div v-if="order.tax > 0" class="flex justify-between text-sm">
-                                    <span class="text-gray-600">{{ $t('orders.tax') }}</span>
-                                    <span class="text-gray-900">€{{ formatPrice(order.tax) }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(calculateSubtotal(order)) }}</span>
                                 </div>
                                 
                                 <!-- Shipping -->
-                                <div v-if="order.shipping > 0" class="flex justify-between text-sm">
+                                <div v-if="order.shipping && order.shipping > 0" class="flex justify-between text-sm">
                                     <span class="text-gray-600">{{ $t('orders.shipping') }}</span>
                                     <span class="text-gray-900">€{{ formatPrice(order.shipping) }}</span>
+                                </div>
+                                
+                                <!-- Tax -->
+                                <div v-if="order.tax && order.tax > 0" class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ $t('orders.tax') }}</span>
+                                    <span class="text-gray-900">€{{ formatPrice(order.tax) }}</span>
                                 </div>
                                 
                                 <!-- Total -->
@@ -289,6 +289,15 @@ const formatDate = (date: any) => {
 
 const formatPrice = (price: number) => {
     return price.toFixed(2)
+}
+
+const calculateSubtotal = (order: any) => {
+    // Calculate subtotal from line items (excludes shipping and tax)
+    if (order.items && order.items.length > 0) {
+        return order.items.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0)
+    }
+    // Fallback to order.subtotal if no items
+    return order.subtotal || 0
 }
 
 const getStatusText = (status?: string) => {

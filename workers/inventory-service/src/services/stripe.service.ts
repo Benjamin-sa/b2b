@@ -36,7 +36,9 @@ export async function createStripeProductWithPrice(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request('http://stripe-service/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 
+          'X-Service-Token': env.SERVICE_SECRET,
+         },
         body: JSON.stringify({
           name: product.name,
           description: product.description || undefined,
@@ -93,7 +95,9 @@ export async function updateStripeProduct(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request('http://stripe-service/products', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
+         },
         body: JSON.stringify({
           stripe_product_id: product.stripe_product_id,
           name: product.name,
@@ -150,7 +154,9 @@ export async function replaceStripePrice(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request('http://stripe-service/products/price', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
+         },
         body: JSON.stringify({
           stripe_product_id: product.stripe_product_id,
           stripe_price_id: product.stripe_price_id,
@@ -196,7 +202,9 @@ export async function archiveStripeProduct(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request(`http://stripe-service/products/${product.stripe_product_id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
+         },
         body: JSON.stringify({
           price_id: product.stripe_price_id || undefined,
         }),
@@ -231,7 +239,9 @@ export async function getStripePrice(
     const response = await env.STRIPE_SERVICE.fetch(
       new Request(`http://stripe-service/products/price/${priceId}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
+           },
       })
     );
 

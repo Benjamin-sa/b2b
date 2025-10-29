@@ -13,6 +13,14 @@
 import { Hono } from 'hono';
 import Stripe from 'stripe';
 import type { Env } from '../types';
+import { 
+  sendInvoicePaidNotification, 
+  sendInvoiceVoidedNotification 
+} from '../utils/telegram-messages';
+import { 
+  buildInvoiceUpdateQuery,
+  extractShippingCost 
+} from '../utils/invoice-update-builder';
 
 const webhooks = new Hono<{ Bindings: Env }>();
 
@@ -80,6 +88,10 @@ webhooks.post('/', async (c) => {
           await handleInvoiceCreated(c.env, event.data.object as Stripe.Invoice);
           break;
         
+        case 'invoice.updated':
+          await handleInvoiceUpdated(c.env, event.data.object as Stripe.Invoice);
+          break;
+        
         case 'invoice.paid':
           await handleInvoicePaid(c.env, event.data.object as Stripe.Invoice);
           break;
@@ -88,8 +100,9 @@ webhooks.post('/', async (c) => {
           await handleInvoiceVoided(c.env, event.data.object as Stripe.Invoice);
           break;
 
-        case 'invoice.payment_failed':
-          await handleInvoicePaymentFailed(c.env, event.data.object as Stripe.Invoice);
+        case 'customer.tax_id.created':
+        case 'customer.tax_id.updated':
+          await handleCustomerTaxIdVerification(c.env, event.data.object as Stripe.TaxId);
           break;
 
         default:
@@ -254,6 +267,51 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
 }
 
 /**
+ * Handle invoice.updated event
+ * 
+ * Fired when Stripe updates an invoice (e.g., status change from draft to open, 
+ * shipping costs added, customer details updated).
+ * 
+ * Updates order with:
+ * - Shipping cost from line items (metadata.type = 'shipping')
+ * - Customer address/phone details
+ * - Invoice URLs (if finalized)
+ * - Status changes
+ */
+async function handleInvoiceUpdated(env: Env, invoice: Stripe.Invoice) {
+  console.log(`[Webhook] 🔄 Processing invoice.updated: ${invoice.id} (status: ${invoice.status})`);
+
+  // Check if order exists in D1 (linked by stripe_invoice_id)
+  const existing = await env.DB.prepare(
+    'SELECT id, stripe_status FROM orders WHERE stripe_invoice_id = ?'
+  ).bind(invoice.id).first();
+
+  if (!existing) {
+    console.warn(`[Webhook] ⚠️  Order with invoice ${invoice.id} not found in D1 - skipping update`);
+    return;
+  }
+
+  const orderInternalId = (existing as any).id;
+  const previousStatus = (existing as any).stripe_status;
+
+  // Extract shipping cost for logging
+  const [shippingCostCents] = extractShippingCost(invoice);
+
+  // Build dynamic update query using utility
+  const { query, values } = buildInvoiceUpdateQuery(invoice);
+
+  // Execute update
+  await env.DB.prepare(query).bind(...values).run();
+
+  console.log(
+    `[Webhook] ✅ Updated order ${orderInternalId} (invoice ${invoice.id}): ` +
+    `status ${previousStatus} → ${invoice.status}, ` +
+    `shipping €${(shippingCostCents / 100).toFixed(2)}, ` +
+    `${values.length - 1} fields updated` // -1 for WHERE clause param
+  );
+}
+
+/**
  * Handle invoice.paid event
  * 
  * Fired when customer successfully pays the invoice.
@@ -340,28 +398,97 @@ async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
 
   console.log(`[Webhook] ✅ Voided order with invoice ${invoice.id}`);
 
-  // ============================================================================
-  // INCREASE B2B STOCK (Invoice voided = order cancelled)
-  // ============================================================================
   await increaseB2BStockFromInvoice(env, invoice, orderInternalId);
 
-  // ============================================================================
-  // SEND TELEGRAM NOTIFICATION
-  // ============================================================================
   await sendInvoiceVoidedNotification(env, invoice);
 }
 
+
 /**
- * Handle invoice.payment_failed event
+ * Handle customer.tax_id.created and customer.tax_id.updated events
  * 
- * Fired when payment attempt fails.
- * We don't track failed payments per requirements, but log for debugging.
+ * Fired when Stripe validates a customer's tax ID (BTW/VAT number).
+ * Updates the user's btw_number_validated status to 1 when verification succeeds.
+ * 
+ * Stores VIES (EU VAT Information Exchange System) verification data:
+ * - verified_name: Official company name from government registry
+ * - verified_address: Official registered address from government registry
+ * 
+ * These values come from the European Commission's VIES database, NOT from
+ * customer-submitted data, and serve as authoritative sources for compliance.
+ * 
+ * Listens to both events because:
+ * - customer.tax_id.created: Initial submission (status may be "pending")
+ * - customer.tax_id.updated: Status changes to "verified" after validation
  */
-async function handleInvoicePaymentFailed(env: Env, invoice: Stripe.Invoice) {
-  console.log(`[Webhook] ⚠️  Payment failed for invoice ${invoice.id} - logged for debugging`);
-  
-  // Per requirements: "2) no" - we don't track failed payments
-  // Just log it for debugging purposes
+async function handleCustomerTaxIdVerification(env: Env, taxId: Stripe.TaxId) {
+  console.log(`[Webhook] 🆔 Processing tax ID verification: ${taxId.id} (status: ${taxId.verification?.status})`);
+
+  // Only process verified tax IDs
+  if (taxId.verification?.status !== 'verified') {
+    console.log(`[Webhook] ℹ️  Tax ID ${taxId.id} not verified yet (status: ${taxId.verification?.status}), skipping`);
+    return;
+  }
+
+  const customerId = typeof taxId.customer === 'string' ? taxId.customer : taxId.customer?.id;
+
+  if (!customerId) {
+    console.warn(`[Webhook] ⚠️  Tax ID ${taxId.id} has no customer, skipping`);
+    return;
+  }
+
+  // Find user by stripe_customer_id
+  const user = await env.DB.prepare(
+    'SELECT id, email, btw_number_validated FROM users WHERE stripe_customer_id = ?'
+  ).bind(customerId).first();
+
+  if (!user) {
+    console.warn(`[Webhook] ⚠️  User with Stripe customer ${customerId} not found in D1 - skipping update`);
+    return;
+  }
+
+  const userId = (user as any).id;
+  const userEmail = (user as any).email;
+  const alreadyValidated = (user as any).btw_number_validated === 1;
+
+  if (alreadyValidated) {
+    console.log(`[Webhook] ℹ️  User ${userEmail} already has BTW validated, skipping`);
+    return;
+  }
+
+  // Extract VIES verification data
+  const verifiedName = taxId.verification.verified_name || null;
+  const verifiedAddress = taxId.verification.verified_address || null;
+  const now = new Date().toISOString();
+
+
+  // ============================================================================
+  // UPDATE USER WITH VIES VERIFICATION DATA
+  // ============================================================================
+  await env.DB.prepare(`
+    UPDATE users
+    SET 
+      btw_number_validated = 1,
+      btw_verified_name = ?,
+      btw_verified_address = ?,
+      btw_verified_at = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).bind(
+    verifiedName,
+    verifiedAddress,
+    now,
+    now,
+    userId
+  ).run();
+
+  console.log(
+    `[Webhook] ✅ Validated BTW for user ${userEmail} (${customerId}):\n` +
+    `  Tax ID: ${taxId.type.toUpperCase()} ${taxId.value}\n` +
+    `  VIES Name: ${verifiedName || 'N/A'}\n` +
+    `  VIES Address: ${verifiedAddress || 'N/A'}\n` +
+    `  Verified At: ${now}`
+  );
 }
 
 // ============================================================================
@@ -483,74 +610,6 @@ async function increaseB2BStockFromInvoice(
     }
   } else {
     console.log(`[Webhook] ℹ️  No stock updates needed for invoice ${invoice.id}`);
-  }
-}
-
-// ============================================================================
-// TELEGRAM NOTIFICATION HELPERS
-// ============================================================================
-
-/**
- * Send invoice paid notification to Telegram
- * Uses service binding to telegram-service
- */
-async function sendInvoicePaidNotification(env: Env, invoice: Stripe.Invoice) {
-  try {
-    console.log(`[Webhook] 📬 Sending invoice paid notification for ${invoice.id}`);
-    
-    const telegramRequest = new Request('https://dummy/notifications/invoice/paid', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: invoice.id,
-        number: invoice.number,
-        amount_due: invoice.amount_due,
-        amount_paid: invoice.amount_paid,
-        currency: invoice.currency,
-        customer_name: invoice.customer_name,
-        customer_email: invoice.customer_email,
-        status_transitions: invoice.status_transitions,
-        metadata: invoice.metadata,
-        lines: invoice.lines,
-      }),
-    });
-
-    await env.TELEGRAM_SERVICE.fetch(telegramRequest);
-    console.log(`[Webhook] ✅ Invoice paid notification sent for ${invoice.id}`);
-  } catch (error) {
-    // Log error but don't fail the webhook (notifications are not critical)
-    console.error(`[Webhook] ⚠️  Failed to send invoice paid notification:`, error);
-  }
-}
-
-/**
- * Send invoice voided notification to Telegram
- * Uses service binding to telegram-service
- */
-async function sendInvoiceVoidedNotification(env: Env, invoice: Stripe.Invoice) {
-  try {
-    console.log(`[Webhook] 📬 Sending invoice voided notification for ${invoice.id}`);
-    
-    const telegramRequest = new Request('https://dummy/notifications/invoice/voided', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: invoice.id,
-        number: invoice.number,
-        amount_due: invoice.amount_due,
-        currency: invoice.currency,
-        customer_name: invoice.customer_name,
-        customer_email: invoice.customer_email,
-        metadata: invoice.metadata,
-        lines: invoice.lines,
-      }),
-    });
-
-    await env.TELEGRAM_SERVICE.fetch(telegramRequest);
-    console.log(`[Webhook] ✅ Invoice voided notification sent for ${invoice.id}`);
-  } catch (error) {
-    // Log error but don't fail the webhook (notifications are not critical)
-    console.error(`[Webhook] ⚠️  Failed to send invoice voided notification:`, error);
   }
 }
 

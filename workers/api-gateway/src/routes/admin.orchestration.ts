@@ -8,7 +8,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
 import type { EmailQueueMessage } from "../../../shared-types/email-queue";
-import invoicesRoutes from './admin/invoices.routes';
+import invoicesRoutes from "./admin/invoices.routes";
 
 const adminOrchestration = new Hono<{ Bindings: Env }>();
 
@@ -48,13 +48,14 @@ adminOrchestration.get("/users", async (c) => {
 
     console.log("🎯 [Gateway] Fetching users list with params:", queryString);
 
-    const request = new Request(
-      `http://internal/admin/users${queryString}`,
-      {
-        method: "GET",
-        headers: c.req.raw.headers,
-      }
-    );
+
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
+    const request = new Request(`http://internal/admin/users${queryString}`, {
+      method: "GET",
+      headers,
+    });
 
     const response = await c.env.AUTH_SERVICE.fetch(request);
 
@@ -90,9 +91,13 @@ adminOrchestration.get("/users/:userId", async (c) => {
 
     console.log("🎯 [Gateway] Fetching user details for:", userId);
 
+
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     const request = new Request(`http://internal/admin/users/${userId}`, {
       method: "GET",
-      headers: c.req.raw.headers,
+      headers,
     });
 
     const response = await c.env.AUTH_SERVICE.fetch(request);
@@ -133,9 +138,13 @@ adminOrchestration.put("/users/:userId", async (c) => {
 
     console.log("🎯 [Gateway] Updating user:", userId);
 
+
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     const request = new Request(`http://internal/admin/users/${userId}`, {
       method: "PUT",
-      headers: clonedRequest.headers,
+      headers,
       body: clonedRequest.body,
     });
 
@@ -176,6 +185,9 @@ adminOrchestration.post("/users/:userId/verify", async (c) => {
   try {
     const userId = c.req.param("userId");
 
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     console.log("🎯 [Gateway] Orchestrating user verification for:", userId);
 
     // Step 1: Verify user (BLOCKING)
@@ -183,7 +195,7 @@ adminOrchestration.post("/users/:userId/verify", async (c) => {
       `http://internal/admin/users/${userId}/verify`,
       {
         method: "POST",
-        headers: c.req.raw.headers,
+        headers,
       }
     );
 
@@ -201,10 +213,7 @@ adminOrchestration.post("/users/:userId/verify", async (c) => {
       message: string;
       user: User;
     };
-    console.log(
-      "✅ [Gateway] User verified:",
-      verificationResult.user.email
-    );
+    console.log("✅ [Gateway] User verified:", verificationResult.user.email);
 
     // Step 2: Send verification confirmation email via QUEUE (NON-BLOCKING)
     console.log(
@@ -232,35 +241,56 @@ adminOrchestration.post("/users/:userId/verify", async (c) => {
     }
 
     // Step 3: Send Telegram notification (NON-BLOCKING)
-    console.log("📱 [Gateway] Sending Telegram notification for user verification");
-    
+    console.log(
+      "📱 [Gateway] Sending Telegram notification for user verification"
+    );
+
     try {
       const telegramMessage = `
 ✅ <b>User Verified</b>
 
-👤 <b>User:</b> ${verificationResult.user.first_name} ${verificationResult.user.last_name}
+👤 <b>User:</b> ${verificationResult.user.first_name} ${
+        verificationResult.user.last_name
+      }
 🏢 <b>Company:</b> ${verificationResult.user.company_name}
 📧 <b>Email:</b> ${verificationResult.user.email}
-${verificationResult.user.phone ? `📞 <b>Phone:</b> ${verificationResult.user.phone}` : ''}
-${verificationResult.user.btw_number ? `🔖 <b>VAT:</b> ${verificationResult.user.btw_number}` : ''}
+${
+  verificationResult.user.phone
+    ? `📞 <b>Phone:</b> ${verificationResult.user.phone}`
+    : ""
+}
+${
+  verificationResult.user.btw_number
+    ? `🔖 <b>VAT:</b> ${verificationResult.user.btw_number}`
+    : ""
+}
 
 <i>User has been verified and notified via email.</i>
       `.trim();
 
-      const telegramRequest = new Request('https://dummy/notifications/custom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: telegramMessage,
-          parseMode: 'HTML'
-        })
-      });
+      const telegramRequest = new Request(
+        "https://dummy/notifications/custom",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Service-Token": c.env.SERVICE_SECRET,
+          },
+          body: JSON.stringify({
+            message: telegramMessage,
+            parseMode: "HTML",
+          }),
+        }
+      );
 
       await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
       console.log("✅ [Gateway] Telegram notification sent successfully");
     } catch (telegramError) {
       // Log Telegram error but don't fail the request
-      console.error("⚠️  [Gateway] Failed to send Telegram notification:", telegramError);
+      console.error(
+        "⚠️  [Gateway] Failed to send Telegram notification:",
+        telegramError
+      );
     }
 
     // Step 4: Return success immediately (don't wait for notifications)
@@ -291,9 +321,12 @@ adminOrchestration.delete("/users/:userId", async (c) => {
 
     console.log("🎯 [Gateway] Deactivating user:", userId);
 
+    const headers = new Headers(c.req.raw.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     const request = new Request(`http://internal/admin/users/${userId}`, {
       method: "DELETE",
-      headers: c.req.raw.headers,
+      headers,
     });
 
     const response = await c.env.AUTH_SERVICE.fetch(request);
@@ -329,13 +362,16 @@ adminOrchestration.post("/users/:userId/reset-password", async (c) => {
     const userId = c.req.param("userId");
     const clonedRequest = c.req.raw.clone();
 
+    const headers = new Headers(clonedRequest.headers);
+    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
+
     console.log("🎯 [Gateway] Resetting password for user:", userId);
 
     const request = new Request(
       `http://internal/admin/users/${userId}/reset-password`,
       {
         method: "POST",
-        headers: clonedRequest.headers,
+        headers,
         body: clonedRequest.body,
       }
     );
@@ -343,10 +379,7 @@ adminOrchestration.post("/users/:userId/reset-password", async (c) => {
     const response = await c.env.AUTH_SERVICE.fetch(request);
 
     if (!response.ok) {
-      console.error(
-        "❌ [Gateway] Failed to reset password:",
-        response.status
-      );
+      console.error("❌ [Gateway] Failed to reset password:", response.status);
       return response;
     }
 
@@ -370,6 +403,6 @@ adminOrchestration.post("/users/:userId/reset-password", async (c) => {
 // INVOICES ROUTES
 // ============================================================================
 // Mount invoice routes (direct D1 database queries)
-adminOrchestration.route('/invoices', invoicesRoutes);
+adminOrchestration.route("/invoices", invoicesRoutes);
 
 export default adminOrchestration;

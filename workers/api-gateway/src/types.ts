@@ -47,6 +47,9 @@ export interface Env {
   SHOPIFY_SYNC_SERVICE: ShopifySyncService;
   TELEGRAM_SERVICE: TelegramService;
   
+  // Service-to-service authentication secret
+  SERVICE_SECRET: string;
+  
   // Queue Bindings (for async email processing)
   EMAIL_QUEUE: Queue;
   

@@ -3,6 +3,7 @@
 // ============================================================================
 export interface Env {
   ENVIRONMENT: 'development' | 'production';
+  SERVICE_SECRET: string; // Service-to-service authentication
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
 }

@@ -12,6 +12,10 @@ export interface Env {
   CLOUDFLARE_R2_ACCESS_KEY_ID: string;
   CLOUDFLARE_R2_SECRET_ACCESS_KEY: string;
   PUBLIC_R2_URL: string;
+  
+  // Service-to-service authentication
+  SERVICE_SECRET: string;
+  ENVIRONMENT: 'development' | 'production';
 }
 
 export interface ImageUploadRequest {

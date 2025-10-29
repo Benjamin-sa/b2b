@@ -9,6 +9,7 @@ export interface Env {
   SESSIONS: KVNamespace;
   JWT_SECRET: string;
   REFRESH_SECRET: string;
+  SERVICE_SECRET: string; // Service-to-service authentication
   ENVIRONMENT: 'development' | 'production';
   ACCESS_TOKEN_TTL: string;
   REFRESH_TOKEN_TTL: string;
@@ -27,6 +28,10 @@ export interface User {
   last_name: string | null;
   phone: string | null;
   btw_number: string | null;
+  btw_number_validated: number | null; // SQLite boolean (0 or 1)
+  btw_verified_name: string | null; // Official company name from VIES
+  btw_verified_address: string | null; // Official address from VIES
+  btw_verified_at: string | null; // When BTW was verified
   address_street: string | null;
   address_house_number: string | null;
   address_postal_code: string | null;

@@ -285,6 +285,7 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
           // Call Shopify Sync Service via service binding
           const syncRequest = new Request(`http://shopify-sync/sync/${productId}`, {
             method: 'POST',
+            headers: { 'X-Service-Token': c.env.SERVICE_SECRET },
           });
           
           const syncResponse = await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
@@ -338,6 +339,7 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
           // Call Shopify Sync Service via service binding
           const syncRequest = new Request(`http://shopify-sync/sync/${productId}`, {
             method: 'POST',
+            headers: { 'X-Service-Token': c.env.SERVICE_SECRET },
           });
           
           const syncResponse = await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);

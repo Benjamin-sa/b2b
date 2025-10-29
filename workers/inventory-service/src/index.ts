@@ -23,16 +23,20 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env, InventoryError } from './types';
 import { loggingMiddleware } from './middleware/logging';
+import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import productRoutes from './routes/product.routes';
 import categoryRoutes from './routes/category.routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // ============================================================================
-// GLOBAL MIDDLEWARE
+// GLOBAL MIDDLEWARE (Order matters!)
 // ============================================================================
 
 app.use('*', loggingMiddleware);
+
+// 🔐 Service authentication - blocks direct HTTP access in production
+app.use('*', createServiceAuthMiddleware());
 
 // CORS middleware - allow requests from frontend
 app.use('*', async (c, next) => {
@@ -57,15 +61,8 @@ app.get('/', (c) => {
     version: '1.0.0',
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
-    description: 'Product management and inventory tracking',
     timestamp: new Date().toISOString(),
-    features: [
-      'Product CRUD operations',
-      'Pagination and filtering',
-      'Category-based queries',
-      'JWT authentication via auth-service',
-      'Admin-only write operations',
-    ],
+
   });
 });
 

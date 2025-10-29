@@ -29,7 +29,7 @@ async function validateUserToken(env: Env, authHeader: string | null): Promise<A
   // Note: Service bindings are much faster than HTTP requests
   const validateRequest = new Request('http://auth-service/auth/validate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Service-Token': env.SERVICE_SECRET },
     body: JSON.stringify({ accessToken: token }), // Auth service expects 'accessToken', not 'token'
   });
 

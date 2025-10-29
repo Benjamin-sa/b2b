@@ -13,6 +13,7 @@ export interface Env {
   STRIPE_SECRET_KEY: string;
   STRIPE_API_VERSION: string;
   STRIPE_WEBHOOK_SECRET: string; // Webhook signature verification
+  SERVICE_SECRET: string; // Service-to-service authentication
   DB: D1Database; // D1 database binding for invoice persistence
   TELEGRAM_SERVICE: Fetcher; // Service binding to telegram-service
 }
@@ -34,7 +35,6 @@ export interface CustomerInput {
   address_postal_code?: string;
   address_country?: string;
   role?: string;
-  is_verified?: boolean;
   user_id?: string;
   ip_address?: string;
 }

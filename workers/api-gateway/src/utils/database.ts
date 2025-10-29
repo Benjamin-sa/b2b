@@ -332,6 +332,7 @@ export async function fetchUserInvoices(
       subtotal,
       tax,
       shipping,
+      shipping_cost_cents,
       invoice_pdf,
       invoice_url,
       invoice_number,
@@ -427,6 +428,14 @@ export async function fetchUserInvoices(
       paidAt: order.paid_at,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
+      
+      // Financial breakdown
+      subtotal: order.subtotal || subtotal, // Use DB value if available, else calculate
+      tax: order.tax || totalTax, // Tax in euros (from DB or calculated)
+      shipping: order.shipping || 0, // Shipping in euros
+      shippingCents: order.shipping_cost_cents || 0, // Shipping in cents (for precision)
+      totalAmount: order.total_amount, // Total in euros
+      
       items, // ⭐ Include line items with historical pricing
     };
   });

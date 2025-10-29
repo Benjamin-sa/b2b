@@ -4,7 +4,7 @@
  * Handles all communication with Shopify's GraphQL Admin API
  */
 
-import type { Env, ShopifyInventoryLevel, ShopifyVariant } from '../types';
+import type { Env, ShopifyVariant } from '../types';
 
 /**
  * Make a GraphQL request to Shopify Admin API

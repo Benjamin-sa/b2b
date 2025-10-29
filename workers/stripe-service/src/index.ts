@@ -11,6 +11,7 @@
  */
 
 import { Hono } from 'hono';
+import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import type { Env, StripeServiceResponse } from './types';
 import { StripeServiceError } from './types';
 
@@ -25,6 +26,15 @@ import webhooksRoutes from './routes/webhooks.routes';
 const app = new Hono<{ Bindings: Env }>();
 
 // ============================================================================
+// GLOBAL MIDDLEWARE
+// ============================================================================
+
+// 🔐 Service authentication - blocks direct HTTP access in production
+app.use('*', createServiceAuthMiddleware({
+  allowedPaths: ['/', '/health', '/webhooks'], // Allow webhooks (Stripe calls them directly)
+}));
+
+// ============================================================================
 // HEALTH CHECK
 // ============================================================================
 
@@ -34,31 +44,7 @@ app.get('/', (c) => {
     version: '1.0.0',
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
-    description: 'Centralized Stripe service for products, customers, and invoices',
     timestamp: new Date().toISOString(),
-    endpoints: {
-      customers: [
-        'POST /customers',
-        'PUT /customers',
-        'DELETE /customers/:id',
-        'POST /customers/get-or-create',
-      ],
-      products: [
-        'POST /products',
-        'PUT /products',
-        'PUT /products/price',
-        'DELETE /products/:id',
-        'GET /products/price/:id',
-      ],
-      invoices: [
-        'POST /invoices',
-        'POST /invoices/:id/void',
-        'GET /invoices/:id',
-      ],
-      webhooks: [
-        'POST /webhooks',
-      ],
-    },
   });
 });
 

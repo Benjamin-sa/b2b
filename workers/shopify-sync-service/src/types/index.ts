@@ -13,6 +13,9 @@ export interface Env {
   SHOPIFY_API_VERSION: string;
   SHOPIFY_LOCATION_ID: string;
 
+  // Service-to-service authentication
+  SERVICE_SECRET: string;
+
   // Environment
   ENVIRONMENT: 'development' | 'production';
   ALLOWED_ORIGINS: string;

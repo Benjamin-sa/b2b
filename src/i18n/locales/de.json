@@ -30,7 +30,7 @@
     },
     "contact": {
       "title": "Kontakt",
-      "email": "E-Mail: info@4Tparts.com",
+      "email": "E-Mail: info{'@'}4Tparts.com",
       "phone": "Telefon: +31 (0) 20 123 4567"
     },
     "bottom": {
@@ -82,7 +82,7 @@
     "emailRequired": "E-Mail erforderlich",
     "emailRequiredMessage": "Bitte geben Sie zuerst Ihre E-Mail-Adresse ein, um Ihr Passwort zurückzusetzen.",
     "resetEmailSent": "E-Mail zum Zurücksetzen gesendet",
-    "resetEmailSentMessage": "Anweisungen zum Zurücksetzen des Passworts wurden an {email} gesendet. Bitte überprüfen Sie Ihre E-Mails und folgen Sie den Anweisungen.",
+    "resetEmailSentMessage": "Anweisungen zum Zurücksetzen des Passworts wurden an Ihre E-Mail gesendet. Bitte überprüfen Sie Ihre E-Mails und folgen Sie den Anweisungen.",
     "resetFailed": "Zurücksetzen fehlgeschlagen",
     "resetFailedMessage": "Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht.",
     "resetYourPassword": "Setzen Sie Ihr Passwort zurück",
@@ -144,6 +144,12 @@
       "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
       "missingFields": "Bitte füllen Sie alle Pflichtfelder aus.",
       "serverError": "Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+    },
+    "validation": {
+      "vatRequired": "USt-IdNr. ist erforderlich",
+      "vatTooShort": "USt-IdNr. ist zu kurz",
+      "vatUnknownCountry": "Unbekannter Ländercode: {code}. Nur EU-Länder sind zulässig.",
+      "vatInvalidFormat": "Ungültiges Format für {country}. Erwartetes Format: {format}"
     }
   },
   "products": {
@@ -489,6 +495,7 @@
     "orderPlacedOn": "Bestellt am",
     "paidOn": "Bezahlt am",
     "dueOn": "Fällig am",
+    "items": "Artikel",
     "itemsPurchased": "Gekaufte Artikel",
     "sku": "SKU",
     "orderSummary": "Bestellübersicht",
@@ -553,7 +560,7 @@
     "contactSupport": "Wenn Sie Fragen haben oder Ihre Informationen aktualisieren müssen, kontaktieren Sie bitte unser Support-Team.",
     "signOut": "Abmelden",
     "needHelp": "Hilfe benötigt? Kontaktieren Sie den Support:",
-    "supportEmail": "support@4Tparts.com"
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Unterkategorien:",

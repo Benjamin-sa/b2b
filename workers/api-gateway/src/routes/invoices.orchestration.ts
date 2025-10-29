@@ -67,31 +67,7 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       };
     }>();
 
-    // 2. Validate request data
-    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
-      return c.json({ 
-        error: 'invalid-argument',
-        message: 'Items array is required and cannot be empty' 
-      }, 400);
-    }
-
-    for (const item of body.items) {
-      if (!item.stripePriceId || !item.quantity || item.quantity < 1) {
-        return c.json({ 
-          error: 'invalid-argument',
-          message: 'Each item must have a valid stripePriceId and quantity' 
-        }, 400);
-      }
-
-      // Metadata is optional - shopifyVariantId can be empty for standalone products
-      if (!item.metadata) {
-        return c.json({ 
-          error: 'invalid-argument',
-          message: 'Each item must have metadata (productId, productName, shopifyVariantId)' 
-        }, 400);
-      }
-    }
-
+    
     // 3. Check stock availability and prepare stock updates
     const now = new Date().toISOString();
     const stockResult = await validateAndPrepareStockUpdates(c.env.DB, body.items, user.userId);
@@ -116,15 +92,16 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     }
 
     // 4. Prepare invoice creation request for STRIPE_SERVICE
-    // Note: Using service binding for direct worker-to-worker communication
-    // Service bindings are much faster and more secure than HTTP requests
-    // IMPORTANT: Use snake_case to match Stripe service's InvoiceInput type
+    const invoiceHeaders = new Headers();
+    invoiceHeaders.set('Content-Type', 'application/json');
+    invoiceHeaders.set('X-Service-Token', c.env.SERVICE_SECRET);
+
     const invoiceRequest = new Request('http://stripe-service/invoices', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: invoiceHeaders,
       body: JSON.stringify({
-        customer_id: user.stripeCustomerId, // snake_case for Stripe service
-        user_id: user.userId,               // snake_case for Stripe service
+        customer_id: user.stripeCustomerId,
+        user_id: user.userId,
         items: body.items.map(item => ({
           stripe_price_id: item.stripePriceId,
           quantity: item.quantity,
@@ -136,7 +113,7 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
         })),
         shipping_cost_cents: body.shippingCost || 0,
         notes: body.metadata?.notes || '',
-        shipping_address: body.metadata?.shippingAddress || null, // Pass shipping address for customer update
+        shipping_address: body.metadata?.shippingAddress || null,
       }),
     });
 
@@ -210,10 +187,13 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     console.log('📱 [Gateway] Sending Telegram notification for invoice creation');
     
     try {
-      // Use the pre-built invoice/created endpoint with proper data structure
+      const telegramHeaders = new Headers();
+      telegramHeaders.set('Content-Type', 'application/json');
+      telegramHeaders.set('X-Service-Token', c.env.SERVICE_SECRET);
+
       const telegramRequest = new Request('https://dummy/notifications/invoice/created', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: telegramHeaders,
         body: JSON.stringify({
           id: responseData.data.invoice_id,
           number: responseData.data.invoice_number,

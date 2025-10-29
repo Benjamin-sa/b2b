@@ -51,7 +51,7 @@
                                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
-                            <p class="text-sm text-red-600 font-medium">{{ vatValidation.error }}</p>
+                            <p class="text-sm text-red-600 font-medium">{{ vatValidation.error ? $t(vatValidation.error, vatValidation.errorParams || {}) : '' }}</p>
                             <div v-if="vatValidation.format" class="text-xs text-red-500 mt-1">
                                 {{ $t('auth.vatFormat', { format: vatValidation.format }) }}
                             </div>

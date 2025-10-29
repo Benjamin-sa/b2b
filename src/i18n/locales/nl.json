@@ -30,7 +30,7 @@
     },
     "contact": {
       "title": "Contact",
-      "email": "E-mail: info@4Tparts.com",
+      "email": "E-mail: info{'@'}4Tparts.com",
       "phone": "Telefoon: +31 (0) 20 123 4567"
     },
     "bottom": {
@@ -82,7 +82,7 @@
     "emailRequired": "E-mailadres Vereist",
     "emailRequiredMessage": "Voer eerst uw e-mailadres in om uw wachtwoord opnieuw in te stellen.",
     "resetEmailSent": "Reset E-mail Verzonden",
-    "resetEmailSentMessage": "Instructies voor het opnieuw instellen van uw wachtwoord zijn verzonden naar {email}. Controleer uw e-mail en volg de instructies.",
+    "resetEmailSentMessage": "Instructies voor het opnieuw instellen van uw wachtwoord zijn verzonden naar uw e-mail. Controleer uw e-mail en volg de instructies.",
     "resetFailed": "Reset Mislukt",
     "resetFailedMessage": "Het verzenden van de e-mail voor wachtwoordherstel is mislukt. Probeer het opnieuw of neem contact op met de ondersteuning als het probleem aanhoudt.",
     "resetYourPassword": "Stel Uw Wachtwoord Opnieuw In",
@@ -144,6 +144,12 @@
       "sessionExpired": "Uw sessie is verlopen. Log opnieuw in.",
       "missingFields": "Vul alle verplichte velden in.",
       "serverError": "Er is een serverfout opgetreden. Probeer het later opnieuw."
+    },
+    "validation": {
+      "vatRequired": "BTW/VAT nummer is verplicht",
+      "vatTooShort": "BTW/VAT nummer is te kort",
+      "vatUnknownCountry": "Onbekende landcode: {code}. Alleen EU landen zijn toegestaan.",
+      "vatInvalidFormat": "Ongeldig formaat voor {country}. Verwacht formaat: {format}"
     }
   },
   "products": {
@@ -489,6 +495,7 @@
     "orderPlacedOn": "Bestelling geplaatst op",
     "paidOn": "Betaald op",
     "dueOn": "Vervaldatum",
+    "items": "Artikelen",
     "itemsPurchased": "Bestelde artikelen",
     "sku": "SKU",
     "orderSummary": "Bestelsamenvatting",
@@ -553,7 +560,7 @@
     "contactSupport": "Als u vragen heeft of uw informatie wilt bijwerken, neem dan contact op met ons ondersteuningsteam.",
     "signOut": "Uitloggen",
     "needHelp": "Hulp nodig? Neem contact op met ondersteuning:",
-    "supportEmail": "support@4Tparts.com"
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Subcategorieën:",

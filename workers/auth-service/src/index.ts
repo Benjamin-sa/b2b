@@ -6,7 +6,7 @@
  */
 
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
+import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import type { Env } from './types';
@@ -17,18 +17,11 @@ const app = new Hono<{ Bindings: Env }>();
 // GLOBAL MIDDLEWARE
 // ============================================================================
 
-// CORS middleware - allow requests from frontend
-app.use('*', async (c, next) => {
-  const allowedOrigins = c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
-  
-  return cors({
-    origin: allowedOrigins,
-    credentials: true,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    maxAge: 86400, // 24 hours
-  })(c, next);
-});
+// 🔐 Service authentication - blocks direct HTTP access in ALL environments
+app.use('*', createServiceAuthMiddleware({
+  enforceInEnv: 'all', // Enforce in both dev and production
+}));
+
 
 // ============================================================================
 // HEALTH CHECK

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import type { Env } from './types';
 import notifications from './routes/notifications.routes';
 
@@ -7,6 +8,10 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 // GLOBAL MIDDLEWARE
 // ============================================================================
+
+// 🔐 Service authentication - blocks direct HTTP access in production
+app.use('*', createServiceAuthMiddleware());
+
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();

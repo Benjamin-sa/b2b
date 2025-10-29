@@ -8,7 +8,13 @@ export interface UserProfile {
   lastName: string
   phone?: string
   btwNumber: string // Belgian VAT number
-  address: {
+  btwVerification?: {
+    verifiedName: string | null
+    verifiedAddress: string | null
+    verifiedAt: string | null
+    isValidated: boolean
+  }
+  address?: {
     street: string
     houseNumber: string
     postalCode: string

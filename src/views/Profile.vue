@@ -70,11 +70,11 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">{{
                                         $t('profile.fields.address') }}</label>
                                     <div class="text-gray-900">
-                                        <p>{{ authStore.userProfile?.address.street }} {{
-                                            authStore.userProfile?.address.houseNumber }}</p>
-                                        <p>{{ authStore.userProfile?.address.postalCode }} {{
-                                            authStore.userProfile?.address.city }}</p>
-                                        <p>{{ authStore.userProfile?.address.country }}</p>
+                                        <p>{{ authStore.userProfile?.address?.street }} {{
+                                            authStore.userProfile?.address?.houseNumber }}</p>
+                                        <p>{{ authStore.userProfile?.address?.postalCode }} {{
+                                            authStore.userProfile?.address?.city }}</p>
+                                        <p>{{ authStore.userProfile?.address?.country }}</p>
                                     </div>
                                 </div>
                             </div>

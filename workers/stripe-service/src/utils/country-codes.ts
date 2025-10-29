@@ -56,7 +56,7 @@ export function getCountryCode(countryName?: string): string | undefined {
   if (!countryName) return undefined;
   
   // If it's already a 2-letter code, return as-is (uppercase)
-  if (countryName.length === 2) {company_name
+  if (countryName.length === 2) {
     return countryName.toUpperCase();
   }
   
