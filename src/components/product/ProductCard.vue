@@ -1,8 +1,8 @@
 <template>
     <div
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden h-full flex flex-col">
+        class="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden h-full flex flex-col border border-gray-100 transform hover:-translate-y-1">
         <RouterLink :to="{ name: 'ProductDetail', params: { id: product.id } }"
-            class="flex flex-col flex-grow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            class="flex flex-col flex-grow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             <!-- Product Image -->
             <div class="relative bg-secondary-200">
                 <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
@@ -19,28 +19,40 @@
 
             <!-- Product Info -->
             <div class="p-4 flex flex-col flex-grow">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-lg font-semibold text-secondary-900 line-clamp-2 flex-shrink-0">
+                <div class="flex flex-col space-y-2 mb-2">
+                    <!-- Title with tooltip for full text -->
+                    <h3 
+                        class="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 hover:text-primary-600 transition-colors cursor-help group relative"
+                        :title="product.name"
+                    >
                         {{ product.name }}
+                        <!-- Tooltip on hover for long titles -->
+                        <span class="invisible group-hover:visible absolute left-0 top-full mt-1 w-max max-w-xs bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-10 shadow-xl">
+                            {{ product.name }}
+                        </span>
                     </h3>
-                    <span v-if="product.coming_soon"
-                        class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
-                        {{ $t('products.card.comingSoon') }}
-                    </span>
-                    <span v-else-if="!product.in_stock"
-                        class="bg-danger-100 text-danger-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
-                        {{ $t('products.card.outOfStock') }}
-                    </span>
+                    
+                    <!-- Badges stacked below title -->
+                    <div v-if="product.coming_soon || !product.in_stock" class="flex">
+                        <span v-if="product.coming_soon"
+                            class="bg-warning-100 text-warning-800 border border-warning-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                            {{ $t('products.card.comingSoon') }}
+                        </span>
+                        <span v-else-if="!product.in_stock"
+                            class="bg-danger-100 text-danger-800 border border-danger-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                            {{ $t('products.card.outOfStock') }}
+                        </span>
+                    </div>
                 </div>
 
-                <p class="text-secondary-600 text-sm mb-3 line-clamp-2 flex-shrink-0 html-content"
+                <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-shrink-0 html-content"
                     v-html="truncateHtml(product.description || '', 100)">
                 </p>
 
                 <!-- Pricing -->
                 <div class="mb-4 flex-shrink-0">
                     <div class="flex items-baseline space-x-2">
-                        <span class="text-2xl font-bold text-gray-900">
+                        <span class="text-2xl font-bold text-primary-700">
                             €{{ formatPrice(product.price) }}
                         </span>
                         <span v-if="product.original_price && product.original_price > product.price"
@@ -48,7 +60,7 @@
                             €{{ formatPrice(product.original_price) }}
                         </span>
                     </div>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-sm text-gray-600 font-medium mt-1">
                         {{ product.unit || $t('products.card.perPiece') }}
                     </p>
                 </div>
@@ -75,19 +87,19 @@
         <!-- Actions -->
         <div class="px-4 pb-4 pt-0 flex flex-col space-y-2">
             <!-- Quantity Selector -->
-            <div class="flex items-center space-x-2">
-                <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
-                <div class="flex items-center border rounded-md">
+            <div class="flex items-center justify-between space-x-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <label class="text-sm font-semibold text-gray-700">{{ $t('products.card.quantity') }}:</label>
+                <div class="flex items-center border-2 border-primary-200 rounded-lg bg-white overflow-hidden">
                     <button @click="decreaseQuantity"
                         :disabled="quantity <= minSelectableQuantity || product.coming_soon === 1"
-                        class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="px-3 py-2 text-primary-600 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold">
                         -
                     </button>
                     <input v-model.number="quantity" type="number" :min="minInputValue" :max="maxInputValue"
                         :disabled="maxAddableQuantity <= 0 || product.coming_soon === 1"
-                        class="w-16 px-2 py-1 text-center border-0 focus:ring-0" @blur="validateQuantity" />
+                        class="w-14 px-2 py-2 text-center border-0 focus:ring-0 font-bold text-gray-900" @blur="validateQuantity" />
                     <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.coming_soon === 1"
-                        class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="px-3 py-2 text-primary-600 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold">
                         +
                     </button>
                 </div>
@@ -97,9 +109,9 @@
             <button @click="addToCart"
                 :disabled="product.coming_soon === 1 || product.in_stock === 0 || isLoading || maxAddableQuantity <= 0" :class="[
                     product.coming_soon === 1 || product.in_stock === 0 || maxAddableQuantity <= 0
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700',
-                    'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
+                        ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                        : 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transform hover:scale-105 shadow-md hover:shadow-lg',
+                    'w-full text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center font-semibold'
                 ]">
                 <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
                     viewBox="0 0 24 24">

@@ -1,5 +1,5 @@
 <template>
-    <nav class="bg-white shadow-lg border-b" ref="navRef">
+    <nav class="bg-white shadow-xl border-b-2 border-primary-200" ref="navRef">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <!-- Logo and Brand -->
@@ -11,33 +11,33 @@
                     </div>
 
                     <!-- Desktop Navigation -->
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                    <div class="hidden md:ml-6 md:flex md:space-x-2">
                         <router-link to="/"
-                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            class="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105">
                             {{ $t('navigation.home') }}
                         </router-link>
                         <router-link to="/products"
-                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            class="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105">
                             {{ $t('navigation.products') }}
                         </router-link>
                         <router-link to="/categories"
-                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            class="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105">
                             {{ $t('navigation.categories') }}
                         </router-link>
                         <router-link to="/orders"
-                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            class="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105">
                             {{ $t('navigation.orders') }}
                         </router-link>
                         <router-link to="/profile"
-                            class="text-secondary-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-smooth hover-lift">
+                            class="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105">
                             {{ $t('navigation.profile') }}
                         </router-link>
                         <!-- Replace router-link with button for admin toggle -->
                         <button v-if="authStore.isAdmin" @click="$emit('toggle-admin')" :class="[
                             showAdminPanel
-                                ? 'bg-primary-600 text-white'
-                                : 'text-secondary-700 hover:text-primary-600',
-                            'px-3 py-2 rounded-md text-sm font-medium transition-smooth btn-animate'
+                                ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
+                                : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50',
+                            'px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105'
                         ]">
                             {{ showAdminPanel ? $t('navigation.backToDashboard') : $t('navigation.adminPanel') }}
                         </button>
@@ -51,7 +51,7 @@
                     <!-- Cart -->
                     <div class="relative">
                         <button @click="toggleCart"
-                            class="p-2 text-secondary-600 hover:text-secondary-900 relative transition-smooth hover-scale cursor-pointer">
+                            class="p-2 text-gray-600 hover:text-primary-600 relative transition-all duration-200 transform hover:scale-110 cursor-pointer bg-gray-50 hover:bg-primary-50 rounded-lg">
                             <img src="../assets/shoppingcart.svg" alt="Shopping Cart" class="w-6 h-6">
                             <Transition name="cart-badge">
                                 <div v-if="cartStore.itemCount > 0" class="absolute -top-1 -right-1 cart-count-badge">
@@ -66,11 +66,11 @@
                     <!-- User Menu -->
                     <div class="relative">
                         <button @click="toggleUserMenu"
-                            class="flex items-center space-x-2 text-secondary-700 hover:text-secondary-900 transition-smooth">
+                            class="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition-all duration-200 bg-gray-50 hover:bg-primary-50 px-3 py-2 rounded-lg">
                             <div
-                                class="w-8 h-8 bg-secondary-300 rounded-full flex items-center justify-center hover-scale transition-smooth">
+                                class="w-8 h-8 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center transform hover:scale-110 transition-transform">
                                 <span class="text-sm font-medium">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
@@ -87,41 +87,47 @@
                         <!-- User Dropdown -->
                         <Transition name="slide-fade">
                             <div v-if="showUserMenu"
-                                class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 transform-gpu backdrop-blur-sm"
+                                class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border-2 border-primary-200 py-2 z-50 transform-gpu"
                                 style="max-height: calc(100vh - 120px); overflow-y: auto;">
                                 <div
-                                    class="px-4 py-3 text-sm text-secondary-700 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                                    <div class="font-medium truncate">{{ authStore.user?.email }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">{{ $t('navigation.accountSettings') }}</div>
+                                    class="px-4 py-3 text-sm text-gray-700 border-b-2 border-primary-100 bg-gradient-to-r from-primary-50 to-primary-100 rounded-t-lg">
+                                    <div class="font-bold truncate text-gray-900">{{ authStore.user?.email }}</div>
+                                    <div class="text-xs text-gray-600 mt-1 font-medium">{{ $t('navigation.accountSettings') }}</div>
                                 </div>
                                 <router-link to="/profile" @click="showUserMenu = false"
-                                    class="block w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 transition-all duration-200 cursor-pointer">
-                                    <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
+                                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 cursor-pointer font-semibold">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="p-1.5 bg-primary-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
                                         <span>{{ $t('navigation.profile') }}</span>
                                     </div>
                                 </router-link>
                                 <router-link to="/orders" @click="showUserMenu = false"
-                                    class="block w-full text-left px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50 transition-all duration-200 cursor-pointer">
-                                    <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                        </svg>
+                                    class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-success-50 hover:text-success-700 transition-all duration-200 cursor-pointer font-semibold">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="p-1.5 bg-success-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                        </div>
                                         <span>{{ $t('navigation.orders') }}</span>
                                     </div>
                                 </router-link>
-                                <hr class="my-1 border-gray-100">
+                                <hr class="my-2 border-gray-200">
                                 <button @click="handleLogout"
-                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 cursor-pointer">
-                                    <div class="flex items-center space-x-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                        </svg>
+                                    class="block w-full text-left px-4 py-3 text-sm text-danger-600 hover:bg-danger-50 hover:text-danger-700 transition-all duration-200 cursor-pointer font-semibold">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="p-1.5 bg-danger-100 rounded-lg">
+                                            <svg class="w-4 h-4 text-danger-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                        </div>
                                         <span>{{ $t('navigation.signOut') }}</span>
                                     </div>
                                 </button>

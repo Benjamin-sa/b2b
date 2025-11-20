@@ -23,7 +23,6 @@
                     </ol>
                 </nav>
                 <div class="mt-2">
-                    <h1 class="text-2xl font-bold text-gray-900">{{ currentCategory.name }}</h1>
                     <p v-if="currentCategory.description" class="text-sm text-gray-600 mt-1">
                         {{ currentCategory.description }}
                     </p>
@@ -40,33 +39,33 @@
             @view-mode-change="handleViewModeChange" @toggle-filters="toggleAdvancedFilters" />
 
         <!-- Advanced Filters Panel -->
-        <div v-if="showAdvancedFilters" class="bg-white border-b border-gray-200 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div v-if="showAdvancedFilters" class="bg-gradient-to-br from-white to-gray-50 border-b border-gray-200 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category_id')
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{ $t('products.filters.category_id')
                         }}</label>
                         <select v-model="filters.category_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
                             <option v-for="category in categoryStore.categories" :key="category.id" :value="category.name">{{ category.name }}
                             </option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{
                             $t('products.filters.availability') }}</label>
                         <select v-model="filters.in_stock"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
                             <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
                             <option :value="true">{{ $t('products.filters.in_stockOnly') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{ $t('products.filters.priceRange')
                         }}</label>
                         <select v-model="priceRange"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
                             @change="handlePriceRangeChange">
                             <option value="">{{ $t('products.filters.anyPrice') }}</option>
                             <option value="0-50">€0 - €50</option>
@@ -75,13 +74,13 @@
                             <option value="500+">€500+</option>
                         </select>
                     </div>
-                    <div class="flex flex-col space-y-2">
+                    <div class="flex flex-col space-y-3">
                         <button @click="clearFilters"
-                            class="w-full px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-300 rounded-md font-medium">
+                            class="w-full px-4 py-3 text-primary-600 hover:text-white bg-primary-50 hover:bg-primary-600 border border-primary-300 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
                             {{ $t('products.filters.clear') }}
                         </button>
                         <button @click="toggleAdvancedFilters"
-                            class="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-md font-medium">
+                            class="w-full px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-300 rounded-lg font-semibold transition-all duration-200">
                             {{ $t('products.filters.hideFilters') }}
                         </button>
                     </div>
@@ -92,21 +91,24 @@
         <!-- Products Grid/List -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div v-if="productStore.isLoading && !productStore.hasProducts" class="text-center py-24">
-                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto">
+                <div class="w-20 h-20 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto shadow-lg">
                 </div>
-                <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('products.header.loading') }}</p>
+                <p class="mt-8 text-lg text-gray-700 font-semibold">{{ $t('products.header.loading') }}</p>
+                <p class="mt-2 text-sm text-gray-500">Please wait while we fetch the products...</p>
             </div>
 
             <div v-else-if="!productStore.hasProducts" class="text-center py-24">
-                <div class="max-w-md mx-auto">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-4h-3a2 2 0 00-2 2v1m-3 0V9a2 2 0 012-2h3m-6 3h2m-2 0v2a1 1 0 01-1 1h-1a1 1 0 01-1-1v-2z" />
-                    </svg>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">{{ $t('products.empty.title') }}</h3>
-                    <p class="mt-2 text-gray-500">{{ $t('products.empty.description') }}</p>
+                <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-8 border border-gray-100">
+                    <div class="bg-gradient-to-br from-primary-100 to-primary-200 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
+                        <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-4h-3a2 2 0 00-2 2v1m-3 0V9a2 2 0 012-2h3m-6 3h2m-2 0v2a1 1 0 01-1 1h-1a1 1 0 01-1-1v-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="mt-6 text-xl font-bold text-gray-900">{{ $t('products.empty.title') }}</h3>
+                    <p class="mt-3 text-gray-600">{{ $t('products.empty.description') }}</p>
                     <button @click="clearFilters"
-                        class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="mt-6 inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transform transition-all duration-200 hover:scale-105 shadow-md">
                         {{ $t('products.empty.clearFilters') }}
                     </button>
                 </div>
@@ -152,7 +154,7 @@
                 <!-- Load More Button -->
                 <div v-if="productStore.hasMoreProducts" class="mt-12 text-center">
                     <button @click="loadMore" :disabled="productStore.isLoading"
-                        class="px-8 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                        class="px-10 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-primary-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                         {{ productStore.isLoading ? $t('common.actions.loading') : $t('products.loadMore') }}
                     </button>
                 </div>

@@ -8,22 +8,22 @@
             <!-- Menu Content -->
             <div class="relative bg-white h-full max-w-sm ml-auto shadow-2xl">
                 <!-- Header -->
-                <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+                <div class="flex items-center justify-between p-5 border-b-2 border-primary-200 bg-gradient-to-r from-primary-50 to-primary-100">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-secondary-300 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-secondary-600" fill="none" stroke="currentColor"
+                        <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </div>
                         <div>
-                            <div class="font-medium text-secondary-900 text-sm truncate">{{ userEmail }}</div>
-                            <div class="text-xs text-gray-500">{{ $t('navigation.accountSettings') }}</div>
+                            <div class="font-bold text-gray-900 text-sm truncate">{{ userEmail }}</div>
+                            <div class="text-xs text-gray-600 font-medium">{{ $t('navigation.accountSettings') }}</div>
                         </div>
                     </div>
-                    <button @click="$emit('close')" class="p-2 text-gray-400 hover:text-gray-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button @click="$emit('close')" class="p-2 text-gray-500 hover:text-primary-600 hover:bg-white rounded-lg transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -34,8 +34,9 @@
                 <div class="flex-1 overflow-y-auto">
                     <!-- Navigation Links -->
                     <div class="py-4">
-                        <div class="px-4 mb-2">
-                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <div class="px-4 mb-3">
+                            <h3 class="text-xs font-bold text-primary-700 uppercase tracking-wider flex items-center">
+                                <div class="w-1 h-4 bg-primary-600 rounded-full mr-2"></div>
                                 {{ $t('navigation.menu') || 'Menu' }}
                             </h3>
                         </div>
@@ -72,9 +73,10 @@
                     </div>
 
                     <!-- Account Section -->
-                    <div class="py-4 border-t">
-                        <div class="px-4 mb-2">
-                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <div class="py-4 border-t-2 border-primary-100">
+                        <div class="px-4 mb-3">
+                            <h3 class="text-xs font-bold text-success-700 uppercase tracking-wider flex items-center">
+                                <div class="w-1 h-4 bg-success-600 rounded-full mr-2"></div>
                                 {{ $t('navigation.account') || 'Account' }}
                             </h3>
                         </div>
@@ -101,9 +103,10 @@
                     </div>
 
                     <!-- Language & Settings -->
-                    <div class="py-4 border-t">
+                    <div class="py-4 border-t-2 border-primary-100">
                         <div class="px-4 mb-3">
-                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <h3 class="text-xs font-bold text-secondary-700 uppercase tracking-wider flex items-center">
+                                <div class="w-1 h-4 bg-secondary-600 rounded-full mr-2"></div>
                                 {{ $t('navigation.settings') || 'Settings' }}
                             </h3>
                         </div>
@@ -124,9 +127,9 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="border-t p-4 bg-gray-50">
+                <div class="border-t-2 border-primary-200 p-5 bg-gradient-to-r from-danger-50 to-danger-100">
                     <button @click="handleLogout"
-                        class="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        class="w-full flex items-center justify-center space-x-2 py-4 px-4 bg-gradient-to-r from-danger-600 to-danger-700 text-white rounded-xl hover:from-danger-700 hover:to-danger-800 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -288,25 +291,28 @@ const handleLogout = () => {
 .mobile-nav-link {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
+    padding: 14px 16px;
     color: #374151;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.2s ease;
-    border-radius: 8px;
+    border-radius: 12px;
     margin: 0 12px;
 }
 
 .mobile-nav-link:hover,
 .mobile-nav-link:focus {
-    background-color: #f3f4f6;
-    color: #1f2937;
-    transform: translateX(4px);
+    background: linear-gradient(to right, #f0f2f4, #e8edef);
+    color: #466478;
+    transform: translateX(6px);
+    box-shadow: 0 2px 8px rgba(70, 100, 120, 0.1);
 }
 
 .mobile-nav-link.router-link-active {
-    background-color: #dbeafe;
-    color: #2563eb;
-    border-left: 3px solid #2563eb;
+    background: linear-gradient(to right, #e8edef, #c5d0d8);
+    color: #466478;
+    border-left: 4px solid #466478;
+    font-weight: 700;
+    box-shadow: 0 2px 12px rgba(70, 100, 120, 0.15);
 }
 
 .mobile-nav-icon {

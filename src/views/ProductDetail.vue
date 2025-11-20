@@ -1,27 +1,30 @@
 <template>
     <div class="min-h-screen bg-gray-50">
         <!-- Loading State -->
-        <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
+        <div v-if="isLoading" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4">
             <div class="text-center">
                 <div
-                    class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
+                    class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4 sm:mb-6 shadow-lg">
                 </div>
-                <p class="text-lg text-gray-600 font-medium">{{ $t('common.loading') }}...</p>
+                <p class="text-lg sm:text-xl text-gray-700 font-bold">{{ $t('common.loading') }}...</p>
+                <p class="text-xs sm:text-sm text-gray-500 mt-2">Please wait while we load product details</p>
             </div>
         </div>
 
         <!-- Product Not Found -->
-        <div v-else-if="!product" class="flex items-center justify-center min-h-screen">
-            <div class="text-center">
-                <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ $t('productDetail.productNotFound') }}</h2>
-                <p class="text-gray-600 mb-6">{{ $t('productDetail.productNotFoundMessage') }}</p>
+        <div v-else-if="!product" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+            <div class="text-center max-w-md mx-auto bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-10 border border-gray-100">
+                <div class="bg-gradient-to-br from-danger-100 to-danger-200 rounded-full w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+                    <svg class="w-8 h-8 sm:w-10 sm:h-10 text-danger-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">{{ $t('productDetail.productNotFound') }}</h2>
+                <p class="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">{{ $t('productDetail.productNotFoundMessage') }}</p>
                 <router-link to="/products"
-                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm sm:text-base font-bold rounded-lg sm:rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                     {{ $t('productDetail.backToProducts') }}
@@ -30,16 +33,16 @@
         </div>
 
         <!-- Product Details -->
-        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <!-- Breadcrumb -->
-            <nav class="flex mb-8" aria-label="Breadcrumb">
-                <ol class="flex items-center space-x-2">
+            <nav class="flex mb-4 sm:mb-8 overflow-x-auto" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap">
                     <li>
                         <router-link to="/" class="text-gray-500 hover:text-gray-700">{{ $t('navigation.home')
                             }}</router-link>
                     </li>
                     <li>
-                        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                                 clip-rule="evenodd" />
@@ -50,19 +53,19 @@
                             $t('navigation.products') }}</router-link>
                     </li>
                     <li>
-                        <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                                 clip-rule="evenodd" />
                         </svg>
                     </li>
                     <li>
-                        <span class="text-gray-900 font-medium">{{ product.name }}</span>
+                        <span class="text-gray-900 font-medium truncate max-w-[150px] sm:max-w-none">{{ product.name }}</span>
                     </li>
                 </ol>
             </nav>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
                 <!-- Left Column - Images -->
                 <div class="space-y-6">
                     <ImageGallery :images="productImages" :alt="product.name" :show-thumbnails="true"
@@ -70,13 +73,13 @@
                 </div>
 
                 <!-- Right Column - Product Info -->
-                <div class="space-y-8">
+                <div class="space-y-4 sm:space-y-6 lg:space-y-8">
                     <!-- Basic Info -->
                     <div>
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
-                                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                        <div class="flex flex-col sm:flex-row items-start justify-between mb-3 sm:mb-4 gap-3">
+                            <div class="flex-1 w-full sm:w-auto">
+                                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
                                     <span v-if="product.shopify_variant_id">{{ $t('productDetail.sku', {
                                         sku:
@@ -88,100 +91,102 @@
                                     }) }}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center ml-4">
+                            <div class="flex items-center w-full sm:w-auto sm:ml-4">
                                 <div v-if="product.coming_soon"
-                                    class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+                                    class="bg-gradient-to-r from-secondary-100 to-secondary-200 text-secondary-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-secondary-300 shadow-sm w-full sm:w-auto text-center whitespace-nowrap">
                                     {{ $t('productDetail.comingSoon') }}
                                 </div>
                                 <div v-else-if="!product.in_stock"
-                                    class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
+                                    class="bg-gradient-to-r from-danger-100 to-danger-200 text-danger-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-danger-300 shadow-sm animate-pulse w-full sm:w-auto text-center whitespace-nowrap">
                                     {{ $t('productDetail.outOfStock') }}
                                 </div>
                                 <div v-else-if="product.stock && product.stock < 10"
-                                    class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+                                    class="bg-gradient-to-r from-warning-100 to-warning-200 text-warning-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-warning-300 shadow-sm w-full sm:w-auto text-center whitespace-nowrap">
                                     {{ $t('productDetail.lowStock', { count: product.stock }) }}
                                 </div>
                                 <div v-else
-                                    class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                                    class="bg-gradient-to-r from-success-100 to-success-200 text-success-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-success-300 shadow-sm w-full sm:w-auto text-center whitespace-nowrap">
                                     {{ $t('productDetail.inStock') }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Price -->
-                        <div class="mb-6">
-                            <div class="flex items-baseline space-x-3">
-                                <span class="text-4xl font-bold text-gray-900">
+                        <div class="mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 border-primary-200 shadow-md">
+                            <div class="flex flex-wrap items-baseline gap-2 sm:gap-3 mb-2">
+                                <span class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
                                     €{{ formatPrice(product.price) }}
                                 </span>
                                 <span v-if="product.original_price && product.original_price > product.price"
-                                    class="text-xl text-gray-500 line-through">
+                                    class="text-lg sm:text-xl text-gray-500 line-through font-medium">
                                     €{{ formatPrice(product.original_price) }}
                                 </span>
                                 <span v-if="product.original_price && product.original_price > product.price"
-                                    class="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
+                                    class="bg-gradient-to-r from-danger-600 to-danger-700 text-white text-xs sm:text-sm font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-sm">
                                     {{ Math.round(((product.original_price - product.price) / product.original_price) *
                                         100) }}% OFF
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">{{ $t('productDetail.per', {
+                            <p class="text-sm sm:text-base text-gray-700 font-medium">{{ $t('productDetail.per', {
                                 unit: product.unit ||
                                     $t('productDetail.piece')
                             }) }}</p>
                         </div>
 
                         <!-- Tags -->
-                        <div v-if="product.tags && product.tags.length > 0" class="mb-6">
-                            <div class="flex flex-wrap gap-2">
+                        <div v-if="product.tags && product.tags.length > 0" class="mb-4 sm:mb-6 lg:mb-8">
+                            <div class="flex flex-wrap gap-1.5 sm:gap-2">
                                 <span v-for="tag in product.tags" :key="tag"
-                                    class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                    class="bg-gradient-to-r from-secondary-100 to-secondary-200 text-secondary-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-secondary-300 shadow-sm hover:shadow-md transition-shadow">
                                     {{ tag }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Description -->
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ $t('productDetail.description') }}
+                        <div class="mb-4 sm:mb-6 lg:mb-8">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">{{ $t('productDetail.description') }}
                             </h3>
-                            <div class="text-gray-700 leading-relaxed html-content"
+                            <div class="text-sm sm:text-base text-gray-700 leading-relaxed html-content"
                                 v-html="sanitizeHtml(product.description || '')"></div>
                         </div>
                     </div>
 
                     <!-- Purchase Section -->
-                    <div class="bg-gray-50 rounded-xl p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('productDetail.purchaseOptions') }}
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 sm:border-2 shadow-lg">
+                        <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                            <span class="w-1 sm:w-1.5 h-6 sm:h-8 bg-gradient-to-b from-primary-600 to-primary-700 rounded-full mr-2 sm:mr-3"></span>
+                            {{ $t('productDetail.purchaseOptions') }}
                         </h3>
 
                         <!-- Quantity Selector -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('productDetail.quantity')
+                        <div class="mb-4 sm:mb-6 lg:mb-8">
+                            <label class="block text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3">{{ $t('productDetail.quantity')
                             }}</label>
-                            <div class="flex items-center space-x-4">
-                                <div class="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                                <div class="flex items-center border border-primary-300 sm:border-2 rounded-lg sm:rounded-xl bg-white shadow-md hover:shadow-lg transition-shadow">
                                     <button @click="decreaseQuantity"
                                         :disabled="!canAddMore || Boolean(product.coming_soon) || quantity <= inputMinValue"
-                                        class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-lg">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        class="px-3 py-3 sm:px-5 sm:py-4 text-primary-600 hover:text-primary-800 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-l-lg sm:rounded-l-xl font-bold">
+                                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                                 d="M20 12H4"></path>
                                         </svg>
                                     </button>
                                     <input v-model.number="quantity" type="number" :min="inputMinValue"
                                         :max="inputMaxValue" :disabled="!canAddMore || Boolean(product.coming_soon)"
-                                        class="w-20 px-3 py-3 text-center border-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        class="w-20 sm:w-24 px-2 sm:px-4 py-3 sm:py-4 text-center border-0 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg sm:text-xl font-bold text-gray-900"
                                         @blur="validateQuantity" @input="validateQuantity" />
                                     <button @click="increaseQuantity"
                                         :disabled="!canAddMore || Boolean(product.coming_soon) || quantity >= inputMaxValue"
-                                        class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-lg">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        class="px-3 py-3 sm:px-5 sm:py-4 text-primary-600 hover:text-primary-800 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-r-lg sm:rounded-r-xl font-bold">
+                                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                         </svg>
                                     </button>
                                 </div>
-                                <div class="text-sm text-gray-600">
+                                <div class="text-xs sm:text-sm text-gray-600">
                                     <div v-if="product.min_order_quantity">{{ $t('productDetail.min') }} {{
                                         product.min_order_quantity }} {{ product.unit || $t('productDetail.pieces') }}
                                     </div>
@@ -200,9 +205,9 @@
                             </div>
                             <!-- Stock warning -->
                             <div v-if="quantity > availableStock"
-                                class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                                <p class="text-sm text-red-700 flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                class="mt-2 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl">
+                                <p class="text-xs sm:text-sm text-red-700 flex items-center">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd"
                                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                             clip-rule="evenodd" />
@@ -214,11 +219,11 @@
 
 
                         <!-- Total Price -->
-                        <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
-                            <div class="flex justify-between items-center">
-                                <span class="text-lg font-medium text-gray-900">{{ $t('productDetail.totalPrice')
+                        <div class="mb-4 sm:mb-6 lg:mb-8 p-4 sm:p-6 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg sm:rounded-xl border border-primary-300 sm:border-2 shadow-md">
+                            <div class="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
+                                <span class="text-base sm:text-lg lg:text-xl font-bold text-gray-900">{{ $t('productDetail.totalPrice')
                                     }}</span>
-                                <span class="text-2xl font-bold text-blue-600">€{{ formatPrice(product.price * quantity)
+                                <span class="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">€{{ formatPrice(product.price * quantity)
                                 }}</span>
                             </div>
                         </div>
@@ -228,18 +233,18 @@
                             :disabled="Boolean(product.coming_soon) || !Boolean(product.in_stock) || !canOrder || isAddingToCart || !canAddMore"
                             :class="[
                                 Boolean(product.coming_soon) || !Boolean(product.in_stock) || !canAddMore
-                                    ? 'bg-gray-300 cursor-not-allowed'
+                                    ? 'bg-gray-400 cursor-not-allowed shadow-none'
                                     : !canOrder
-                                        ? 'bg-yellow-500 hover:bg-yellow-600'
+                                        ? 'bg-gradient-to-r from-warning-600 to-warning-700 hover:from-warning-700 hover:to-warning-800 shadow-lg hover:shadow-xl'
                                         : isAddingToCart
-                                            ? 'bg-blue-500'
+                                            ? 'bg-gradient-to-r from-primary-500 to-primary-600 shadow-lg'
                                             : addedToCartRecently
-                                                ? 'bg-green-600 hover:bg-green-700'
-                                                : 'bg-blue-600 hover:bg-blue-700',
-                                'w-full text-white py-4 px-6 rounded-xl text-lg font-semibold transition-all duration-200 flex items-center justify-center transform active:scale-95'
+                                                ? 'bg-gradient-to-r from-success-600 to-success-700 hover:from-success-700 hover:to-success-800 shadow-lg hover:shadow-xl'
+                                                : 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl',
+                                'w-full text-white py-3 sm:py-4 lg:py-5 px-6 sm:px-8 rounded-lg sm:rounded-xl text-base sm:text-lg lg:text-xl font-black transition-all duration-200 flex items-center justify-center transform hover:scale-105 active:scale-95'
                             ]">
                             <!-- Loading spinner -->
-                            <svg v-if="isAddingToCart" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none"
+                            <svg v-if="isAddingToCart" class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none"
                                 viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
                                     stroke-width="4"></circle>
@@ -248,13 +253,13 @@
                                 </path>
                             </svg>
                             <!-- Success checkmark -->
-                            <svg v-else-if="addedToCartRecently" class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                            <svg v-else-if="addedToCartRecently" class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
                             <!-- Shopping cart icon -->
-                            <svg class="w-5 h-5 text-white-400 mr-3" fill="none" stroke="currentColor"
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white-400 mr-2 sm:mr-3" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
@@ -271,20 +276,20 @@
                         </button>
 
                         <!-- Quick Actions -->
-                        <div v-if="addedToCartRecently" class="mt-4 grid grid-cols-2 gap-3">
+                        <div v-if="addedToCartRecently" class="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                             <router-link to="/products"
-                                class="flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                class="flex items-center justify-center px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 rounded-lg sm:rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 transform hover:scale-105 shadow-md text-sm sm:text-base font-bold border border-gray-300">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                         d="M15 19l-7-7 7-7"></path>
                                 </svg>
                                 {{ $t('productDetail.continueShopping') }}
                             </router-link>
                             <router-link to="/checkout"
-                                class="flex items-center justify-center px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                                class="flex items-center justify-center px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-secondary-600 to-secondary-700 text-white rounded-lg sm:rounded-xl hover:from-secondary-700 hover:to-secondary-800 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base font-bold">
                                 {{ $t('productDetail.viewCart') }}
-                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                         d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </router-link>

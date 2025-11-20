@@ -14,7 +14,9 @@
     "accountSettings": "Account Settings",
     "menu": "Menu",
     "account": "Account",
-    "settings": "Settings"
+    "settings": "Settings",
+    "selectLanguage": "Select Language"
+
   },
   "footer": {
     "company": {

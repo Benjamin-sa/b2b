@@ -7,7 +7,7 @@
                 <p class="text-gray-600 mt-1">Manage your product categories</p>
             </div>
             <button @click="openModal()"
-                class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+                class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
                 Add Category
             </button>
         </div>
@@ -33,14 +33,14 @@
         </div>
 
         <!-- Search and filters -->
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
             <div class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
                     <input v-model="searchTerm" type="text" placeholder="Search categories..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                        class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" />
                 </div>
                 <select v-model="statusFilter"
-                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    class="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
