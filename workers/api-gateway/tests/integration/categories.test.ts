@@ -21,7 +21,7 @@ import {
   TestResourceTracker,
 } from '../helpers'
 
-describe('Integration: Categories 'CRUD, () => {
+describe('Integration: Categories CRUD', () => {
   let publicClient: ApiClient
   let adminClient: ApiClient
   const tracker = new TestResourceTracker()
@@ -309,11 +309,17 @@ describe('Integration: Categories 'CRUD, () => {
       // Reverse the order
       const newOrder = [...categoryIds].reverse()
 
+      console.log(`[DEBUG] Reorder request payload: ${JSON.stringify({ categoryIds: newOrder })}`)
+
+      // API expects { categoryIds: [...] } not { order: [...] }
       const response = await adminClient.post(
         '/api/categories/reorder',
-        { order: newOrder },
+        { categoryIds: newOrder },
         { auth: true }
       )
+
+      console.log(`[DEBUG] Reorder response status: ${response.status}`)
+      console.log(`[DEBUG] Reorder response data:`, JSON.stringify(response.data, null, 2))
 
       // Reorder should succeed
       expectSuccess(response)
