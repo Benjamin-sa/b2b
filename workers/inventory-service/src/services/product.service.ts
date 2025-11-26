@@ -1,7 +1,10 @@
 /**
  * Product Service
  * 
- * Business logic for product management
+ * Business logic for product management (D1 database operations only)
+ * 
+ * NOTE: Stripe operations are handled at the API Gateway orchestration layer.
+ * This service only handles D1 database operations.
  */
 
 import { nanoid } from 'nanoid';
@@ -17,17 +20,10 @@ import type {
   PaginatedResponse,
   ProductFilters,
   PaginationParams,
-  Env,
 } from '../types';
 import { getOne, getOneOrNull, getMany, getPaginated, batch } from '../utils/database';
 import { errors } from '../utils/errors';
 import { validateRequired, validatePrice } from '../utils/validation';
-import {
-  createStripeProductWithPrice,
-  updateStripeProduct,
-  replaceStripePrice,
-  archiveStripeProduct,
-} from './stripe.service';
 import { buildUpdateQuery, buildFieldUpdates, boolToInt } from '../utils/query-builder';
 
 /**
@@ -200,51 +196,25 @@ export async function getProductsByCategory(
 
 /**
  * Create a new product
- * Automatically creates Stripe product and price
+ * 
+ * NOTE: Stripe product/price creation is handled at the API Gateway orchestration layer.
+ * This function expects stripe_product_id and stripe_price_id to be passed in the request.
  */
 export async function createProduct(
   db: any,
-  env: Env,
   data: CreateProductRequest
 ): Promise<ProductWithRelations> {
   // Validate required fields
   validateRequired(data, ['name', 'price']);
   validatePrice(data.price);
 
-  // Generate ID
-  const productId = nanoid();
+  // Generate ID (or use provided ID from orchestration layer)
+  const productId = (data as any).id || nanoid();
   const now = new Date().toISOString();
 
-  // Create Stripe product and price first (if not provided)
-  let stripeProductId = data.stripe_product_id || null;
-  let stripePriceId = data.stripe_price_id || null;
-
-  if (!stripeProductId && !stripePriceId) {
-    try {
-      console.log(`🔄 Creating Stripe product for: ${data.name}`);
-      
-      const stripeResult = await createStripeProductWithPrice(env, {
-        id: productId,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        image_url: data.image_url || (data.images && data.images[0]) || null,
-        category_id: data.category_id,
-        brand: data.brand,
-        part_number: data.part_number,
-        shopify_product_id: data.shopify_product_id,
-        shopify_variant_id: data.shopify_variant_id,
-      });
-
-      stripeProductId = stripeResult.stripeProductId;
-      stripePriceId = stripeResult.stripePriceId;
-
-      console.log(`✅ Stripe product created: ${stripeProductId}, price: ${stripePriceId}`);
-    } catch (error: any) {
-      console.error('❌ Failed to create Stripe product:', error);
-      console.warn('⚠️ Product will be created without Stripe integration');
-    }
-  }
+  // Stripe IDs are passed from the orchestration layer
+  const stripeProductId = data.stripe_product_id || null;
+  const stripePriceId = data.stripe_price_id || null;
 
   // Prepare statements
   const statements: any[] = [];
@@ -388,11 +358,12 @@ export async function createProduct(
 
 /**
  * Update a product
- * Automatically updates Stripe product and handles price changes
+ * 
+ * NOTE: Stripe updates are handled at the API Gateway orchestration layer.
+ * This function only handles D1 database updates.
  */
 export async function updateProduct(
   db: any,
-  env: Env,
   productId: string,
   data: UpdateProductRequest
 ): Promise<ProductWithRelations> {
@@ -415,56 +386,9 @@ export async function updateProduct(
   const now = new Date().toISOString();
   const statements: any[] = [];
 
-  // Handle Stripe updates if product has Stripe integration
-  let newStripePriceId = existing.stripe_price_id;
-
-    try {
-      // Check if price changed - need to create new price in Stripe
-      const priceChanged = data.price !== undefined && data.price !== existing.price;
-
-      if (priceChanged && existing.stripe_price_id) {
-        console.log(`🔄 Replacing Stripe price for product ${productId}`);
-        
-        newStripePriceId = await replaceStripePrice(env, {
-          id: productId,
-          stripe_product_id: existing.stripe_product_id,
-          stripe_price_id: existing.stripe_price_id,
-          price: data.price!,
-        }, data.price!);
-
-        console.log(`✅ New Stripe price created: ${newStripePriceId}`);
-      }
-
-      // Update product details in Stripe (if not just a stock/inventory update)
-      const hasNonInventoryChanges = Object.keys(data).some(
-        (key) => !['stock', 'inStock', 'shopifyProductId', 'shopifyVariantId', 'shopifyInventoryItemId'].includes(key)
-      );
-
-      if (hasNonInventoryChanges) {
-        console.log(`🔄 Updating Stripe product ${existing.stripe_product_id}`);
-        
-        await updateStripeProduct(env, {
-          id: productId,
-          stripe_product_id: existing.stripe_product_id,
-          name: data.name ?? existing.name,
-          description: data.description ?? existing.description,
-          price: data.price ?? existing.price,
-          image_url: data.image_url ?? existing.image_url,
-          category_id: data.category_id ?? existing.category_id,
-          brand: data.brand ?? existing.brand,
-          part_number: data.part_number ?? existing.part_number,
-          shopify_product_id: null, // Not stored in products table anymore
-          shopify_variant_id: null,  // Not stored in products table anymore
-        });
-
-        console.log(`✅ Stripe product updated`);
-      }
-    } catch (error: any) {
-      console.error('❌ Failed to update Stripe product:', error);
-      // Continue with D1 update - Stripe sync can be done later
-      console.warn('⚠️ Product will be updated in D1 only, Stripe sync failed');
-    }
-
+  // NOTE: Stripe updates are handled at the API Gateway orchestration layer.
+  // If a new stripe_price_id is passed from orchestration (due to price change),
+  // it will be included in the data and updated below.
 
   // ============================================================================
   // UPDATE PRODUCTS TABLE
@@ -485,15 +409,9 @@ export async function updateProduct(
     max_order_quantity: data.max_order_quantity,
     weight: data.weight,
     stripe_product_id: data.stripe_product_id,
+    stripe_price_id: data.stripe_price_id,
     updated_at: now,
   });
-
-  // Update stripe_price_id if we created a new price
-  if (newStripePriceId !== existing.stripe_price_id) {
-    productUpdates.stripe_price_id = newStripePriceId;
-  } else if (data.stripe_price_id !== undefined) {
-    productUpdates.stripe_price_id = data.stripe_price_id;
-  }
 
   // NOTE: shopify_product_id and shopify_variant_id are DEPRECATED in products table
   // They should NOT be updated here - use product_inventory table instead
@@ -649,10 +567,12 @@ export async function updateProduct(
 
 /**
  * Delete a product
- * Archives product in Stripe (soft delete) before deleting from D1
+ * 
+ * NOTE: Stripe archival is handled at the API Gateway orchestration layer.
+ * This function only handles D1 database deletion.
  */
-export async function deleteProduct(db: any, env: Env, productId: string): Promise<void> {
-  // Check if product exists and get Stripe IDs
+export async function deleteProduct(db: any, productId: string): Promise<void> {
+  // Check if product exists
   const existing = await getOneOrNull<Product>(
     db,
     'SELECT * FROM products WHERE id = ?',
@@ -663,26 +583,7 @@ export async function deleteProduct(db: any, env: Env, productId: string): Promi
     throw errors.notFound('Product', productId);
   }
 
-  // Archive in Stripe if product has Stripe integration
-  if (existing.stripe_product_id) {
-    try {
-      console.log(`🔄 Archiving Stripe product ${existing.stripe_product_id}`);
-      
-      await archiveStripeProduct(env, {
-        id: productId,
-        stripe_product_id: existing.stripe_product_id,
-        stripe_price_id: existing.stripe_price_id,
-      });
-
-      console.log(`✅ Stripe product archived`);
-    } catch (error: any) {
-      console.error('❌ Failed to archive Stripe product:', error);
-      // Continue with D1 deletion - Stripe archive can be done manually
-      console.warn('⚠️ Product will be deleted from D1, but Stripe product remains active');
-    }
-  }
-
-  // Delete product (cascade will delete related records)
+  // Delete product and all related records from D1
   const statements = [
     db.prepare('DELETE FROM product_images WHERE product_id = ?').bind(productId),
     db.prepare('DELETE FROM product_specifications WHERE product_id = ?').bind(productId),

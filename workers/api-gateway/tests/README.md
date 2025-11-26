@@ -1,212 +1,236 @@
 # API Gateway Tests
 
-This directory contains tests for the B2B API Gateway, organized by complexity and purpose.
+This directory contains comprehensive integration tests for the B2B API Gateway.  
+These tests hit the **real deployed dev worker** to ensure the API contract is maintained.
 
-## Test Structure
+## 🎯 Purpose
 
-### 01 - Health Check Tests (`01-health-check.test.ts`)
-**What it tests:**
-- Basic gateway health endpoints (`/` and `/health`)
-- 404 error handling
-- CORS preflight requests
-- JSON response formatting
+These tests act like the **frontend Vue application**, sending real HTTP requests to validate:
 
-**Why it's important:**
-- Fastest tests (no dependencies)
-- Verifies gateway is running correctly
-- Good smoke test before deployment
+1. **Response structure** - Ensures API responses match expected TypeScript interfaces
+2. **Authentication flows** - Login, logout, token refresh work correctly
+3. **CRUD operations** - Products, categories, invoices, admin operations
+4. **Error handling** - Proper error codes and messages
+5. **Authorization** - Admin-only routes are protected
 
-**How to run:**
-```bash
-npm test 01-health-check
+## 📁 Test Structure
+
+```
+tests/
+├── helpers/
+│   ├── index.ts           # Re-exports all helpers
+│   ├── api-client.ts      # HTTP client mimicking frontend behavior
+│   ├── validators.ts      # Response structure validators
+│   ├── test-data.ts       # Test data generators
+│   └── auth.ts            # Legacy auth helper (backwards compat)
+├── integration/
+│   ├── health.test.ts     # Health check endpoints
+│   ├── auth.test.ts       # Authentication flows
+│   ├── products.test.ts   # Product CRUD operations
+│   ├── categories.test.ts # Category CRUD operations
+│   ├── invoices.test.ts   # Invoice creation/listing
+│   └── admin.test.ts      # Admin user management
+├── .env.example           # Example environment variables
+└── README.md              # This file
 ```
 
----
+## 🚀 Quick Start
 
-### 02 - Middleware Tests (`02-middleware.test.ts`)
-**What it tests:**
-- CORS headers for allowed/disallowed origins
-- Rate limiting behavior (100 requests/minute)
-- Request logging (doesn't break requests)
-- OPTIONS preflight handling
+### 1. Prerequisites
 
-**Why it's important:**
-- Security layer verification
-- Prevents abuse via rate limiting
-- Ensures frontend can communicate (CORS)
+- Deploy the dev worker:
+  ```bash
+  cd workers/api-gateway
+  npm run deploy:dev
+  ```
 
-**How to run:**
+- Create a test admin user in the dev D1 database:
+  ```sql
+  -- Via wrangler D1 console or frontend registration
+  -- Ensure: role='admin', is_verified=1, is_active=1
+  ```
+
+### 2. Configure Environment
+
 ```bash
-npm test 02-middleware
+# Copy example env file
+cp tests/.env.example tests/.env
+
+# Edit with your test credentials
+nano tests/.env
 ```
 
----
-
-### 03 - Database Utilities Tests (`03-database-utils.test.ts`)
-**What it tests:**
-- Stock validation (sufficient/insufficient stock)
-- Multi-item inventory checks
-- Stock rollback mechanism
-- Batch update execution
-
-**Why it's important:**
-- Critical for invoice creation integrity
-- Prevents overselling (stock goes negative)
-- Tests the "undo" mechanism if Stripe fails
-
-**How to run:**
+Required variables:
 ```bash
-npm test 03-database-utils
+TEST_ADMIN_EMAIL=your-admin@test.local
+TEST_ADMIN_PASSWORD=YourSecurePassword123!
 ```
 
----
+### 3. Run Tests
 
-### 04 - Product CRUD Tests (`04-products-crud.test.ts`)
-**What it tests:**
-- Product data validation (required fields, price, stock)
-- Product creation requests (full & minimal)
-- Product update requests (PUT & PATCH)
-- Stock allocation logic (B2B/B2C split)
-- Shopify sync orchestration
-- Product filtering & pagination
-- Error handling
-
-**Why it's important:**
-- Validates product data integrity before DB operations
-- Tests stock allocation rules (B2B + B2C ≤ total)
-- Ensures Shopify sync triggers correctly
-- Validates filtering & search logic
-
-**How to run:**
 ```bash
-npm test 04-products-crud
-```
+# Run all integration tests
+npm run test:integration
 
----
+# Run specific test suites
+npm run test:integration:health    # Fast - health checks only
+npm run test:integration:auth      # Authentication flows
+npm run test:integration:products  # Product CRUD
+npm run test:integration:categories
+npm run test:integration:invoices
+npm run test:integration:admin
 
-## Running Tests
-
-### Run all tests
-```bash
-npm test
-```
-
-### Run specific test file
-```bash
-npm test 01-health-check
-```
-
-### Run with coverage
-```bash
-npm run test:coverage
-```
-
-### Run in watch mode (during development)
-```bash
+# Watch mode (re-runs on file changes)
 npm run test:watch
+
+# With verbose API logging
+npm run test:verbose
 ```
 
-### Run tests with UI (interactive)
-```bash
-npm run test:ui
-```
+## 📊 Test Coverage
 
----
+| Endpoint Group | Coverage |
+|---------------|----------|
+| Health Checks | ✅ Complete |
+| Auth Routes | ✅ Complete |
+| Products CRUD | ✅ Complete |
+| Categories CRUD | ✅ Complete |
+| Invoices | ✅ Complete |
+| Admin Operations | ✅ Complete |
+| Shopify Routes | ⏳ Planned |
 
-## Test Environment
+## 🔧 API Client
 
-Tests run against a **local Wrangler dev server** with:
-- `ENVIRONMENT=test`
-- `ALLOWED_ORIGINS=*` (permissive for testing)
-- Mock/test service bindings (when needed)
+The `ApiClient` class mimics frontend Vue store behavior:
 
-**Note:** Tests do NOT hit production or dev workers by default.
-
----
-
-## Adding New Tests
-
-### Simple Pattern (Unit Test Style)
 ```typescript
-import { describe, it, expect } from 'vitest'
+import { createApiClient, createAdminClient } from './helpers'
 
-describe('Feature Name', () => {
-  it('should do something specific', () => {
-    expect(actual).toBe(expected)
-  })
+// Public client (no auth)
+const client = createApiClient()
+const response = await client.get('/api/products')
+
+// Admin client (auto-login)
+const admin = await createAdminClient()
+const response = await admin.post('/api/products', productData, { auth: true })
+
+// Manual login
+const client = createApiClient()
+await client.login('user@example.com', 'password')
+```
+
+### Features
+
+- **Auto token refresh** - Mimics `authenticatedFetch()` from Vue store
+- **Response timing** - Tracks request duration
+- **Error handling** - Parses JSON errors consistently
+- **State tracking** - `isAuthenticated`, `isAdmin`, `user`
+
+## ✅ Validators
+
+Response validators ensure API contracts:
+
+```typescript
+import { validateProduct, validateProductList, expectSuccess } from './helpers'
+
+// Validate response
+const response = await client.get('/api/products')
+expectSuccess(response)
+validateProductList(response.data)
+
+// Each product validates against schema
+response.data.items.forEach(product => {
+  validateProduct(product)
 })
 ```
 
-### Worker Test Pattern (Integration Style)
+### Available Validators
+
+- `validateHealthCheck` / `validateSimpleHealth`
+- `validateAuthResponse` / `validateUserProfile`
+- `validateProduct` / `validateProductList` / `validateProductInventory`
+- `validateCategory` / `validateCategoryList`
+- `validateInvoice` / `validateInvoiceList`
+- `validateApiError` / `validate404Error` / `validate401Error`
+
+## 🧪 Test Data Generators
+
+Generate realistic test data:
+
 ```typescript
-import { unstable_dev } from 'wrangler'
-import type { UnstableDevWorker } from 'wrangler'
+import { generateProduct, generateUser, generateCategory } from './helpers'
 
-describe('API Endpoint', () => {
-  let worker: UnstableDevWorker
-
-  beforeAll(async () => {
-    worker = await unstable_dev('src/index.ts', {
-      experimental: { disableExperimentalWarning: true }
-    })
-  })
-
-  afterAll(async () => {
-    await worker.stop()
-  })
-
-  it('should return data', async () => {
-    const response = await worker.fetch('/endpoint')
-    expect(response.status).toBe(200)
-  })
+const product = generateProduct({
+  name: 'Custom Name',  // Override defaults
 })
+
+const user = generateUser()  // Unique email each time
+
+const category = generateCategory()
 ```
 
----
+## 🔒 Security Notes
 
-## Test Coverage Goals
+⚠️ **Never commit credentials to git!**
 
-| Area | Target Coverage |
-|------|----------------|
-| Health checks | 100% |
-| Middleware | 90% |
-| Database utilities | 85% |
-| Orchestration routes | 80% |
-| Error handling | 75% |
+- `.env` file is in `.gitignore`
+- Use dedicated test accounts (not production)
+- Test admin should have limited permissions if possible
+- Rotate test credentials periodically
 
-**Current coverage:** Run `npm run test:coverage` to see.
+## 🐛 Troubleshooting
 
----
+### Tests fail with 401
 
-## Common Issues
+1. Check `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` are correct
+2. Verify user exists in dev D1 database
+3. Ensure user has `role='admin'` and `is_verified=1`
 
-### "Worker failed to start"
-- Check `wrangler.toml` configuration
-- Ensure all dependencies are installed (`npm install`)
-- Try `npm run dev` first to see detailed error
+### Tests fail with network errors
 
-### "Service binding failed"
-- Tests may need mock service bindings
-- Check `vitest.config.ts` for service binding configuration
-- For now, tests use isolated worker (no external services)
+1. Ensure dev worker is deployed: `npm run deploy:dev`
+2. Check `API_GATEWAY_DEV_URL` is correct
+3. Try curl: `curl https://b2b-api-gateway-dev.xxx.workers.dev/health`
 
-### "Rate limit tests slow"
-- Rate limit tests are marked `.skip` by default
-- They send 100+ requests which is slow
-- Enable only for full test runs
+### Invoice tests skip
 
----
+Invoice creation requires:
+1. User has `stripe_customer_id` set
+2. Product has `stripe_price_id` set
+3. Product has available `b2b_stock`
 
-## Next Steps
+### Tests are slow
 
-After these basic tests work, we can add:
-1. **Auth flow tests** (registration, login, token validation)
-2. **Invoice creation E2E tests** (full flow with Stripe sandbox)
-3. **Product management tests** (CRUD operations)
-4. **Service binding tests** (test actual service-to-service calls)
+- Use specific test files instead of all: `npm run test:integration:health`
+- Enable verbose mode to see timing: `npm run test:verbose`
+- Check Cloudflare Worker logs: `wrangler tail --env dev`
 
----
+## 📈 Best Practices
 
-## Questions?
+1. **Run health checks first** - Fast sanity check
+2. **Clean up test data** - Tests delete created resources in `afterAll`
+3. **Use unique identifiers** - `generateTestId()` prevents conflicts
+4. **Check response timing** - `expectFastResponse()` catches slow endpoints
+5. **Validate error responses** - Use `validateApiError()` for consistent errors
 
-Check the main project docs at `/docs/` or the Copilot instructions at `/.github/copilot-instructions.md`
+## 🔄 CI/CD Integration
+
+These tests can run in CI:
+
+```yaml
+# .github/workflows/test.yml
+- name: Run Integration Tests
+  env:
+    TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+    TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+    API_GATEWAY_DEV_URL: ${{ secrets.API_GATEWAY_DEV_URL }}
+  run: |
+    cd workers/api-gateway
+    npm run test:integration
+```
+
+## 📚 Related Documentation
+
+- [API Gateway README](../README.md)
+- [Copilot Instructions](../../../.github/copilot-instructions.md)
+- [D1 Database Migrations](../../../migrations/)

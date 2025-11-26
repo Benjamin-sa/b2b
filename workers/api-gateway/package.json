@@ -12,7 +12,15 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run tests/integration/",
+    "test:integration:health": "vitest run tests/integration/health.test.ts",
+    "test:integration:auth": "vitest run tests/integration/auth.test.ts",
+    "test:integration:products": "vitest run tests/integration/products.test.ts",
+    "test:integration:categories": "vitest run tests/integration/categories.test.ts",
+    "test:integration:invoices": "vitest run tests/integration/invoices.test.ts",
+    "test:integration:admin": "vitest run tests/integration/admin.test.ts",
+    "test:verbose": "TEST_VERBOSE=true vitest run"
   },
   "dependencies": {
     "hono": "^4.6.14",

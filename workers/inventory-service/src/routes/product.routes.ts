@@ -132,12 +132,15 @@ products.get('/category/:categoryId', optionalAuth, async (c) => {
 /**
  * POST /products
  * Create a new product (admin only)
+ * 
+ * NOTE: Stripe product/price creation is handled at the API Gateway orchestration layer.
+ * This endpoint expects stripe_product_id and stripe_price_id to be passed in the request body.
  */
 products.post('/', requireAuth, requireAdmin, async (c) => {
   try {
     const data = await c.req.json();
 
-    const product = await createProduct(c.env.DB, c.env, data);
+    const product = await createProduct(c.env.DB, data);
 
     return c.json(product, 201);
   } catch (error) {
@@ -146,32 +149,18 @@ products.post('/', requireAuth, requireAdmin, async (c) => {
 });
 
 /**
- * PUT /products/:id
- * Update a product (admin only)
- */
-products.put('/:id', requireAuth, requireAdmin, async (c) => {
-  try {
-    const productId = c.req.param('id');
-    const data = await c.req.json();
-
-    const product = await updateProduct(c.env.DB, c.env, productId, data);
-
-    return c.json(product);
-  } catch (error) {
-    throw error;
-  }
-});
-
-/**
  * PATCH /products/:id
  * Partially update a product (admin only)
+ * 
+ * NOTE: Stripe updates are handled at the API Gateway orchestration layer.
+ * If a price change requires a new stripe_price_id, it will be passed in the request body.
  */
 products.patch('/:id', requireAuth, requireAdmin, async (c) => {
   try {
     const productId = c.req.param('id');
     const data = await c.req.json();
 
-    const product = await updateProduct(c.env.DB, c.env, productId, data);
+    const product = await updateProduct(c.env.DB, productId, data);
 
     return c.json(product);
   } catch (error) {
@@ -182,12 +171,15 @@ products.patch('/:id', requireAuth, requireAdmin, async (c) => {
 /**
  * DELETE /products/:id
  * Delete a product (admin only)
+ * 
+ * NOTE: Stripe archival is handled at the API Gateway orchestration layer.
+ * This endpoint only handles D1 database deletion.
  */
 products.delete('/:id', requireAuth, requireAdmin, async (c) => {
   try {
     const productId = c.req.param('id');
 
-    await deleteProduct(c.env.DB, c.env, productId);
+    await deleteProduct(c.env.DB, productId);
 
     return c.json({ message: 'Product deleted successfully' });
   } catch (error) {
@@ -199,6 +191,14 @@ products.delete('/:id', requireAuth, requireAdmin, async (c) => {
  * POST /inventory/:id/stock
  * Update product inventory (B2B/B2C stock allocation) - admin only
  * This is the new endpoint for managing stock in the product_inventory table
+ * 
+ * Request body:
+ * - totalStock: Total available stock
+ * - b2bStock: Stock allocated to B2B (ignored if sharedStockMode=true)
+ * - b2cStock: Stock allocated to B2C/Shopify (ignored if sharedStockMode=true)
+ * - sharedStockMode: If true, both channels share the same stock pool (total_stock)
+ * - shopifyInventoryItemId: Optional Shopify inventory item ID for sync
+ * - syncEnabled: Optional flag to enable/disable Shopify sync
  */
 products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
   try {

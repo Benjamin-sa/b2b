@@ -1,0 +1,283 @@
+/**
+ * Integration Tests - Admin Operations
+ *
+ * Tests admin user management endpoints against the real dev worker.
+ *
+ * Run: npm test integration/admin
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import {
+  createApiClient,
+  createAdminClient,
+  ApiClient,
+  validateAdminUserList,
+  validateUserProfile,
+  expectSuccess,
+  expectStatus,
+  expectClientError,
+  expectFastResponse,
+} from '../helpers'
+
+describe('Integration: Admin Operations', () => {
+  let publicClient: ApiClient
+  let adminClient: ApiClient
+
+  beforeAll(async () => {
+    publicClient = createApiClient({ verbose: true })
+
+    try {
+      adminClient = await createAdminClient({ verbose: true })
+      console.log(`[TEST] Admin authenticated as: ${adminClient.user?.email}`)
+    } catch (error) {
+      console.error('[TEST] Failed to create admin client:', error)
+      throw error
+    }
+
+    console.log(`[TEST] Testing against: ${publicClient.url}`)
+  }, 30000)
+
+  afterAll(async () => {
+    if (adminClient?.isAuthenticated) {
+      await adminClient.logout()
+    }
+  })
+
+  describe('GET /admin/users - List Users (Admin Only)', () => {
+    it('should reject request without authentication', async () => {
+      const response = await publicClient.get('/admin/users')
+
+      expectClientError(response, 401)
+    })
+
+    it('should list users for admin', async () => {
+      const response = await adminClient.get('/admin/users', { auth: true })
+
+      expectSuccess(response)
+      expectStatus(response, 200)
+      expectFastResponse(response.timing, 5000)
+
+      validateAdminUserList(response.data)
+
+      console.log(`[TEST] Listed ${response.data.users.length} users (total: ${response.data.total})`)
+    })
+
+    it('should support pagination', async () => {
+      const response = await adminClient.get('/admin/users', {
+        auth: true,
+        params: { limit: '5', offset: '0' },
+      })
+
+      expectSuccess(response)
+      expect(response.data.users.length).toBeLessThanOrEqual(5)
+    })
+
+    it('should support search', async () => {
+      const adminEmail = adminClient.user?.email
+
+      if (adminEmail) {
+        const searchTerm = adminEmail.split('@')[0]
+
+        const response = await adminClient.get('/admin/users', {
+          auth: true,
+          params: { search: searchTerm },
+        })
+
+        expectSuccess(response)
+
+        // Should find the admin user
+        const foundAdmin = response.data.users.some(
+          (user: any) => user.email === adminEmail
+        )
+        expect(foundAdmin).toBe(true)
+      }
+    })
+  })
+
+  describe('GET /admin/users/:userId - Get User Details (Admin Only)', () => {
+    it('should reject request without authentication', async () => {
+      const response = await publicClient.get('/admin/users/some-user-id')
+
+      expectClientError(response, 401)
+    })
+
+    it('should return user details for admin', async () => {
+      // Get user list first
+      const listResponse = await adminClient.get('/admin/users', { auth: true })
+      expectSuccess(listResponse)
+
+      if (listResponse.data.users.length > 0) {
+        const userId = listResponse.data.users[0].id
+
+        const response = await adminClient.get(`/admin/users/${userId}`, { auth: true })
+
+        expectSuccess(response)
+        expect(response.data).toHaveProperty('id', userId)
+        expect(response.data).toHaveProperty('email')
+        expect(response.data).toHaveProperty('role')
+
+        console.log(`[TEST] Fetched user details: ${response.data.email}`)
+      }
+    })
+
+    it('should return 404 for non-existent user', async () => {
+      const response = await adminClient.get('/admin/users/nonexistent-user-xyz', { auth: true })
+
+      expectStatus(response, 404)
+    })
+  })
+
+  describe('PUT /admin/users/:userId - Update User (Admin Only)', () => {
+    it('should reject update without authentication', async () => {
+      const response = await publicClient.put('/admin/users/some-user-id', {
+        first_name: 'Updated',
+      })
+
+      expectClientError(response, 401)
+    })
+
+    it('should update user details', async () => {
+      // Get a non-admin user to update
+      const listResponse = await adminClient.get('/admin/users', { auth: true })
+      expectSuccess(listResponse)
+
+      const nonAdminUser = listResponse.data.users.find(
+        (user: any) => user.role !== 'admin'
+      )
+
+      if (nonAdminUser) {
+        const newFirstName = `Test_${Date.now()}`
+
+        const response = await adminClient.put(
+          `/admin/users/${nonAdminUser.id}`,
+          { first_name: newFirstName },
+          { auth: true }
+        )
+
+        expectSuccess(response)
+
+        console.log(`[TEST] ✅ Updated user: ${nonAdminUser.email}`)
+      } else {
+        console.log('[SKIP] No non-admin user available for update test')
+      }
+    })
+  })
+
+  describe('POST /admin/users/:userId/verify - Verify User (Admin Only)', () => {
+    it('should reject verification without authentication', async () => {
+      const response = await publicClient.post('/admin/users/some-user-id/verify', {})
+
+      expectClientError(response, 401)
+    })
+
+    it('should verify an unverified user', async () => {
+      // Find an unverified user
+      const listResponse = await adminClient.get('/admin/users', { auth: true })
+      expectSuccess(listResponse)
+
+      const unverifiedUser = listResponse.data.users.find(
+        (user: any) => user.is_verified === 0 || user.is_verified === false
+      )
+
+      if (unverifiedUser) {
+        const response = await adminClient.post(
+          `/admin/users/${unverifiedUser.id}/verify`,
+          {},
+          { auth: true }
+        )
+
+        expectSuccess(response)
+
+        expect(response.data).toHaveProperty('message')
+        expect(response.data).toHaveProperty('user')
+        expect(response.data.user.is_verified).toBe(1)
+
+        console.log(`[TEST] ✅ Verified user: ${unverifiedUser.email}`)
+
+        // Note: This sends a verification email, which is OK in dev
+      } else {
+        console.log('[SKIP] No unverified user available for verification test')
+      }
+    })
+  })
+
+  describe('DELETE /admin/users/:userId - Deactivate User (Admin Only)', () => {
+    it('should reject deactivation without authentication', async () => {
+      const response = await publicClient.delete('/admin/users/some-user-id')
+
+      expectClientError(response, 401)
+    })
+
+    // Note: Deactivating real users is risky in dev, so we skip creating test users
+    // In a real test setup, you'd want a test user specifically for this
+    it('should return error for non-existent user', async () => {
+      const response = await adminClient.delete('/admin/users/nonexistent-user-xyz', {
+        auth: true,
+      })
+
+      expectStatus(response, 404)
+    })
+  })
+
+  describe('POST /admin/users/:userId/reset-password - Admin Password Reset (Admin Only)', () => {
+    it('should reject reset without authentication', async () => {
+      const response = await publicClient.post('/admin/users/some-user-id/reset-password', {
+        newPassword: 'NewPassword123!',
+      })
+
+      expectClientError(response, 401)
+    })
+
+    // Note: Resetting passwords is risky, so we only test the auth check
+  })
+
+  describe('GET /admin/invoices - List All Invoices (Admin Only)', () => {
+    it('should reject request without authentication', async () => {
+      const response = await publicClient.get('/admin/invoices')
+
+      expectClientError(response, 401)
+    })
+
+    it('should list all invoices for admin', async () => {
+      const response = await adminClient.get('/admin/invoices', { auth: true })
+
+      expectSuccess(response)
+      expect(response.data).toHaveProperty('invoices')
+      expect(Array.isArray(response.data.invoices)).toBe(true)
+
+      console.log(`[TEST] Listed ${response.data.invoices.length} invoices`)
+    })
+
+    it('should support pagination', async () => {
+      const response = await adminClient.get('/admin/invoices', {
+        auth: true,
+        params: { limit: '10', offset: '0' },
+      })
+
+      expectSuccess(response)
+      expect(response.data.invoices.length).toBeLessThanOrEqual(10)
+    })
+
+    it('should support filtering by user', async () => {
+      // Get a user ID from invoices
+      const listResponse = await adminClient.get('/admin/invoices', { auth: true })
+      expectSuccess(listResponse)
+
+      if (listResponse.data.invoices.length > 0) {
+        const userId = listResponse.data.invoices[0].user_id
+
+        const response = await adminClient.get('/admin/invoices', {
+          auth: true,
+          params: { userId },
+        })
+
+        expectSuccess(response)
+
+        // All invoices should belong to the filtered user
+        response.data.invoices.forEach((invoice: any) => {
+          expect(invoice.user_id).toBe(userId)
+        })
+      }
+    })
+  })
+})
