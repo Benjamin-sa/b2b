@@ -22,13 +22,14 @@ import {
   fetchUserInvoices,
   type OrderItem
 } from '../utils/database';
+import { syncProductsToShopify } from '../utils/shopify-sync';
 
 const invoices = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
 /**
  * Create invoice via STRIPE_SERVICE
  * 
- * Request body matches Firebase Functions createInvoice:
+ * Request body matches createInvoice:
  * {
  *   items: Array<{
  *     stripePriceId: string,
@@ -181,6 +182,19 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     } catch (dbError) {
       // Log error but don't fail the request - invoice is created in Stripe
       console.error('⚠️  Failed to store order/line items in D1 (non-critical):', dbError);
+    }
+
+    // 7. Sync inventory to Shopify (blocking to prevent overselling)
+    const productIds = body.items.map(item => item.metadata.productId);
+    console.log(`🔄 [Gateway] Syncing ${productIds.length} products to Shopify after invoice creation`);
+    
+    const syncResults = await syncProductsToShopify(c.env, productIds);
+    const failedSyncs = syncResults.filter(r => !r.success);
+    
+    if (failedSyncs.length > 0) {
+      console.warn(`⚠️  [Gateway] ${failedSyncs.length} products failed to sync to Shopify:`, failedSyncs.map(r => r.productId));
+    } else {
+      console.log(`✅ [Gateway] All ${productIds.length} products synced to Shopify`);
     }
 
     // 8. Send Telegram notification (NON-BLOCKING)

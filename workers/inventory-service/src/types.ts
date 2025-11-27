@@ -36,6 +36,13 @@ export interface Env {
 }
 
 // ============================================================================
+// STOCK MODE TYPE
+// ============================================================================
+
+// Stock mode: 'split' = separate B2B/B2C allocations, 'unified' = shared stock pool
+export type StockMode = 'split' | 'unified';
+
+// ============================================================================
 // PRODUCT TYPES
 // ============================================================================
 
@@ -52,6 +59,8 @@ export interface ProductInventory {
   sync_enabled: number; // SQLite boolean (0 or 1)
   last_synced_at: string | null;
   sync_error: string | null;
+  // Stock mode: 'split' (default) = separate B2B/B2C allocations, 'unified' = shared stock pool
+  stock_mode: StockMode;
   created_at: string;
   updated_at: string;
 }
@@ -183,10 +192,12 @@ export interface CreateProductRequest {
   shopify_inventory_item_id?: string; // ✅ REQUIRED for Shopify inventory sync
   stripe_product_id?: string;
   stripe_price_id?: string;
-  // ✅ NEW: Stock allocation fields (sent from ProductForm)
+  // ✅ Stock allocation fields (sent from ProductForm)
   total_stock?: number;  // Total inventory available
   b2b_stock?: number;    // Stock allocated to B2B platform
   b2c_stock?: number;    // Stock allocated to B2C (Shopify)
+  // ✅ Stock mode: 'split' (default) or 'unified' (shared stock pool)
+  stock_mode?: StockMode;
   images?: string[];
   specifications?: { key: string; value: string }[];
   tags?: string[];

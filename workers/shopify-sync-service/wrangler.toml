@@ -39,13 +39,6 @@ SHOPIFY_STORE_DOMAIN = "motordashbnl.myshopify.com"
 SHOPIFY_API_VERSION = "2025-10"
 
 # ============================================
-# CRON TRIGGERS
-# ============================================
-# Full reconciliation every 5 minutes
-[triggers]
-crons = ["*/10 * * * *"]
-
-# ============================================
 # SECRETS (set via: wrangler secret put SECRET_NAME)
 # ============================================
 # SHOPIFY_ACCESS_TOKEN - Admin API access token

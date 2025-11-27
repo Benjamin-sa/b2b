@@ -1,3 +1,6 @@
+// Stock mode: 'split' = separate B2B/B2C allocations, 'unified' = shared stock pool
+export type StockMode = 'split' | 'unified';
+
 // Product Inventory data (from product_inventory table)
 export interface ProductInventory {
   product_id: string;
@@ -9,6 +12,8 @@ export interface ProductInventory {
   shopify_inventory_item_id: string | null;
   sync_enabled: number;
   last_synced_at: string | null;
+  // Stock mode: 'split' (default) = separate B2B/B2C allocations, 'unified' = shared stock pool
+  stock_mode: StockMode;
 }
 
 
@@ -107,6 +112,8 @@ export interface ProductInventory {
   shopify_inventory_item_id: string | null;
   sync_enabled: number;
   last_synced_at: string | null;
+  // Stock mode: 'split' (default) = separate B2B/B2C allocations, 'unified' = shared stock pool
+  stock_mode: StockMode;
 }
 
 export interface ProductWithInventory {
@@ -122,4 +129,6 @@ export interface StockUpdate {
   b2bStock: number;
   b2cStock: number;
   shopifyInventoryItemId?: string | null;
+  // Stock mode: 'split' (default) or 'unified' (shared stock pool)
+  stockMode?: StockMode;
 }

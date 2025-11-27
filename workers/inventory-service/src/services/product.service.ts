@@ -266,10 +266,24 @@ export async function createProduct(
     data.shopify_inventory_item_id
   );
 
+  // Determine stock mode (default to 'split')
+  const stockMode = data.stock_mode || 'split';
+
   // Extract stock values from request (sent from ProductForm)
   const totalStock = data.total_stock ?? 0;
-  const b2bStock = data.b2b_stock ?? 0;
-  const b2cStock = data.b2c_stock ?? 0;
+  
+  // In unified mode: b2b_stock = total_stock, b2c_stock = 0 (Shopify syncs total_stock directly)
+  // In split mode: use provided values
+  let b2bStock: number;
+  let b2cStock: number;
+  
+  if (stockMode === 'unified') {
+    b2bStock = totalStock;
+    b2cStock = 0;
+  } else {
+    b2bStock = data.b2b_stock ?? 0;
+    b2cStock = data.b2c_stock ?? 0;
+  }
 
   statements.push(
     db
@@ -277,8 +291,8 @@ export async function createProduct(
         `INSERT INTO product_inventory (
         product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
         total_stock, b2b_stock, b2c_stock, reserved_stock,
-        sync_enabled, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        stock_mode, sync_enabled, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         productId,
@@ -289,6 +303,7 @@ export async function createProduct(
         b2bStock,
         b2cStock,
         0, // reserved_stock starts at 0
+        stockMode,
         hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
         now,
         now
@@ -424,13 +439,25 @@ export async function updateProduct(
   // ============================================================================
   // UPDATE PRODUCT_INVENTORY TABLE (Shopify fields + Stock allocation)
   // ============================================================================
+  
+  // Determine stock mode - use provided value or keep existing
+  const stockMode = data.stock_mode;
+  
+  // Build inventory updates
   const inventoryUpdates = buildFieldUpdates({
     shopify_product_id: data.shopify_product_id,
     shopify_variant_id: data.shopify_variant_id,
     shopify_inventory_item_id: data.shopify_inventory_item_id,
     total_stock: data.total_stock,
-    b2b_stock: data.b2b_stock,
-    b2c_stock: data.b2c_stock,
+    // In unified mode: b2b_stock = total_stock, b2c_stock = 0
+    // In split mode: use provided values
+    b2b_stock: stockMode === 'unified' && data.total_stock !== undefined 
+      ? data.total_stock 
+      : data.b2b_stock,
+    b2c_stock: stockMode === 'unified' 
+      ? 0 
+      : data.b2c_stock,
+    stock_mode: stockMode,
     updated_at: now,
   });
 
@@ -464,8 +491,19 @@ export async function updateProduct(
     // ✅ ALWAYS create inventory record if missing with stock allocation
     // This handles legacy products that don't have inventory records yet
     const totalStock = data.total_stock ?? 0;
-    const b2bStock = data.b2b_stock ?? 0;
-    const b2cStock = data.b2c_stock ?? 0;
+    const newStockMode = stockMode || 'split';
+    
+    // In unified mode: b2b_stock = total_stock, b2c_stock = 0
+    let b2bStock: number;
+    let b2cStock: number;
+    
+    if (newStockMode === 'unified') {
+      b2bStock = totalStock;
+      b2cStock = 0;
+    } else {
+      b2bStock = data.b2b_stock ?? 0;
+      b2cStock = data.b2c_stock ?? 0;
+    }
     
     statements.push(
       db
@@ -473,8 +511,8 @@ export async function updateProduct(
           `INSERT INTO product_inventory (
             product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
             total_stock, b2b_stock, b2c_stock, reserved_stock,
-            sync_enabled, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            stock_mode, sync_enabled, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .bind(
           productId,
@@ -485,6 +523,7 @@ export async function updateProduct(
           b2bStock,
           b2cStock,
           0, // reserved_stock starts at 0
+          newStockMode,
           hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
           now,
           now

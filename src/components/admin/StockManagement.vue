@@ -26,7 +26,7 @@
     </div>
 
     <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-6 bg-gray-50 rounded-lg">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 p-6 bg-gray-50 rounded-lg">
       <div class="flex flex-col gap-2">
         <label class="text-sm font-medium text-gray-600">Search</label>
         <input
@@ -61,6 +61,18 @@
           <option value="not-synced">Not Synced</option>
         </select>
       </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-gray-600">Stock Mode</label>
+        <select 
+          v-model="stockModeFilter" 
+          class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+        >
+          <option value="all">All Modes</option>
+          <option value="split">Split (B2B/B2C)</option>
+          <option value="unified">Unified (Shared)</option>
+        </select>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -89,6 +101,9 @@
           <tr>
             <th class="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Product
+            </th>
+            <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Stock Mode
             </th>
             <th class="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Total Stock
@@ -132,6 +147,28 @@
               </div>
             </td>
 
+            <!-- Stock Mode -->
+            <td class="px-4 py-4 text-center">
+              <span 
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+                :class="{
+                  'bg-purple-100 text-purple-800': getStockMode(product) === 'unified',
+                  'bg-gray-100 text-gray-700': getStockMode(product) === 'split'
+                }"
+              >
+                <svg v-if="getStockMode(product) === 'unified'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="12" y1="3" x2="12" y2="21"/>
+                </svg>
+                {{ getStockMode(product) === 'unified' ? 'Unified' : 'Split' }}
+              </span>
+            </td>
+
             <!-- Total Stock -->
             <td class="px-4 py-4 text-center">
               <span 
@@ -148,12 +185,23 @@
 
             <!-- B2B Stock -->
             <td class="px-4 py-4 text-center">
-              <span class="font-medium text-gray-700">{{ product.inventory?.b2b_stock || 0 }}</span>
+              <span 
+                class="font-medium"
+                :class="getStockMode(product) === 'unified' ? 'text-purple-600' : 'text-gray-700'"
+              >
+                {{ product.inventory?.b2b_stock || 0 }}
+                <span v-if="getStockMode(product) === 'unified'" class="text-xs text-purple-500">(shared)</span>
+              </span>
             </td>
 
             <!-- B2C Stock -->
             <td class="px-4 py-4 text-center">
-              <span class="font-medium text-gray-700">{{ product.inventory?.b2c_stock || 0 }}</span>
+              <span 
+                class="font-medium"
+                :class="getStockMode(product) === 'unified' ? 'text-gray-400' : 'text-gray-700'"
+              >
+                {{ getStockMode(product) === 'unified' ? '—' : (product.inventory?.b2c_stock || 0) }}
+              </span>
             </td>
 
             <!-- Shopify Sync Status -->
@@ -242,9 +290,87 @@
 
           <!-- Update Form -->
           <form @submit.prevent="updateStock" class="flex flex-col gap-4">
+            <!-- Stock Mode Toggle -->
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-700">Stock Mode</label>
+              <div class="flex gap-4">
+                <label 
+                  class="flex-1 relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all"
+                  :class="stockUpdate.stockMode === 'split' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
+                >
+                  <input 
+                    type="radio" 
+                    v-model="stockUpdate.stockMode" 
+                    value="split" 
+                    class="sr-only"
+                  />
+                  <div class="flex flex-col gap-1">
+                    <span class="font-medium text-gray-900 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="12" y1="3" x2="12" y2="21"/>
+                      </svg>
+                      Split Stock
+                    </span>
+                    <span class="text-xs text-gray-500">Separate B2B and Shopify allocations</span>
+                  </div>
+                  <div v-if="stockUpdate.stockMode === 'split'" class="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                </label>
+
+                <label 
+                  class="flex-1 relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all"
+                  :class="stockUpdate.stockMode === 'unified' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
+                >
+                  <input 
+                    type="radio" 
+                    v-model="stockUpdate.stockMode" 
+                    value="unified" 
+                    class="sr-only"
+                  />
+                  <div class="flex flex-col gap-1">
+                    <span class="font-medium text-gray-900 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                      </svg>
+                      Unified Stock
+                    </span>
+                    <span class="text-xs text-gray-500">B2B and Shopify share the same pool</span>
+                  </div>
+                  <div v-if="stockUpdate.stockMode === 'unified'" class="absolute top-2 right-2 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Mode description -->
+              <div 
+                class="mt-2 p-3 rounded-lg text-sm"
+                :class="stockUpdate.stockMode === 'unified' ? 'bg-purple-50 text-purple-800' : 'bg-blue-50 text-blue-800'"
+              >
+                <template v-if="stockUpdate.stockMode === 'unified'">
+                  <strong>Unified Mode:</strong> Both B2B platform and Shopify sell from the same stock pool. 
+                  Any sale on either platform will decrement the total available stock.
+                </template>
+                <template v-else>
+                  <strong>Split Mode:</strong> B2B and Shopify have separate stock allocations. 
+                  You control how much stock each channel can sell.
+                </template>
+              </div>
+            </div>
+
             <!-- Total Stock -->
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">Total Stock</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ stockUpdate.stockMode === 'unified' ? 'Available Stock (Shared Pool)' : 'Total Stock' }}
+              </label>
               <input
                 v-model.number="stockUpdate.totalStock"
                 type="number"
@@ -252,33 +378,44 @@
                 class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
                 required
               />
+              <p v-if="stockUpdate.stockMode === 'unified'" class="text-xs text-gray-500">
+                This stock is available to both B2B customers and Shopify customers
+              </p>
             </div>
 
-            <!-- B2B Stock -->
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">B2B Stock (Available for B2B Platform)</label>
-              <input
-                v-model.number="stockUpdate.b2bStock"
-                type="number"
-                min="0"
-                :max="stockUpdate.totalStock"
-                class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
-                required
-              />
-            </div>
+            <!-- B2B/B2C Stock (Split Mode Only) -->
+            <template v-if="stockUpdate.stockMode === 'split'">
+              <!-- B2B Stock -->
+              <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium text-gray-700">B2B Stock (Available for B2B Platform)</label>
+                <input
+                  v-model.number="stockUpdate.b2bStock"
+                  type="number"
+                  min="0"
+                  :max="stockUpdate.totalStock"
+                  class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+                  required
+                />
+              </div>
 
-            <!-- B2C Stock -->
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-gray-700">B2C Stock (Allocated to Shopify)</label>
-              <input
-                v-model.number="stockUpdate.b2cStock"
-                type="number"
-                min="0"
-                :max="stockUpdate.totalStock"
-                class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
-                required
-              />
-            </div>
+              <!-- B2C Stock -->
+              <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium text-gray-700">B2C Stock (Allocated to Shopify)</label>
+                <input
+                  v-model.number="stockUpdate.b2cStock"
+                  type="number"
+                  min="0"
+                  :max="stockUpdate.totalStock"
+                  class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+                  required
+                />
+              </div>
+
+              <!-- Unallocated Stock Info -->
+              <div v-if="unallocatedStock > 0" class="p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
+                <strong>{{ unallocatedStock }}</strong> units are unallocated (reserve stock)
+              </div>
+            </template>
 
             <!-- Validation Error -->
             <div v-if="validationError" class="px-3 py-3 bg-red-100 text-red-800 rounded-md text-sm">
@@ -309,7 +446,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
-import type { ProductWithInventory, StockUpdate } from '../../types';
+import type { ProductWithInventory, StockUpdate, StockMode } from '../../types';
 
 const authStore = useAuthStore();
 
@@ -323,6 +460,7 @@ const error = ref<string | null>(null);
 const searchTerm = ref('');
 const stockFilter = ref('all');
 const syncFilter = ref('all');
+const stockModeFilter = ref('all');
 const editingProduct = ref<ProductWithInventory | null>(null);
 const submitting = ref(false);
 const stockUpdate = ref<StockUpdate>({
@@ -330,6 +468,7 @@ const stockUpdate = ref<StockUpdate>({
   b2bStock: 0,
   b2cStock: 0,
   shopifyInventoryItemId: null,
+  stockMode: 'split',
 });
 
 // Computed
@@ -366,10 +505,23 @@ const filteredProducts = computed(() => {
     });
   }
 
+  // Stock mode filter
+  if (stockModeFilter.value !== 'all') {
+    filtered = filtered.filter((p) => {
+      const mode = getStockMode(p);
+      return mode === stockModeFilter.value;
+    });
+  }
+
   return filtered;
 });
 
 const reallocationError = computed(() => {
+  // Only validate in split mode
+  if (stockUpdate.value.stockMode === 'unified') {
+    return null;
+  }
+  
   const total = stockUpdate.value.totalStock;
   const sum = stockUpdate.value.b2bStock + stockUpdate.value.b2cStock;
   
@@ -384,11 +536,20 @@ const validationError = computed(() => {
   return reallocationError.value;
 });
 
+const unallocatedStock = computed(() => {
+  if (stockUpdate.value.stockMode === 'unified') return 0;
+  return stockUpdate.value.totalStock - stockUpdate.value.b2bStock - stockUpdate.value.b2cStock;
+});
+
 // Methods
 const getStockClass = (stock: number): string => {
   if (stock === 0) return 'out-of-stock';
   if (stock <= 5) return 'low-stock';
   return 'in-stock';
+};
+
+const getStockMode = (product: ProductWithInventory): StockMode => {
+  return (product.inventory?.stock_mode as StockMode) || 'split';
 };
 
 const refreshData = async () => {
@@ -413,11 +574,14 @@ const refreshData = async () => {
 
 const openEditModal = (product: ProductWithInventory) => {
   editingProduct.value = product;
+  const currentMode = getStockMode(product);
+  
   stockUpdate.value = {
     totalStock: product.inventory?.total_stock || 0,
     b2bStock: product.inventory?.b2b_stock || 0,
     b2cStock: product.inventory?.b2c_stock || 0,
-    shopifyInventoryItemId: product.inventory?.shopify_inventory_item_id || null
+    shopifyInventoryItemId: product.inventory?.shopify_inventory_item_id || null,
+    stockMode: currentMode,
   };
 };
 
@@ -427,7 +591,8 @@ const closeEditModal = () => {
     totalStock: 0,
     b2bStock: 0,
     b2cStock: 0,
-    shopifyInventoryItemId: null
+    shopifyInventoryItemId: null,
+    stockMode: 'split',
   };
 };
 

@@ -18,6 +18,7 @@ import {
   replaceStripePrice,
   archiveStripeProduct,
 } from "../utils/stripe";
+import { syncToShopify } from "../utils/shopify-sync";
 
 const products = new Hono<{ Bindings: Env }>();
 
@@ -191,7 +192,7 @@ products.post("/", async (c) => {
     }
 
     // Step 2: Create product in D1 via inventory-service
-    const headers = new Headers();
+    const headers = new Headers(c.req.raw.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Service-Token", c.env.SERVICE_SECRET);
 
@@ -211,20 +212,10 @@ products.post("/", async (c) => {
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
 
-    // Step 3: Trigger Shopify sync (non-blocking, errors don't fail the request)
-    try {
-      const syncRequest = new Request(`http://shopify-sync/sync/all`, {
-        method: "POST",
-        headers: {
-          "X-Service-Token": c.env.SERVICE_SECRET,
-        },
-      });
-      await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
-    } catch (syncError: any) {
-      console.error(
-        "[Products Orchestration] Shopify sync failed after product creation:",
-        syncError
-      );
+    // Only trigger Shopify sync if inventory-service succeeded
+    if (response.ok) {
+      // Step 3: Trigger Shopify sync (blocking to prevent overselling)
+      await syncToShopify(c.env, productId);
     }
 
     return response;
@@ -319,7 +310,7 @@ products.patch("/:id", async (c) => {
     }
 
     // Step 4: Update product in D1 via inventory-service
-    const headers = new Headers();
+    const headers = new Headers(c.req.raw.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Service-Token", c.env.SERVICE_SECRET);
 
@@ -340,21 +331,10 @@ products.patch("/:id", async (c) => {
 
     const response = await c.env.INVENTORY_SERVICE.fetch(request);
 
-    // Step 5: Trigger Shopify sync (non-blocking)
-    try {
-      const syncHeaders = new Headers();
-      syncHeaders.set("X-Service-Token", c.env.SERVICE_SECRET);
-
-      const syncRequest = new Request(`http://shopify-sync/sync/${productId}`, {
-        method: "POST",
-        headers: syncHeaders,
-      });
-      await c.env.SHOPIFY_SYNC_SERVICE.fetch(syncRequest);
-    } catch (syncError: any) {
-      console.error(
-        "[Products Orchestration] Shopify sync failed after product patch:",
-        syncError
-      );
+    // Only trigger Shopify sync if inventory-service succeeded
+    if (response.ok) {
+      // Step 5: Trigger Shopify sync (blocking to prevent overselling)
+      await syncToShopify(c.env, productId);
     }
 
     return response;
@@ -404,7 +384,7 @@ products.delete("/:id", async (c) => {
     }
 
     // Step 3: Delete product from D1 via inventory-service
-    const headers = new Headers();
+    const headers = new Headers(c.req.raw.headers);
     headers.set("X-Service-Token", c.env.SERVICE_SECRET);
 
     const request = new Request(

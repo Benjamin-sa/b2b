@@ -194,37 +194,69 @@ products.delete('/:id', requireAuth, requireAdmin, async (c) => {
  * 
  * Request body:
  * - totalStock: Total available stock
- * - b2bStock: Stock allocated to B2B (ignored if sharedStockMode=true)
- * - b2cStock: Stock allocated to B2C/Shopify (ignored if sharedStockMode=true)
- * - sharedStockMode: If true, both channels share the same stock pool (total_stock)
+ * - b2bStock: Stock allocated to B2B (ignored if stockMode='unified')
+ * - b2cStock: Stock allocated to B2C/Shopify (ignored if stockMode='unified')
+ * - stockMode: 'split' (default) or 'unified' (shared stock pool)
  * - shopifyInventoryItemId: Optional Shopify inventory item ID for sync
  * - syncEnabled: Optional flag to enable/disable Shopify sync
+ * 
+ * When stockMode='unified':
+ * - Both B2B and Shopify share the same stock pool (total_stock)
+ * - b2b_stock and b2c_stock are set equal to total_stock for compatibility
+ * - Any sale on either platform decrements total_stock
+ * - Shopify sync will send total_stock instead of b2c_stock
  */
 products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
   try {
     const productId = c.req.param('id');
-    const { totalStock, b2bStock, b2cStock, shopifyInventoryItemId } = await c.req.json<{
+    const { totalStock, b2bStock, b2cStock, shopifyInventoryItemId, stockMode } = await c.req.json<{
       totalStock: number;
       b2bStock: number;
       b2cStock: number;
       shopifyInventoryItemId?: string | null;
+      stockMode?: 'split' | 'unified';
       notes?: string;
     }>();
 
-    console.log(`🛠️ Admin updating stock for product ${productId}: Total=${totalStock}, B2B=${b2bStock}, B2C=${b2cStock}, ShopifyInventoryItemID=${shopifyInventoryItemId}`);
+    // Determine stock mode (default to 'split' for backwards compatibility)
+    const mode = stockMode || 'split';
+    
+    // Calculate actual stock values based on mode
+    let actualB2BStock: number;
+    let actualB2CStock: number;
+    
+    if (mode === 'unified') {
+      // Unified mode: both channels share total_stock
+      // Set b2b_stock = total_stock for B2B availability checks
+      // Set b2c_stock = 0 (Shopify sync will use total_stock directly)
+      actualB2BStock = totalStock;
+      actualB2CStock = 0;
+      console.log(`🔗 Unified stock mode for product ${productId}: Total=${totalStock} (shared pool)`);
+    } else {
+      // Split mode: separate allocations (current behavior)
+      actualB2BStock = b2bStock;
+      actualB2CStock = b2cStock;
+      console.log(`📊 Split stock mode for product ${productId}: Total=${totalStock}, B2B=${b2bStock}, B2C=${b2cStock}`);
+    }
+
+    console.log(`🛠️ Admin updating stock for product ${productId}: Mode=${mode}, Total=${totalStock}, B2B=${actualB2BStock}, B2C=${actualB2CStock}, ShopifyInventoryItemID=${shopifyInventoryItemId}`);
 
     // Validation
     if (typeof totalStock !== 'number' || totalStock < 0) {
       throw errors.validationError('Total stock must be a non-negative number');
     }
-    if (typeof b2bStock !== 'number' || b2bStock < 0) {
-      throw errors.validationError('B2B stock must be a non-negative number');
-    }
-    if (typeof b2cStock !== 'number' || b2cStock < 0) {
-      throw errors.validationError('B2C stock must be a non-negative number');
-    }
-    if (b2bStock + b2cStock > totalStock) {
-      throw errors.validationError('B2B + B2C stock cannot exceed total stock');
+    
+    // Only validate B2B/B2C allocation in split mode
+    if (mode === 'split') {
+      if (typeof b2bStock !== 'number' || b2bStock < 0) {
+        throw errors.validationError('B2B stock must be a non-negative number');
+      }
+      if (typeof b2cStock !== 'number' || b2cStock < 0) {
+        throw errors.validationError('B2C stock must be a non-negative number');
+      }
+      if (b2bStock + b2cStock > totalStock) {
+        throw errors.validationError('B2B + B2C stock cannot exceed total stock');
+      }
     }
 
     // Check if product exists
@@ -252,10 +284,11 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
           total_stock = ?,
           b2b_stock = ?,
           b2c_stock = ?,
+          stock_mode = ?,
           shopify_inventory_item_id = ?,
           updated_at = ?
         WHERE product_id = ?
-      `).bind(totalStock, b2bStock, b2cStock, shopifyInventoryItemId || null, now, productId).run();
+      `).bind(totalStock, actualB2BStock, actualB2CStock, mode, shopifyInventoryItemId || null, now, productId).run();
 
       // Log the change
       await c.env.DB.prepare(`
@@ -269,11 +302,11 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
         crypto.randomUUID(),
         productId,
         totalStock - (existingInventory.total_stock as number),
-        b2bStock - (existingInventory.b2b_stock as number),
-        b2cStock - (existingInventory.b2c_stock as number),
+        actualB2BStock - (existingInventory.b2b_stock as number),
+        actualB2CStock - (existingInventory.b2c_stock as number),
         totalStock,
-        b2bStock,
-        b2cStock,
+        actualB2BStock,
+        actualB2CStock,
         now
       ).run();
 
@@ -307,9 +340,9 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
       await c.env.DB.prepare(`
         INSERT INTO product_inventory (
           product_id, total_stock, b2b_stock, b2c_stock, reserved_stock,
-          shopify_inventory_item_id, sync_enabled, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 0, ?, 0, ?, ?)
-      `).bind(productId, totalStock, b2bStock, b2cStock, shopifyInventoryItemId || null, now, now).run();
+          stock_mode, shopify_inventory_item_id, sync_enabled, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 0, ?, ?, 0, ?, ?)
+      `).bind(productId, totalStock, actualB2BStock, actualB2CStock, mode, shopifyInventoryItemId || null, now, now).run();
 
       // Log the initial stock creation
       await c.env.DB.prepare(`
@@ -323,11 +356,11 @@ products.post('/inventory/:id/stock', requireAuth, requireAdmin, async (c) => {
         crypto.randomUUID(),
         productId,
         totalStock,
-        b2bStock,
-        b2cStock,
+        actualB2BStock,
+        actualB2CStock,
         totalStock,
-        b2bStock,
-        b2cStock,
+        actualB2BStock,
+        actualB2CStock,
         now
       ).run();
 

@@ -22,6 +22,13 @@ export interface Env {
 }
 
 /**
+ * Stock mode type
+ * - 'split': Separate B2B/B2C allocations (default)
+ * - 'unified': Shared stock pool between B2B and Shopify
+ */
+export type StockMode = 'split' | 'unified';
+
+/**
  * Product inventory from D1
  */
 export interface ProductInventory {
@@ -37,6 +44,8 @@ export interface ProductInventory {
   sync_enabled: number;
   last_synced_at: string | null;
   sync_error: string | null;
+  // Stock mode: 'split' (default) = separate B2B/B2C allocations, 'unified' = shared stock pool
+  stock_mode: StockMode;
   created_at: string;
   updated_at: string;
 }
