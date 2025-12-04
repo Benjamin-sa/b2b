@@ -1,0 +1,102 @@
+name = "b2b-api-gateway"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# ============================================================================
+# SERVICE BINDINGS (Production - No --env flag)
+# ============================================================================
+# Service bindings allow direct worker-to-worker communication
+# without HTTP overhead. Much faster than fetch()!
+
+[[services]]
+binding = "AUTH_SERVICE"
+service = "b2b-auth-service"
+
+[[services]]
+binding = "EMAIL_SERVICE"
+service = "b2b-email-service"
+
+[[services]]
+binding = "INVENTORY_SERVICE"
+service = "b2b-inventory-service"
+
+[[services]]
+binding = "STRIPE_SERVICE"
+service = "b2b-stripe-service"
+
+[[services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service"
+
+[[services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service"
+
+# Queue Binding for Email Service
+[[queues.producers]]
+queue = "b2b-email-queue"
+binding = "EMAIL_QUEUE"
+
+# D1 Database binding (for invoice queries)
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
+database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
+
+# Production vars (used when no --env specified)
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGINS = "https://4tparts.com"
+
+# ============================================================================
+# DEVELOPMENT ENVIRONMENT
+# ============================================================================
+[env.dev]
+name = "b2b-api-gateway-dev"
+
+[[env.dev.services]]
+binding = "AUTH_SERVICE"
+service = "b2b-auth-service-dev"
+
+[[env.dev.services]]
+binding = "EMAIL_SERVICE"
+service = "b2b-email-service-dev"
+
+[[env.dev.services]]
+binding = "INVENTORY_SERVICE"
+service = "b2b-inventory-service-dev"
+
+[[env.dev.services]]
+binding = "STRIPE_SERVICE"
+service = "b2b-stripe-service-dev"
+
+[[env.dev.services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service-dev"
+
+[[env.dev.services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service-dev"
+
+# Queue Binding for Email Service (dev)
+[[env.dev.queues.producers]]
+queue = "b2b-email-queue-dev"
+binding = "EMAIL_QUEUE"
+
+# D1 Database binding (dev)
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "b2b-dev"
+database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+ALLOWED_ORIGINS = "http://localhost:5174,http://localhost:4173"
+
+
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true

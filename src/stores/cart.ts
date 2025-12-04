@@ -22,12 +22,13 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   const calculateLimit = (product: Product): number => {
-    if (product.comingSoon) {
+    if (product.coming_soon === 1) {
       return 0
     }
-    const stock = typeof product.stock === 'number' && product.stock >= 0 ? product.stock : Infinity
-    const maxOrder = typeof product.maxOrderQuantity === 'number' && product.maxOrderQuantity > 0
-      ? product.maxOrderQuantity
+    // Use inventory.b2b_stock as the source of truth for available stock
+    const stock = product.inventory?.b2b_stock ?? 0
+    const maxOrder = typeof product.max_order_quantity === 'number' && product.max_order_quantity > 0
+      ? product.max_order_quantity
       : Infinity
 
     return Math.min(stock, maxOrder)
@@ -88,7 +89,8 @@ export const useCartStore = defineStore('cart', () => {
   const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 
   const addItem = async (item: CartItem): Promise<CartMutationResult> => {
-    if (!item.product.inStock || item.product.comingSoon) {
+    if (!item.product.in_stock || item.product.coming_soon) {
+      console.warn(`Product ${item.productId} is out of stock or coming soon`)
       return {
         status: 'unavailable',
         requestedQuantity: item.quantity,
@@ -179,8 +181,8 @@ export const useCartStore = defineStore('cart', () => {
       }
     }
 
-    const minOrder = typeof item.product.minOrderQuantity === 'number' && item.product.minOrderQuantity > 0
-      ? item.product.minOrderQuantity
+    const minOrder = typeof item.product.min_order_quantity === 'number' && item.product.min_order_quantity > 0
+      ? item.product.min_order_quantity
       : 1
 
     const clampedQuantity = Math.min(Math.max(quantity, minOrder), limit)

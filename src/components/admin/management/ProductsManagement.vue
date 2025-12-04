@@ -3,8 +3,8 @@
         <!-- Header with Add Product Button -->
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900">{{ $t('admin.products.managementTitle') }}</h2>
-                <p class="mt-1 text-sm text-gray-500">{{ $t('admin.products.managementSubtitle') }}</p>
+                <h2 class="text-2xl font-bold text-gray-900">Product Management</h2>
+                <p class="mt-1 text-sm text-gray-500">Manage your product catalog</p>
             </div>
             <button @click="showAddForm = true"
                 class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -12,7 +12,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                {{ $t('admin.products.addProduct') }}
+                Add Product
             </button>
         </div>
 
@@ -27,22 +27,22 @@
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
                         <input v-model="searchTerm" @input="searchProducts" type="text"
-                            :placeholder="$t('admin.products.searchPlaceholder')"
+                            placeholder="Search products..."
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div class="flex gap-2">
                         <select v-model="selectedCategory" @change="filterProducts"
                             class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">{{ $t('admin.products.allCategories') }}</option>
+                            <option value="">All Categories</option>
                             <option v-for="category in categories" :key="category" :value="category">
                                 {{ category }}
                             </option>
                         </select>
                         <select v-model="stockFilter" @change="filterProducts"
                             class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">{{ $t('admin.products.allStock') }}</option>
-                            <option value="true">{{ $t('admin.products.inStock') }}</option>
-                            <option value="false">{{ $t('admin.products.outOfStock') }}</option>
+                            <option value="">All Stock Status</option>
+                            <option value="true">In Stock</option>
+                            <option value="false">Out of Stock</option>
                         </select>
                     </div>
                 </div>
@@ -54,41 +54,41 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.product') }}
+                                Product
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.category') }}
+                                Category
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.price') }}
+                                Price
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.stock') }}
+                                Stock
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.sku') }}
+                                SKU
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.products.actions') }}
+                                Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-if="productStore.isLoading">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.products.loading') }}
+                                Loading products...
                             </td>
                         </tr>
                         <tr v-else-if="productStore.products.length === 0">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.products.noProducts') }}
+                                No products found
                             </td>
                         </tr>
                         <tr v-else v-for="product in productStore.products" :key="product.id" class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
-                                        <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name"
+                                        <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
                                             class="h-10 w-10 rounded-lg object-cover" />
                                         <div v-else
                                             class="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
@@ -102,46 +102,117 @@
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
                                         <div class="text-sm text-gray-500 html-content"
-                                            v-html="truncateHtml(product.description, 60)">
+                                            v-html="truncateHtml(product.description || '', 60)">
                                         </div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.category || $t('admin.products.noCategory') }}
+                                {{ product.category_id || 'No Category' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 €{{ product.price.toFixed(2) }}
-                                <span v-if="product.originalPrice && product.originalPrice > product.price"
+                                <span v-if="product.original_price && product.original_price > product.price"
                                     class="text-xs text-gray-500 line-through ml-1">
-                                    €{{ product.originalPrice.toFixed(2) }}
+                                    €{{ product.original_price.toFixed(2) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span :class="[
-                                    product.inStock
+                                    (product.inventory?.b2b_stock ?? 0) > 0
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800',
                                     'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                 ]">
-                                    {{ product.inStock ? $t('admin.products.inStock') : $t('admin.products.outOfStock')
-                                    }}
+                                    {{ (product.inventory?.b2b_stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ product.shopifyVariantId || '-' }}
+                                {{ product.inventory?.shopify_variant_id || '-' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900 mr-3">
-                                    {{ $t('admin.products.edit') }}
+                                    Edit
                                 </button>
                                 <button @click="confirmDelete(product)" class="text-red-600 hover:text-red-900">
-                                    {{ $t('admin.products.delete') }}
+                                    Delete
                                 </button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div v-if="productStore.totalPages > 1" class="px-6 py-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing {{ ((productStore.currentPage - 1) * productStore.pageSize) + 1 }} to
+                        {{ Math.min(productStore.currentPage * productStore.pageSize, productStore.totalItems) }} of
+                        {{ productStore.totalItems }} products
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- First Page -->
+                        <button @click="goToPage(1)" :disabled="productStore.currentPage === 1" :class="[
+                            productStore.currentPage === 1
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-white text-gray-700 hover:bg-gray-50',
+                            'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                        ]">
+                            First
+                        </button>
+
+                        <!-- Previous Page -->
+                        <button @click="goToPage(productStore.currentPage - 1)"
+                            :disabled="productStore.currentPage === 1" :class="[
+                                productStore.currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Previous
+                        </button>
+
+                        <!-- Page Numbers -->
+                        <div class="flex items-center space-x-1">
+                            <template v-for="page in visiblePages" :key="page">
+                                <!-- Ellipsis -->
+                                <span v-if="page === -1" class="px-2 text-gray-500">...</span>
+                                <!-- Page Button -->
+                                <button v-else @click="goToPage(page)" :class="[
+                                    page === productStore.currentPage
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300',
+                                    'px-3 py-1 border rounded-md text-sm font-medium'
+                                ]">
+                                    {{ page }}
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Next Page -->
+                        <button @click="goToPage(productStore.currentPage + 1)"
+                            :disabled="productStore.currentPage === productStore.totalPages" :class="[
+                                productStore.currentPage === productStore.totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Next
+                        </button>
+
+                        <!-- Last Page -->
+                        <button @click="goToPage(productStore.totalPages)"
+                            :disabled="productStore.currentPage === productStore.totalPages" :class="[
+                                productStore.currentPage === productStore.totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium'
+                            ]">
+                            Last
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -151,18 +222,18 @@
             <div class="absolute inset-0 bg-black bg-opacity-50"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full" @click.stop>
                 <div class="p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('admin.products.deleteTitle') }}</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Product</h3>
                     <p class="text-sm text-gray-500 mb-4">
-                        {{ $t('admin.products.deleteMessage', { productName: productToDelete.name }) }}
+                        Are you sure you want to delete "{{ productToDelete.name }}"? This action cannot be undone.
                     </p>
                     <div class="flex justify-end space-x-4">
                         <button @click="productToDelete = null"
                             class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                            {{ $t('common.actions.cancel') }}
+                            Cancel
                         </button>
                         <button @click="deleteProduct"
                             class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
-                            {{ $t('admin.products.delete') }}
+                            Delete
                         </button>
                     </div>
                 </div>
@@ -172,14 +243,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useProductStore } from '../../../stores/products'
 import type { Product } from '../../../types'
 import ProductForm from '../ProductForm.vue'
-import { useI18n } from 'vue-i18n'
 import { truncateHtml } from '../../../utils/htmlUtils'
 
-const { t } = useI18n()
 const productStore = useProductStore()
 
 const showAddForm = ref(false)
@@ -189,6 +258,59 @@ const searchTerm = ref('')
 const selectedCategory = ref('')
 const stockFilter = ref('')
 const categories = ref<string[]>([])
+
+// Computed property for visible page numbers
+const visiblePages = computed(() => {
+    const current = productStore.currentPage
+    const total = productStore.totalPages
+    const pages: number[] = []
+
+    if (total <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= total; i++) {
+            pages.push(i)
+        }
+    } else {
+        // Always show first page
+        pages.push(1)
+
+        // Calculate range around current page
+        let start = Math.max(2, current - 1)
+        let end = Math.min(total - 1, current + 1)
+
+        // Adjust if we're near the start
+        if (current <= 3) {
+            start = 2
+            end = 5
+        }
+
+        // Adjust if we're near the end
+        if (current >= total - 2) {
+            start = total - 4
+            end = total - 1
+        }
+
+        // Add ellipsis if needed
+        if (start > 2) {
+            pages.push(-1) // -1 represents ellipsis
+        }
+
+        // Add middle pages
+        for (let i = start; i <= end; i++) {
+            pages.push(i)
+        }
+
+        // Add ellipsis if needed
+        if (end < total - 1) {
+            pages.push(-1) // -1 represents ellipsis
+        }
+
+        // Always show last page
+        pages.push(total)
+    }
+
+    return pages
+})
 
 onMounted(async () => {
     await productStore.fetchProducts()
@@ -222,7 +344,7 @@ const deleteProduct = async () => {
             productToDelete.value = null
         } catch (error) {
             console.error('Error deleting product:', error)
-            alert(t('admin.products.deleteFailed'))
+            alert('Failed to delete product. Please try again.')
         }
     }
 }
@@ -235,18 +357,40 @@ const filterProducts = () => {
     const filters: any = {}
 
     if (selectedCategory.value) {
-        filters.category = selectedCategory.value
+        filters.category_id = selectedCategory.value
     }
 
     if (stockFilter.value !== '') {
-        filters.inStock = stockFilter.value === 'true'
+        filters.in_stock = stockFilter.value === 'true'
     }
 
     if (searchTerm.value.trim()) {
-        filters.searchTerm = searchTerm.value
+        filters.search_term = searchTerm.value
     }
 
     // Always call fetchProducts with filters (empty object will fetch all)
+    productStore.fetchProducts(filters)
+}
+
+const goToPage = (page: number) => {
+    if (page < 1 || page > productStore.totalPages || page === productStore.currentPage) {
+        return
+    }
+
+    const filters: any = { page }
+
+    if (selectedCategory.value) {
+        filters.category_id = selectedCategory.value
+    }
+
+    if (stockFilter.value !== '') {
+        filters.in_stock = stockFilter.value === 'true'
+    }
+
+    if (searchTerm.value.trim()) {
+        filters.search_term = searchTerm.value
+    }
+
     productStore.fetchProducts(filters)
 }
 </script>

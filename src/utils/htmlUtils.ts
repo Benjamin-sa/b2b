@@ -55,13 +55,16 @@ export const truncateHtml = (html: string, maxLength: number = 150): string => {
       // Add attributes if any
       for (let i = 0; i < element.attributes.length; i++) {
         const attr = element.attributes[i]
-        result += ` ${attr.name}="${attr.value}"`
+        if (attr && attr.name && attr.value) {
+          result += ` ${attr.name}="${attr.value}"`
+        }
       }
       result += '>'
       
       // Process children
       for (let i = 0; i < element.childNodes.length; i++) {
-        if (!walkNodes(element.childNodes[i])) {
+        const childNode = element.childNodes[i]
+        if (childNode && !walkNodes(childNode)) {
           break
         }
       }
@@ -75,7 +78,8 @@ export const truncateHtml = (html: string, maxLength: number = 150): string => {
   
   // Walk through all child nodes
   for (let i = 0; i < tempDiv.childNodes.length; i++) {
-    if (!walkNodes(tempDiv.childNodes[i])) {
+    const childNode = tempDiv.childNodes[i]
+    if (childNode && !walkNodes(childNode)) {
       break
     }
   }

@@ -10,9 +10,7 @@ const corsConfig: CorsConfig = {
   allowedOrigins: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://motordash-cf401.web.app',
     'https://4tparts.com',
-    'http://192.168.129.22:3000'
   ],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

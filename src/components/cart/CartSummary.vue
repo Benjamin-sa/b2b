@@ -1,23 +1,23 @@
 <template>
-    <div class="bg-gray-50 p-4 rounded-lg">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('cart.summaryTitle') }}</h3>
+    <div class="bg-gradient-to-br from-gray-50 to-primary-50/30 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-primary-100">
+        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">{{ $t('cart.summaryTitle') }}</h3>
 
         <!-- Summary Lines -->
         <div class="space-y-2">
             <!-- Item Count -->
-            <div class="flex justify-between text-sm">
+            <div class="flex justify-between text-xs sm:text-sm">
                 <span class="text-gray-600">
                     {{ $t('cart.items', { count: itemCount }) }}
                 </span>
-                <span class="text-gray-900">
+                <span class="text-gray-900 font-medium">
                     €{{ formatPrice(subtotal) }}
                 </span>
             </div>
 
-            <!-- Shipping (Free for B2B) -->
-            <div class="flex justify-between text-sm">
+            <!-- Shipping -->
+            <div class="flex justify-between text-xs sm:text-sm">
                 <span class="text-gray-600">{{ $t('cart.shipping') }}</span>
-                <span :class="shippingCost === 0 ? 'text-green-600 font-medium' : 'text-gray-900'">
+                <span :class="shippingCost === 0 ? 'text-success-600 font-bold' : 'text-gray-900 font-medium'">
                     <template v-if="shippingCost === 0">
                         {{ $t('cart.free') }}
                     </template>
@@ -28,20 +28,20 @@
             </div>
 
             <!-- Tax -->
-            <div class="flex justify-between text-sm">
+            <div class="flex justify-between text-xs sm:text-sm">
                 <span class="text-gray-600">{{ $t('cart.vat') }}</span>
-                <span class="text-gray-900">
+                <span class="text-gray-900 font-medium">
                     €{{ formatPrice(tax) }}
                 </span>
             </div>
 
             <!-- Divider -->
-            <hr class="border-gray-200">
+            <hr class="border-primary-200">
 
             <!-- Total -->
-            <div class="flex justify-between text-base font-medium">
+            <div class="flex justify-between text-sm sm:text-base font-bold pt-1">
                 <span class="text-gray-900">{{ $t('cart.total') }}</span>
-                <span class="text-gray-900">
+                <span class="text-primary-700">
                     €{{ formatPrice(grandTotal) }}
                 </span>
             </div>
@@ -53,11 +53,11 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="mt-6 space-y-3">
+        <div class="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
             <!-- Checkout Button -->
             <button @click="proceedToCheckout" :disabled="itemCount === 0 || isLoading"
-                class="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center">
-                <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
+                class="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg sm:rounded-xl hover:from-primary-700 hover:to-primary-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none text-sm sm:text-base font-bold">
+                <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 text-white" fill="none"
                     viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor"
@@ -70,13 +70,13 @@
 
             <!-- Continue Shopping -->
             <button @click="continueShopping"
-                class="w-full bg-gray-100 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors duration-200">
+                class="w-full bg-white border border-primary-200 text-primary-700 py-2 px-4 rounded-lg sm:rounded-xl hover:bg-primary-50 hover:border-primary-300 transition-colors duration-200 text-sm sm:text-base font-medium">
                 {{ $t('cart.continueShopping') }}
             </button>
 
             <!-- Clear Cart -->
             <button v-if="itemCount > 0" @click="clearCart" :disabled="isLoading"
-                class="w-full text-red-600 hover:text-red-800 text-sm py-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full text-danger-600 hover:text-danger-800 text-xs sm:text-sm py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 {{ $t('cart.clearCart') }}
             </button>
         </div>

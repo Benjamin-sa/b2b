@@ -54,7 +54,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     if (notifications.value.length >= maxNotifications) {
       const oldestIndex = 0
       const oldest = notifications.value[oldestIndex]
-      if (oldest.timeoutId) {
+      if (oldest?.timeoutId) {
         clearTimeout(oldest.timeoutId)
       }
       notifications.value.splice(oldestIndex, 1)
@@ -90,7 +90,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       const notification = notifications.value[index]
       
       // Clear timeout if exists
-      if (notification.timeoutId) {
+      if (notification?.timeoutId) {
         clearTimeout(notification.timeoutId)
       }
       

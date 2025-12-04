@@ -1,36 +1,45 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  type User
-} from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { auth, db, functions } from '../init/firebase'
-import type { UserProfile } from '../types'
-import { httpsCallable } from 'firebase/functions'
-// Import for notifications and i18n
 import { useNotificationStore } from './notifications'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import type {
+  LoginCredentials,
+  RegisterData,
+  UserProfile,
+  AuthTokens,
+  ValidationResponse
+} from '../types/auth'
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const VITE_API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787'
+const ACCESS_TOKEN_KEY = 'b2b_access_token'
+const REFRESH_TOKEN_KEY = 'b2b_refresh_token'
+const USER_PROFILE_KEY = 'b2b_user_profile'
+
+// ============================================================================
+// STORE DEFINITION
+// ============================================================================
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
+  // Get access to dependencies
+  const notificationStore = useNotificationStore()
+  const { t } = useI18n()
+  const router = useRouter()
+
+  // State
+  const accessToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(null)
   const userProfile = ref<UserProfile | null>(null)
   const loading = ref(false)
   const error = ref('')
-  const initializing = ref(true) // Add this to track initial auth state
+  const initializing = ref(true)
 
-  // Get access to notifications and translations
-  const notificationStore = useNotificationStore()
-  const { t } = useI18n()
-
-  // Router instance
-  const router = useRouter()
-
-  const isAuthenticated = computed(() => !!user.value)
+  // Computed properties
+  const isAuthenticated = computed(() => !!accessToken.value && !!userProfile.value)
   const isAdmin = computed(() => userProfile.value?.role === 'admin')
   const isCustomer = computed(() => userProfile.value?.role === 'customer')
   const isVerified = computed(() => userProfile.value?.isVerified === true)
@@ -41,308 +50,505 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated.value && isActiveUser.value && (isAdmin.value || isVerified.value)
   )
 
-  // Initialize auth state listener
-  const initAuth = () => {
-    return new Promise<void>((resolve) => {
-      onAuthStateChanged(auth, async (firebaseUser) => {
-        console.log('Auth state changed:', firebaseUser?.email || 'No user')
-        user.value = firebaseUser
-        if (firebaseUser) {
-          await loadUserProfile(firebaseUser.uid)
-        } else {
-          userProfile.value = null
-        }
-        initializing.value = false
-        resolve()
-      })
-    })
+  // ============================================================================
+  // LOCALSTORAGE MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Save tokens and user profile to localStorage
+   */
+  const saveAuthData = (tokens: AuthTokens, profile: UserProfile) => {
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken)
+    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken)
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile))
+    
+    accessToken.value = tokens.accessToken
+    refreshToken.value = tokens.refreshToken
+    userProfile.value = profile
   }
 
-  const loadUserProfile = async (uid: string, retryCount = 0) => {
+  /**
+   * Clear tokens and user profile from localStorage
+   */
+  const clearAuthData = () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(USER_PROFILE_KEY)
+    
+    accessToken.value = null
+    refreshToken.value = null
+    userProfile.value = null
+  }
+
+  /**
+   * Load tokens and user profile from localStorage
+   */
+  const loadAuthData = (): boolean => {
     try {
-      console.log('Loading user profile for:', uid)
-      const userDoc = await getDoc(doc(db, 'users', uid))
-      if (userDoc.exists()) {
-        userProfile.value = userDoc.data() as UserProfile
-        console.log('User profile loaded:', userProfile.value)
-      } else {
-        console.log('No user profile found in Firestore for:', uid)
-        
-        // If this is during initial load and profile doesn't exist, 
-        // it might be a new registration - retry a few times
-        if (retryCount < 3) {
-          console.log(`Retrying to load profile (attempt ${retryCount + 1}/3)...`)
-          await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms
-          return loadUserProfile(uid, retryCount + 1)
-        }
+      const storedAccessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
+      const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+      const storedProfile = localStorage.getItem(USER_PROFILE_KEY)
+      
+      if (storedAccessToken && storedRefreshToken && storedProfile) {
+        accessToken.value = storedAccessToken
+        refreshToken.value = storedRefreshToken
+        userProfile.value = JSON.parse(storedProfile)
+        return true
       }
     } catch (err) {
-      console.error('Error loading user profile:', err)
+      console.error('Error loading auth data from localStorage:', err)
+      clearAuthData()
+    }
+    return false
+  }
+
+  // ============================================================================
+  // TOKEN MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Refresh the access token using the refresh token
+   */
+  const refreshAccessToken = async (): Promise<boolean> => {
+    try {
+      const currentRefreshToken = refreshToken.value || localStorage.getItem(REFRESH_TOKEN_KEY)
       
-      // Retry logic for network errors
-      if (retryCount < 2) {
-        console.log(`Retrying due to error (attempt ${retryCount + 1}/2)...`)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1s
-        return loadUserProfile(uid, retryCount + 1)
+      if (!currentRefreshToken) {
+        console.log('No refresh token available')
+        return false
       }
+
+      console.log('Refreshing access token...')
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: currentRefreshToken })
+      })
+
+      if (!response.ok) {
+        console.log('Refresh token failed:', response.status)
+        clearAuthData()
+        return false
+      }
+
+      const data = await response.json()
+      // Refresh endpoint only returns new accessToken, keep existing refreshToken and user
+      if (data.accessToken && userProfile.value && currentRefreshToken) {
+        accessToken.value = data.accessToken
+        localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken)
+      }
+      console.log('Access token refreshed successfully')
+      return true
+    } catch (err) {
+      console.error('Error refreshing access token:', err)
+      clearAuthData()
+      return false
     }
   }
 
-  const login = async (email: string, password: string) => {
+  /**
+   * Validate current access token and refresh user profile
+   */
+  const validateToken = async (): Promise<boolean> => {
+    try {
+      if (!accessToken.value) {
+        return false
+      }
+
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accessToken: accessToken.value })
+      })
+
+      if (!response.ok) {
+        // Try to refresh token
+        return await refreshAccessToken()
+      }
+
+      const data: ValidationResponse = await response.json()
+      
+      if (data.valid && data.user) {
+        // Update user profile with fresh data
+        userProfile.value = data.user
+        localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(data.user))
+        return true
+      }
+
+      return false
+    } catch (err) {
+      console.error('Error validating token:', err)
+      return false
+    }
+  }
+
+  /**
+   * Make an authenticated API request with automatic token refresh
+   */
+  const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    // Add Authorization header
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${accessToken.value}`
+    }
+
+    let response = await fetch(url, { ...options, headers })
+
+    // If 401, try to refresh token and retry once
+    if (response.status === 401) {
+      console.log('Access token expired, attempting refresh...')
+      const refreshed = await refreshAccessToken()
+      
+      if (refreshed) {
+        // Retry request with new token
+        headers.Authorization = `Bearer ${accessToken.value}`
+        response = await fetch(url, { ...options, headers })
+      } else {
+        // Refresh failed, redirect to login
+        clearAuthData()
+        router.push('/auth')
+        throw new Error('Session expired. Please login again.')
+      }
+    }
+
+    return response
+  }
+
+  // ============================================================================
+  // AUTHENTICATION METHODS
+  // ============================================================================
+
+  /**
+   * Login with email and password
+   */
+  const login = async (credentials: LoginCredentials) => {
     loading.value = true
     error.value = ''
+
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password)
-      await loadUserProfile(result.user.uid)
       
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        // Create structured error with code from API
+        const err = new Error(errorData.message || errorData.error || 'Login failed')
+        ;(err as any).code = errorData.code
+        throw err
+      }
+
+      const data = await response.json()
+      
+      // Save tokens and profile
+      // Worker returns { accessToken, refreshToken, expiresIn, user }
+      saveAuthData({ 
+        accessToken: data.accessToken, 
+        refreshToken: data.refreshToken 
+      }, data.user)
+
       // Show success notification
       await notificationStore.success(
         t('auth.welcomeBack'),
         t('auth.loggedInMessage', 'You have been successfully logged in.')
       )
-      
-      return result.user
+
+      console.log('Login successful:', data.user.email)
+      return data.user
     } catch (err: any) {
+      console.error('Login error:', err)
+      error.value = err.message
       await handleAuthError(err, 'login')
+      throw err
     } finally {
       loading.value = false
     }
   }
 
-  const register = async (
-    email: string, 
-    password: string, 
-    companyName: string,
-    firstName: string,
-    lastName: string,
-    btwNumber: string,
-    address: {
-      street: string
-      houseNumber: string
-      postalCode: string
-      city: string
-      country: string
-    },
-    phone?: string
-  ) => {
+  /**
+   * Register a new user
+   */
+  const register = async (data: RegisterData) => {
     loading.value = true
     error.value = ''
+
     try {
-      console.log('Creating user account...', { email, companyName, firstName, lastName, btwNumber, address })
-      const result = await createUserWithEmailAndPassword(auth, email, password)
-      console.log('Firebase user created:', result.user.uid)
-      
-      // Create user profile in Firestore
-      const userProfileData: UserProfile = {
-        uid: result.user.uid,
-        email: result.user.email!,
-        role: 'customer', // Default role
-        companyName,
-        firstName,
-        lastName,
-        btwNumber,
-        address,
-        isActive: true,
-        isVerified: false, // New users need to be verified
-        createdAt: new Date().toISOString()
+      console.log('Registering user:', data.email)
+
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        // Create structured error with code from API
+        const err = new Error(errorData.message || errorData.error || 'Registration failed')
+        ;(err as any).code = errorData.code
+        throw err
       }
 
-      // Add phone if provided
-      if (phone) {
-        userProfileData.phone = phone
-      }
+      const responseData = await response.json()
       
-      console.log('Creating user profile in Firestore:', userProfileData)
-      await setDoc(doc(db, 'users', result.user.uid), userProfileData)
-      console.log('User profile created successfully')
-      
-      // Set the user profile immediately to prevent race condition
-      userProfile.value = userProfileData
-      
-      // Small delay to ensure Firestore write is fully propagated
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
+      // Save tokens and profile
+      // Worker returns { accessToken, refreshToken, expiresIn, user }
+      saveAuthData({ 
+        accessToken: responseData.accessToken, 
+        refreshToken: responseData.refreshToken 
+      }, responseData.user)
+
       // Show success notification
       await notificationStore.success(
         t('auth.accountCreated'),
         t('auth.welcomeToPlatform', 'Welcome to our B2B platform! Your account has been created successfully.')
       )
-      
-      return result.user
+
+      console.log('Registration successful:', responseData.user.email)
+      return responseData.user
     } catch (err: any) {
       console.error('Registration error:', err)
+      error.value = err.message
       await handleAuthError(err, 'register')
+      throw err
     } finally {
       loading.value = false
     }
   }
 
+  /**
+   * Logout user and clear all auth data
+   */
   const logout = async () => {
+    loading.value = true
+
     try {
-      await signOut(auth)
-      user.value = null
-      userProfile.value = null
+      // Call logout endpoint to invalidate session on server
+      if (refreshToken.value) {
+        await fetch(`${VITE_API_GATEWAY_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken: refreshToken.value })
+        }).catch(err => {
+          console.warn('Logout API call failed:', err)
+          // Continue with local logout even if API call fails
+        })
+      }
+
+      // Clear local auth data
+      clearAuthData()
+
+      // Show notification
+      await notificationStore.info(
+        t('auth.loggedOut'),
+        t('auth.loggedOutMessage', 'You have been logged out successfully.')
+      )
+
+      // Redirect to login
       router.push('/auth')
     } catch (err: any) {
-      await handleAuthError(err, 'general')
-    }
-  }
-
-  const requestPasswordReset = async (email: string): Promise<any> => {
-    loading.value = true
-    error.value = ''
-    
-    try {
-      console.log('Requesting password reset for:', email)
-      const requestPasswordResetFunction = httpsCallable(functions, 'requestPasswordReset')
-      const result = await requestPasswordResetFunction({ email })
-      
-      console.log('Password reset request successful:', result.data)
-      return result.data
-    } catch (err: any) {
-      console.error('Password reset request failed:', err)
-      await handleAuthError(err, 'general')
-      return null // Return null on error
+      console.error('Logout error:', err)
+      // Still clear local data even on error
+      clearAuthData()
+      router.push('/auth')
     } finally {
       loading.value = false
     }
   }
 
-  
-  const updateUserVerification = async (uid: string, isVerified: boolean): Promise<boolean> => {
-    // Security check: Only admins can verify/unverify users
-    if (!isAdmin.value) {
-      throw new Error('Unauthorized: Only admins can update user verification')
-    }
+  /**
+   * Request password reset
+   */
+  const requestPasswordReset = async (email: string): Promise<boolean> => {
+    loading.value = true
+    error.value = ''
 
     try {
-      await updateDoc(doc(db, 'users', uid), { isVerified })
-      return true
-    } catch (err: any) {
-      await handleAuthError(err, 'general')
-      return false // Return false on error
-    }
-  }
+      console.log('Requesting password reset for:', email)
 
-  const updateUserStatus = async (uid: string, isActive: boolean): Promise<boolean> => {
-    // Security check: Only admins can activate/deactivate users
-    if (!isAdmin.value) {
-      throw new Error('Unauthorized: Only admins can update user status')
-    }
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/password-reset/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      })
 
-    try {
-      await updateDoc(doc(db, 'users', uid), { isActive })
-      return true
-    } catch (err: any) {
-      await handleAuthError(err, 'general')
-      return false // Return false on error
-    }
-  }
+      if (!response.ok) {
+        const errorData = await response.json()
+        const err = new Error(errorData.message || errorData.error || 'Password reset request failed')
+        ;(err as any).code = errorData.code
+        throw err
+      }
 
-  const getAllUsers = async (): Promise<UserProfile[]> => {
-    // Security check: Only admins can view all users
-    if (!isAdmin.value) {
-      throw new Error('Unauthorized: Only admins can view all users')
-    }
-
-    try {
-      const usersSnapshot = await getDocs(collection(db, 'users'))
-      return usersSnapshot.docs.map(doc => doc.data() as UserProfile)
-    } catch (err: any) {
-      await handleAuthError(err, 'general')
-      return [] // Return empty array on error
-    }
-  }
-
-  const getUnverifiedUsers = async (): Promise<UserProfile[]> => {
-    // Security check: Only admins can view unverified users
-    if (!isAdmin.value) {
-      throw new Error('Unauthorized: Only admins can view unverified users')
-    }
-
-    try {
-      const q = query(
-        collection(db, 'users'),
-        where('isVerified', '==', false),
-        where('role', '==', 'customer')
+      await notificationStore.success(
+        t('auth.resetEmailSent'),
+        t('auth.resetEmailSentMessage', 'Password reset instructions have been sent to your email.')
       )
-      const usersSnapshot = await getDocs(q)
-      return usersSnapshot.docs.map(doc => doc.data() as UserProfile)
+
+      return true
     } catch (err: any) {
+      console.error('Password reset error:', err)
+      error.value = err.message
       await handleAuthError(err, 'general')
-      return [] // Return empty array on error
+      return false
+    } finally {
+      loading.value = false
     }
   }
 
+  /**
+   * Confirm password reset with token
+   */
+  const confirmPasswordReset = async (token: string, newPassword: string): Promise<boolean> => {
+    loading.value = true
+    error.value = ''
+
+    try {
+      console.log('Confirming password reset...')
+
+      const response = await fetch(`${VITE_API_GATEWAY_URL}/auth/password-reset/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, newPassword })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        const err = new Error(errorData.message || errorData.error || 'Password reset confirmation failed')
+        ;(err as any).code = errorData.code
+        throw err
+      }
+
+      await notificationStore.success(
+        t('auth.passwordResetSuccess'),
+        t('auth.passwordResetSuccessMessage', 'Your password has been reset successfully. You can now login with your new password.')
+      )
+
+      return true
+    } catch (err: any) {
+      console.error('Password reset confirmation error:', err)
+      error.value = err.message
+      await handleAuthError(err, 'general')
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ============================================================================
+  // ERROR HANDLING
+  // ============================================================================
+
+  /**
+   * Get error message for display based on error code from auth service
+   */
   const getErrorMessage = (error: any): { title: string; message: string } => {
-    const errorCode = error.code || error.message || 'unknown'
+    const errorCode = error.code || ''
+    const errorMessage = error.message || ''
     
+    // Map auth service error codes to user-friendly messages
     switch (errorCode) {
-      case 'auth/user-not-found':
-      case 'auth/invalid-credential':
-      case 'auth/wrong-password':
-        return {
-          title: t('auth.loginFailed'),
-          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect. Please check your credentials and try again.')
-        }
-      
-      case 'auth/user-disabled':
-        return {
-          title: t('auth.loginFailed'),
-          message: t('auth.errors.accountDisabled', 'Your account has been disabled. Please contact support for assistance.')
-        }
-      
-      case 'auth/too-many-requests':
-        return {
-          title: t('auth.loginFailed'),
-          message: t('auth.errors.tooManyAttempts', 'Too many failed login attempts. Please try again later or reset your password.')
-        }
-      
-      case 'auth/email-already-in-use':
-        return {
-          title: t('auth.registrationFailed'),
-          message: t('auth.errors.emailInUse', 'An account with this email already exists. Please use a different email or try logging in.')
-        }
-      
-      case 'auth/weak-password':
-        return {
-          title: t('auth.registrationFailed'),
-          message: t('auth.errors.weakPassword', 'Password should be at least 6 characters long and contain a mix of letters and numbers.')
-        }
-      
       case 'auth/invalid-email':
         return {
           title: t('auth.error'),
           message: t('auth.errors.invalidEmail', 'Please enter a valid email address.')
         }
       
-      case 'auth/operation-not-allowed':
+      case 'auth/user-not-found':
         return {
-          title: t('auth.error'),
-          message: t('auth.errors.operationNotAllowed', 'This authentication method is not enabled. Please contact support.')
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')
         }
       
-      case 'auth/network-request-failed':
+      case 'auth/wrong-password':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.invalidCredentials', 'The email or password you entered is incorrect.')
+        }
+      
+      case 'auth/email-already-in-use':
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.emailInUse', 'An account with this email already exists.')
+        }
+      
+      case 'auth/weak-password':
+        return {
+          title: t('auth.registrationFailed'),
+          message: t('auth.errors.weakPassword', 'Password must be at least 8 characters long.')
+        }
+      
+      case 'auth/too-many-requests':
         return {
           title: t('auth.error'),
-          message: t('auth.errors.networkError', 'Network connection failed. Please check your internet connection and try again.')
+          message: t('auth.errors.tooManyAttempts', 'Too many failed attempts. Please try again later.')
+        }
+      
+      case 'auth/user-disabled':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.accountDisabled', 'Your account has been disabled. Please contact support.')
+        }
+      
+      case 'auth/user-not-verified':
+        return {
+          title: t('auth.loginFailed'),
+          message: t('auth.errors.notVerified', 'Your account has not been verified yet. Please contact support.')
+        }
+      
+      case 'auth/invalid-token':
+      case 'auth/token-expired':
+      case 'auth/session-expired':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.sessionExpired', 'Your session has expired. Please login again.')
+        }
+      
+      case 'auth/missing-fields':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.missingFields', 'Please fill in all required fields.')
+        }
+      
+      case 'auth/database-error':
+      case 'auth/internal-error':
+        return {
+          title: t('auth.error'),
+          message: t('auth.errors.serverError', 'A server error occurred. Please try again later.')
         }
       
       default:
-        console.error('Unhandled auth error:', error)
+        // Fallback: use error message from API or generic message
         return {
           title: t('auth.error', 'Authentication Error'),
-          message: error.message || t('auth.errors.unexpected', 'An unexpected error occurred. Please try again or contact support if the problem persists.')
+          message: errorMessage || t('auth.errors.unexpected', 'An unexpected error occurred.')
         }
     }
   }
 
-  // Helper function to handle errors with notifications
+  /**
+   * Handle authentication errors
+   */
   const handleAuthError = async (error: any, context: 'login' | 'register' | 'general' = 'general') => {
     const errorInfo = getErrorMessage(error)
     error.value = errorInfo.message
 
-    // Show notification
     try {
       await notificationStore.error(errorInfo.title, errorInfo.message)
     } catch (notificationError) {
@@ -350,35 +556,223 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     console.error(`Auth error (${context}):`, error)
-    throw error
   }
 
+  /**
+   * Clear error message
+   */
   const clearError = () => {
     error.value = ''
   }
 
+  // ============================================================================
+  // ADMIN METHODS
+  // ============================================================================
+
+  /**
+   * Get all users (admin only)
+   */
+  const getAllUsers = async (): Promise<UserProfile[]> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users')
+      }
+
+      const data = await response.json()
+      return data.users || []
+    } catch (err: any) {
+      console.error('Error fetching users:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  /**
+   * Update user verification status (admin only)
+   * This calls the admin orchestration endpoint which verifies the user and sends an email
+   */
+  const updateUserVerification = async (userId: string, isVerified: boolean): Promise<void> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      if (isVerified) {
+        // POST /admin/users/:userId/verify - orchestrates verification + email
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to verify user')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userVerificationUpdated', 'User has been verified and notified via email.')
+        )
+      } else {
+        // For unverifying, we use PUT /admin/users/:userId with is_verified: 0
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_verified: 0 })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to update user verification status')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userVerificationUpdated', 'User verification has been removed.')
+        )
+      }
+    } catch (err: any) {
+      console.error('Error updating user verification:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  /**
+   * Update user active status (admin only)
+   */
+  const updateUserStatus = async (userId: string, isActive: boolean): Promise<void> => {
+    if (!isAdmin.value) {
+      throw new Error('Access denied: Admin privileges required')
+    }
+
+    try {
+      if (!isActive) {
+        // DELETE /admin/users/:userId - soft deletes (deactivates) the user
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to deactivate user')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userStatusUpdated', 'User account has been deactivated.')
+        )
+      } else {
+        // For activating, we use PUT /admin/users/:userId with is_active: 1
+        const response = await authenticatedFetch(`${VITE_API_GATEWAY_URL}/admin/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_active: 1 })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to activate user')
+        }
+
+        await notificationStore.success(
+          t('admin.userUpdated'),
+          t('admin.userStatusUpdated', 'User account has been activated.')
+        )
+      }
+    } catch (err: any) {
+      console.error('Error updating user status:', err)
+      await handleAuthError(err, 'general')
+      throw err
+    }
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  /**
+   * Initialize auth state from localStorage and validate token
+   */
+  const initAuth = async () => {
+    console.log('Initializing auth...')
+    initializing.value = true
+
+    try {
+      // Load from localStorage
+      const hasAuthData = loadAuthData()
+      
+      if (hasAuthData) {
+        console.log('Found stored auth data, validating...')
+        // Validate token with auth service
+        const isValid = await validateToken()
+        
+        if (!isValid) {
+          console.log('Stored token invalid, attempting refresh...')
+          const refreshed = await refreshAccessToken()
+          
+          if (!refreshed) {
+            console.log('Token refresh failed, clearing auth data')
+            clearAuthData()
+          }
+        } else {
+          console.log('User authenticated:', userProfile.value?.email)
+        }
+      } else {
+        console.log('No stored auth data found')
+      }
+    } catch (err) {
+      console.error('Error initializing auth:', err)
+      clearAuthData()
+    } finally {
+      initializing.value = false
+    }
+  }
+
   return {
-    user,
+    // State
+    accessToken: computed(() => accessToken.value),
     userProfile,
+    user: computed(() => userProfile.value), // Alias for compatibility
     loading,
     error,
     initializing,
+    
+    // Computed
     isAuthenticated,
     isAdmin,
     isCustomer,
     isVerified,
     isActiveUser,
     canAccess,
+    
+    // Methods
     initAuth,
     login,
     register,
     logout,
     requestPasswordReset,
+    confirmPasswordReset,
+    validateToken,
+    refreshAccessToken,
+    authenticatedFetch,
     clearError,
-    // Admin functions
+    
+    // Admin methods
+    getAllUsers,
     updateUserVerification,
     updateUserStatus,
-    getAllUsers,
-    getUnverifiedUsers
   }
 })

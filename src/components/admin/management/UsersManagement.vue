@@ -2,8 +2,8 @@
     <div class="space-y-6">
         <!-- Header -->
         <div>
-            <h2 class="text-2xl font-bold text-gray-900">{{ $t('admin.users.managementTitle') }}</h2>
-            <p class="mt-1 text-sm text-gray-500">{{ $t('admin.users.managementSubtitle') }}</p>
+            <h2 class="text-2xl font-bold text-gray-900">User Management</h2>
+            <p class="mt-1 text-sm text-gray-500">Manage user accounts and permissions</p>
         </div>
 
         <!-- Stats Cards -->
@@ -22,7 +22,7 @@
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('admin.users.totalUsers') }}</dt>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
                                 <dd class="text-lg font-medium text-gray-900">{{ allUsers.length }}</dd>
                             </dl>
                         </div>
@@ -44,7 +44,7 @@
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('admin.users.pendingVerification') }}</dt>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Pending Verification</dt>
                                 <dd class="text-lg font-medium text-gray-900">{{ unverifiedUsers.length }}</dd>
                             </dl>
                         </div>
@@ -66,7 +66,7 @@
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('admin.users.verifiedUsers') }}</dt>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Verified Users</dt>
                                 <dd class="text-lg font-medium text-gray-900">{{ verifiedUsers.length }}</dd>
                             </dl>
                         </div>
@@ -78,41 +78,41 @@
         <!-- Users Table -->
         <div class="bg-white shadow rounded-lg">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">{{ $t('admin.users.allUsers') }}</h3>
+                <h3 class="text-lg font-medium text-gray-900">All Users</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.user') }}
+                                User
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.company') }}
+                                Company
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.role') }}
+                                Role
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.status') }}
+                                Status
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.created') }}
+                                Created
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $t('admin.users.actions') }}
+                                Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-if="loading">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.users.loading') }}
+                                Loading users...
                             </td>
                         </tr>
                         <tr v-else-if="allUsers.length === 0">
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                {{ $t('admin.users.noUsers') }}
+                                No users found
                             </td>
                         </tr>
                         <tr v-else v-for="user in allUsers" :key="user.uid" class="hover:bg-gray-50">
@@ -139,8 +139,17 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ user.companyName }}</div>
-                                <div v-if="user.btwNumber" class="text-xs text-gray-500">
-                                    {{ $t('admin.users.vat', { vat: user.btwNumber }) }}
+                                <div v-if="user.btwNumber" class="flex items-center space-x-1 mt-1">
+                                    <span class="text-xs text-gray-500">VAT: {{ user.btwNumber }}</span>
+                                    <svg v-if="user.btwVerification?.isValidated" 
+                                        class="h-3 w-3 text-blue-500" 
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        title="VIES data available">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -161,7 +170,7 @@
                                             : 'bg-yellow-100 text-yellow-800',
                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                     ]">
-                                        {{ user.isVerified ? $t('admin.users.verified') : $t('admin.users.pending') }}
+                                        {{ user.isVerified ? 'Verified' : 'Pending' }}
                                     </span>
                                     <span :class="[
                                         user.isActive
@@ -169,7 +178,7 @@
                                             : 'bg-red-100 text-red-800',
                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full'
                                     ]">
-                                        {{ user.isActive ? $t('admin.users.active') : $t('admin.users.inactive') }}
+                                        {{ user.isActive ? 'Active' : 'Inactive' }}
                                     </span>
                                 </div>
                             </td>
@@ -186,15 +195,15 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
-                                        {{ $t('admin.users.view') }}
+                                        View
                                     </button>
                                     <button v-if="user.isActive" @click="confirmDeactivateUser(user)"
                                         class="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                        {{ $t('admin.users.deactivate') }}
+                                        Deactivate
                                     </button>
                                     <button v-else @click="confirmActivateUser(user)"
                                         class="inline-flex items-center px-3 py-1 border border-green-300 shadow-sm text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                        {{ $t('admin.users.activate') }}
+                                        Activate
                                     </button>
                                 </div>
                             </td>
@@ -213,8 +222,8 @@
                     <!-- Modal Header -->
                     <div class="flex justify-between items-start border-b pb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-900">{{ $t('admin.users.detailsTitle') }}</h3>
-                            <p class="text-sm text-gray-500">{{ $t('admin.users.detailsSubtitle') }}</p>
+                            <h3 class="text-lg font-medium text-gray-900">User Details</h3>
+                            <p class="text-sm text-gray-500">View and manage user information</p>
                         </div>
                         <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
                             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,23 +237,23 @@
                     <div class="mt-6 space-y-6">
                         <!-- Personal Information -->
                         <div>
-                            <h4 class="text-md font-medium text-gray-900 mb-3">{{ $t('admin.users.personalInfo') }}</h4>
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Personal Information</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.fullName') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Full Name</label>
                                     <p class="mt-1 text-sm text-gray-900">{{ selectedUser.firstName }} {{
                                         selectedUser.lastName }}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.email') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
                                     <p class="mt-1 text-sm text-gray-900">{{ selectedUser.email }}</p>
                                 </div>
                                 <div v-if="selectedUser.phone">
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.phone') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Phone</label>
                                     <p class="mt-1 text-sm text-gray-900">{{ selectedUser.phone }}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.role') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Role</label>
                                     <span :class="[
                                         selectedUser.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800',
                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1'
@@ -257,43 +266,107 @@
 
                         <!-- Company Information -->
                         <div>
-                            <h4 class="text-md font-medium text-gray-900 mb-3">{{ $t('admin.users.companyInfo') }}</h4>
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Company Information</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.companyName') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Company Name</label>
                                     <p class="mt-1 text-sm text-gray-900">{{ selectedUser.companyName }}</p>
                                 </div>
                                 <div v-if="selectedUser.btwNumber">
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.vatNumber') }}</label>
-                                    <p class="mt-1 text-sm text-gray-900">{{ selectedUser.btwNumber }}</p>
+                                    <label class="block text-sm font-medium text-gray-700">VAT Number</label>
+                                    <div class="flex items-center space-x-2 mt-1">
+                                        <p class="text-sm text-gray-900">{{ selectedUser.btwNumber }}</p>
+                                        <span v-if="selectedUser.btwVerification?.isValidated"
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                            title="VAT number exists in VIES database">
+                                            <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            VIES Check Passed
+                                        </span>
+                                        <span v-else
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            Not Checked
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BTW Verification Details (if available) -->
+                            <div v-if="selectedUser.btwVerification?.verifiedName || selectedUser.btwVerification?.verifiedAddress"
+                                class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <h5 class="text-sm font-medium text-blue-900">
+                                            VIES Database Information
+                                        </h5>
+                                        <p class="text-xs text-blue-700 mt-1 mb-3">
+                                            This is the official data from the European VAT registry. Please verify it matches the customer-provided information below.
+                                        </p>
+                                        <div class="mt-2 text-sm text-blue-900 space-y-2">
+                                            <div v-if="selectedUser.btwVerification.verifiedName">
+                                                <span class="font-medium">Official Company Name:</span>
+                                                <p class="mt-0.5 text-blue-800">{{ selectedUser.btwVerification.verifiedName }}</p>
+                                            </div>
+                                            <div v-if="selectedUser.btwVerification.verifiedAddress">
+                                                <span class="font-medium">Official Registered Address:</span>
+                                                <p class="mt-0.5 text-blue-800 whitespace-pre-line">{{ selectedUser.btwVerification.verifiedAddress }}</p>
+                                            </div>
+                                            <div v-if="selectedUser.btwVerification.verifiedAt" class="text-xs text-blue-600 pt-2 border-t border-blue-200">
+                                                Retrieved from VIES on {{ formatDate(selectedUser.btwVerification.verifiedAt) }}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Address Information -->
+                        <div v-if="selectedUser.address">
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Customer-Provided Information</h4>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <p class="text-sm text-gray-900">
+                                    {{ selectedUser.address.street }} {{ selectedUser.address.houseNumber }}<br>
+                                    {{ selectedUser.address.postalCode }} {{ selectedUser.address.city }}<br>
+                                    {{ selectedUser.address.country }}
+                                </p>
+                            </div>
+                            <p v-if="selectedUser.btwVerification?.verifiedAddress" class="mt-2 text-xs text-gray-500">
+                                ⚠️ Compare this address with the official VIES address above before verifying the account.
+                            </p>
+                        </div>
+
                         <!-- Account Status -->
                         <div>
-                            <h4 class="text-md font-medium text-gray-900 mb-3">{{ $t('admin.users.accountStatus') }}</h4>
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Account Status</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.verificationStatus') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Verification Status</label>
                                     <span :class="[
                                         selectedUser.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800',
                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1'
                                     ]">
-                                        {{ selectedUser.isVerified ? $t('admin.users.verified') : $t('admin.users.pendingVerification') }}
+                                        {{ selectedUser.isVerified ? 'Verified' : 'Pending Verification' }}
                                     </span>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.accountStatus') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Account Status</label>
                                     <span :class="[
                                         selectedUser.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
                                         'inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1'
                                     ]">
-                                        {{ selectedUser.isActive ? $t('admin.users.active') : $t('admin.users.inactive') }}
+                                        {{ selectedUser.isActive ? 'Active' : 'Inactive' }}
                                     </span>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ $t('admin.users.memberSince') }}</label>
+                                    <label class="block text-sm font-medium text-gray-700">Member Since</label>
                                     <p class="mt-1 text-sm text-gray-900">{{ formatDate(selectedUser.createdAt) }}</p>
                                 </div>
                             </div>
@@ -301,17 +374,17 @@
 
                         <!-- Verification Actions -->
                         <div v-if="selectedUser.role === 'customer'" class="border-t pt-6">
-                            <h4 class="text-md font-medium text-gray-900 mb-3">{{ $t('admin.users.verificationManagement') }}</h4>
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Verification Management</h4>
                             <div class="bg-gray-50 rounded-lg p-4">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">
-                                            {{ $t('admin.users.verificationStatusMessage') }}
+                                            Verification Status
                                         </p>
                                         <p class="text-sm text-gray-500">
                                             {{ selectedUser.isVerified
-                                                ? $t('admin.users.verifiedMessage')
-                                                : $t('admin.users.pendingMessage')
+                                                ? 'This user has been verified and can access all features.'
+                                                : 'This user is pending verification and has limited access.'
                                             }}
                                         </p>
                                     </div>
@@ -323,7 +396,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M5 13l4 4L19 7" />
                                             </svg>
-                                            {{ $t('admin.users.verifyUser') }}
+                                            Verify User
                                         </button>
                                         <button v-else @click="confirmUnverifyUser(selectedUser)"
                                             class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -332,7 +405,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M6 18L18 6M6 6l12 12" />
                                             </svg>
-                                            {{ $t('admin.users.removeVerification') }}
+                                            Remove Verification
                                         </button>
                                     </div>
                                 </div>
@@ -344,7 +417,7 @@
                     <div class="mt-6 flex justify-end border-t pt-4">
                         <button @click="closeModal"
                             class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ $t('admin.users.close') }}
+                            Close
                         </button>
                     </div>
                 </div>
@@ -384,7 +457,7 @@
                     <div class="flex justify-center space-x-3 mt-4">
                         <button @click="closeConfirmation"
                             class="px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                            {{ $t('common.actions.cancel') }}
+                            Cancel
                         </button>
                         <button @click="executeConfirmation" :class="[
                             confirmationModal.type === 'verify' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
@@ -405,9 +478,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import type { UserProfile } from '../../../types'
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
 const authStore = useAuthStore()
 const loading = ref(false)
 const allUsers = ref<UserProfile[]>([])
@@ -448,40 +519,40 @@ const loadUsers = async () => {
 const verifyUser = async (uid: string) => {
     try {
         await authStore.updateUserVerification(uid, true)
-        await loadUsers() // Refresh the list
+        await loadUsers()
     } catch (error) {
         console.error('Error verifying user:', error)
-        alert(t('admin.users.failedToVerify'))
+        alert('Failed to verify user')
     }
 }
 
 const unverifyUser = async (uid: string) => {
     try {
         await authStore.updateUserVerification(uid, false)
-        await loadUsers() // Refresh the list
+        await loadUsers()
     } catch (error) {
         console.error('Error unverifying user:', error)
-        alert(t('admin.users.failedToUnverify'))
+        alert('Failed to remove verification')
     }
 }
 
 const activateUser = async (uid: string) => {
     try {
         await authStore.updateUserStatus(uid, true)
-        await loadUsers() // Refresh the list
+        await loadUsers()
     } catch (error) {
         console.error('Error activating user:', error)
-        alert(t('admin.users.failedToActivate'))
+        alert('Failed to activate user')
     }
 }
 
 const deactivateUser = async (uid: string) => {
     try {
         await authStore.updateUserStatus(uid, false)
-        await loadUsers() // Refresh the list
+        await loadUsers()
     } catch (error) {
         console.error('Error deactivating user:', error)
-        alert(t('admin.users.failedToDeactivate'))
+        alert('Failed to deactivate user')
     }
 }
 
@@ -510,9 +581,9 @@ const confirmVerifyUser = (user: UserProfile) => {
     confirmationModal.value = {
         show: true,
         type: 'verify',
-        title: t('admin.users.confirmVerifyTitle'),
-        message: t('admin.users.confirmVerifyMessage', { userName: `${user.firstName} ${user.lastName}` }),
-        confirmText: t('admin.users.confirmVerifyButton'),
+        title: 'Verify User',
+        message: `Are you sure you want to verify ${user.firstName} ${user.lastName}? This will grant them full access to the platform.`,
+        confirmText: 'Verify User',
         user,
         action: () => verifyUser(user.uid)
     }
@@ -522,9 +593,9 @@ const confirmUnverifyUser = (user: UserProfile) => {
     confirmationModal.value = {
         show: true,
         type: 'unverify',
-        title: t('admin.users.confirmUnverifyTitle'),
-        message: t('admin.users.confirmUnverifyMessage', { userName: `${user.firstName} ${user.lastName}` }),
-        confirmText: t('admin.users.confirmUnverifyButton'),
+        title: 'Remove Verification',
+        message: `Are you sure you want to remove verification for ${user.firstName} ${user.lastName}? This will limit their access.`,
+        confirmText: 'Remove Verification',
         user,
         action: () => unverifyUser(user.uid)
     }
@@ -534,9 +605,9 @@ const confirmActivateUser = (user: UserProfile) => {
     confirmationModal.value = {
         show: true,
         type: 'activate',
-        title: t('admin.users.confirmActivateTitle'),
-        message: t('admin.users.confirmActivateMessage', { userName: `${user.firstName} ${user.lastName}` }),
-        confirmText: t('admin.users.confirmActivateButton'),
+        title: 'Activate User',
+        message: `Are you sure you want to activate ${user.firstName} ${user.lastName}?`,
+        confirmText: 'Activate',
         user,
         action: () => activateUser(user.uid)
     }
@@ -546,9 +617,9 @@ const confirmDeactivateUser = (user: UserProfile) => {
     confirmationModal.value = {
         show: true,
         type: 'deactivate',
-        title: t('admin.users.confirmDeactivateTitle'),
-        message: t('admin.users.confirmDeactivateMessage', { userName: `${user.firstName} ${user.lastName}` }),
-        confirmText: t('admin.users.confirmDeactivateButton'),
+        title: 'Deactivate User',
+        message: `Are you sure you want to deactivate ${user.firstName} ${user.lastName}? They will not be able to access the platform.`,
+        confirmText: 'Deactivate',
         user,
         action: () => deactivateUser(user.uid)
     }

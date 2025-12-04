@@ -1,20 +1,48 @@
-name = "motordash-email-service"
+name = "b2b-email-service"
 main = "src/index.ts"
-compatibility_date = "2024-09-25"
+compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Environment variables (set these in Cloudflare dashboard or via wrangler secret)
-[env.production.vars]
+# Queue Consumer Binding (Production)
+[[queues.consumers]]
+queue = "b2b-email-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "b2b-email-dlq"
+
+# Production vars (used when no --env specified)
+[vars]
 ENVIRONMENT = "production"
 FRONTEND_URL = "https://4tparts.com"
 ALLOWED_ORIGINS = "4tparts.com"
 
-[env.development.vars]
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+# ============================================================================
+# DEVELOPMENT ENVIRONMENT
+# ============================================================================
+[env.dev]
+name = "b2b-email-service-dev"
+
+# Queue Consumer Binding (Development)
+[[env.dev.queues.consumers]]
+queue = "b2b-email-queue-dev"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "b2b-email-dlq-dev"
+
+[env.dev.vars]
 ENVIRONMENT = "development" 
 FRONTEND_URL = "http://localhost:5173"
 ALLOWED_ORIGINS = "localhost:5173,localhost:3000"
 
-[observability.logs]
-enabled = true
+# Secrets to set via: wrangler secret put <NAME> --env dev
+# - SENDGRID_API_KEY
 
 

@@ -10,29 +10,9 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Initialize auth
+// Initialize auth on mount - router guards handle all redirects
 onMounted(async () => {
   await authStore.initAuth()
-
-  // If not authenticated and not on auth page, redirect to auth
-  if (!authStore.isAuthenticated && route.path !== '/auth') {
-    router.push('/auth')
-  }
-
-  // If authenticated and on auth page, redirect based on verification status
-  if (authStore.isAuthenticated && route.path === '/auth') {
-    if (authStore.isVerified || authStore.isAdmin) {
-      router.push('/')
-    } else {
-      router.push('/verification-pending')
-    }
-  }
-
-  // If authenticated but not verifbooleanied (and not admin), redirect to verification page
-  if (authStore.isAuthenticated && !authStore.isVerified && !authStore.isAdmin &&
-    route.path !== '/verification-pending' && route.path !== '/auth') {
-    router.push('/verification-pending')
-  }
 })
 
 // Toggle admin: navigate to /admin or back to /

@@ -14,7 +14,8 @@
     "accountSettings": "Accountinstellingen",
     "menu": "Menu",
     "account": "Account",
-    "settings": "Instellingen"
+    "settings": "Instellingen",
+    "selectLanguage": "Selecteer Taal"
   },
   "footer": {
     "company": {
@@ -30,8 +31,8 @@
     },
     "contact": {
       "title": "Contact",
-      "email": "E-mail: info@4Tparts.com",
-      "phone": "Telefoon: +31 (0) 20 123 4567"
+      "email": "E-mail: info{'@'}4Tparts.com",
+      "phone": "Telefoon: +32 (0) 47 21 2118"
     },
     "bottom": {
       "copyright": "B2B Platform. Alle rechten voorbehouden.",
@@ -82,9 +83,18 @@
     "emailRequired": "E-mailadres Vereist",
     "emailRequiredMessage": "Voer eerst uw e-mailadres in om uw wachtwoord opnieuw in te stellen.",
     "resetEmailSent": "Reset E-mail Verzonden",
-    "resetEmailSentMessage": "Instructies voor het opnieuw instellen van uw wachtwoord zijn verzonden naar {email}. Controleer uw e-mail en volg de instructies.",
+    "resetEmailSentMessage": "Instructies voor het opnieuw instellen van uw wachtwoord zijn verzonden naar uw e-mail. Controleer uw e-mail en volg de instructies.",
     "resetFailed": "Reset Mislukt",
     "resetFailedMessage": "Het verzenden van de e-mail voor wachtwoordherstel is mislukt. Probeer het opnieuw of neem contact op met de ondersteuning als het probleem aanhoudt.",
+    "resetYourPassword": "Stel Uw Wachtwoord Opnieuw In",
+    "resetPasswordInstruction": "Voer hieronder uw nieuwe wachtwoord in",
+    "newPassword": "Nieuw Wachtwoord",
+    "newPasswordPlaceholder": "Voer uw nieuwe wachtwoord in",
+    "confirmNewPassword": "Bevestig Nieuw Wachtwoord",
+    "passwordTooShort": "Wachtwoord moet minimaal 6 tekens lang zijn",
+    "resetPasswordButton": "Wachtwoord Resetten",
+    "resettingPassword": "Wachtwoord Resetten...",
+    "backToLogin": "Terug naar Login",
     "firstName": "Voornaam",
     "firstNamePlaceholder": "Voornaam",
     "lastName": "Achternaam",
@@ -115,207 +125,32 @@
     "confirmPasswordPlaceholder": "Bevestig wachtwoord",
     "passwordsDoNotMatch": "Wachtwoorden komen niet overeen",
     "validVatRequired": "Geldig BTW-nummer vereist om door te gaan",
-    "creatingAccount": "Account aanmaken..."
-  },
-  "admin": {
-    "title": "Beheerpaneel",
-    "tabs": {
-      "products": "Producten",
-      "categories": "Categorieën",
-      "users": "Gebruikers",
-      "orders": "Bestellingen"
+    "creatingAccount": "Account aanmaken...",
+    "error": "Authenticatiefout",
+    "loggedOut": "Uitgelogd",
+    "loggedOutMessage": "U bent succesvol uitgelogd.",
+    "passwordResetSuccess": "Wachtwoord Succesvol Gereset",
+    "passwordResetSuccessMessage": "Uw wachtwoord is succesvol opnieuw ingesteld. U kunt nu inloggen met uw nieuwe wachtwoord.",
+    "errors": {
+      "invalidCredentials": "Het e-mailadres of wachtwoord dat u heeft ingevoerd is onjuist. Controleer uw gegevens en probeer het opnieuw.",
+      "accountDisabled": "Uw account is uitgeschakeld. Neem contact op met de ondersteuning voor hulp.",
+      "tooManyAttempts": "Te veel mislukte inlogpogingen. Probeer het later opnieuw of stel uw wachtwoord opnieuw in.",
+      "emailInUse": "Er bestaat al een account met dit e-mailadres. Gebruik een ander e-mailadres of probeer in te loggen.",
+      "weakPassword": "Het wachtwoord moet minimaal 6 tekens lang zijn en een mix van letters en cijfers bevatten.",
+      "invalidEmail": "Voer een geldig e-mailadres in.",
+      "operationNotAllowed": "Deze authenticatiemethode is niet ingeschakeld. Neem contact op met de ondersteuning.",
+      "networkError": "Netwerkverbinding mislukt. Controleer uw internetverbinding en probeer het opnieuw.",
+      "unexpected": "Er is een onverwachte fout opgetreden. Probeer het opnieuw of neem contact op met de ondersteuning als het probleem aanhoudt.",
+      "notVerified": "Uw account is nog niet geverifieerd. Neem contact op met de ondersteuning.",
+      "sessionExpired": "Uw sessie is verlopen. Log opnieuw in.",
+      "missingFields": "Vul alle verplichte velden in.",
+      "serverError": "Er is een serverfout opgetreden. Probeer het later opnieuw."
     },
-    "orders": {
-      "title": "Bestellingenbeheer",
-      "comingSoon": "Bestellingenbeheer binnenkort beschikbaar..."
-    },
-    "categories": {
-      "category": "Categorie",
-      "parent": "Bovenliggend",
-      "order": "Volgorde",
-      "status": "Status",
-      "products": "Producten",
-      "edit": "Categorie Bewerken",
-      "create": "Nieuwe Categorie Aanmaken",
-      "name": "Naam *",
-      "namePlaceholder": "Voer categorienaam in",
-      "description": "Omschrijving",
-      "descriptionPlaceholder": "Optionele categorieomschrijving",
-      "noParent": "Geen (Hoofdcategorie)",
-      "displayOrder": "Weergavevolgorde",
-      "displayOrderHint": "Lagere nummers verschijnen eerst",
-      "color": "Kleur",
-      "image": "Categorieafbeelding",
-      "imageHint": "Upload één afbeelding om deze categorie te vertegenwoordigen",
-      "active": "Actief",
-      "saving": "Opslaan...",
-      "update": "Bijwerken",
-      "createButton": "Aanmaken",
-      "managementTitle": "Categoriebeheer",
-      "managementSubtitle": "Beheer productcategorieën en subcategorieën",
-      "add": "Categorie Toevoegen",
-      "loading": "Categorieën laden...",
-      "tryAgain": "Probeer opnieuw",
-      "searchPlaceholder": "Zoek categorieën...",
-      "allStatus": "Alle Statussen",
-      "inactive": "Inactief",
-      "actions": "Acties",
-      "unknown": "Onbekend",
-      "delete": "Verwijderen",
-      "noCategories": "Geen categorieën gevonden",
-      "noCategoriesMessage": "Begin met het aanmaken van uw eerste categorie.",
-      "updated": "Categorie Bijgewerkt",
-      "updatedMessage": "De categorie is succesvol bijgewerkt.",
-      "created": "Categorie Aangemaakt",
-      "createdMessage": "De nieuwe categorie is succesvol aangemaakt.",
-      "deleted": "Categorie Verwijderd",
-      "deletedMessage": "De categorie is succesvol verwijderd.",
-      "deleteFailed": "Verwijderen Mislukt",
-      "deleteFailedMessage": "Het verwijderen van de categorie is mislukt.",
-      "confirmDelete": "Weet u zeker dat u \"{categoryName}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
-    },
-    "users": {
-      "managementTitle": "Gebruikersbeheer",
-      "managementSubtitle": "Beheer gebruikersaccounts en verificatiestatus",
-      "totalUsers": "Totaal Gebruikers",
-      "pendingVerification": "Verificatie in Afwachting",
-      "verifiedUsers": "Geverifieerde Gebruikers",
-      "allUsers": "Alle Gebruikers",
-      "user": "Gebruiker",
-      "company": "Bedrijf",
-      "role": "Rol",
-      "status": "Status",
-      "created": "Aangemaakt",
-      "actions": "Acties",
-      "loading": "Gebruikers laden...",
-      "noUsers": "Geen gebruikers gevonden",
-      "vat": "BTW: {vat}",
-      "verified": "Geverifieerd",
-      "pending": "In afwachting",
-      "active": "Actief",
-      "inactive": "Inactief",
-      "view": "Bekijken",
-      "deactivate": "Deactiveren",
-      "activate": "Activeren",
-      "detailsTitle": "Gebruikersdetails",
-      "detailsSubtitle": "Beheer gebruikersverificatie en accountstatus",
-      "personalInfo": "Persoonlijke Informatie",
-      "fullName": "Volledige Naam",
-      "email": "E-mail",
-      "phone": "Telefoonnummer",
-      "companyInfo": "Bedrijfsinformatie",
-      "companyName": "Bedrijfsnaam",
-      "vatNumber": "BTW-nummer",
-      "accountStatus": "Accountstatus",
-      "verificationStatus": "Verificatiestatus",
-      "memberSince": "Lid Sinds",
-      "verificationManagement": "Verificatiebeheer",
-      "verificationStatusMessage": "Verificatiestatus Gebruiker",
-      "verifiedMessage": "Deze gebruiker is geverifieerd en heeft toegang tot alle functies.",
-      "pendingMessage": "De verificatie van deze gebruiker is in behandeling. Controleer hun informatie.",
-      "verifyUser": "Gebruiker Verifiëren",
-      "removeVerification": "Verificatie Verwijderen",
-      "close": "Sluiten",
-      "confirmVerifyTitle": "Gebruiker Verifiëren",
-      "confirmVerifyMessage": "Weet u zeker dat u {userName} wilt verifiëren? Dit geeft hen volledige toegang tot het platform.",
-      "confirmVerifyButton": "Verifiëren",
-      "confirmUnverifyTitle": "Verificatie Verwijderen",
-      "confirmUnverifyMessage": "Weet u zeker dat u de verificatie voor {userName} wilt verwijderen? Dit beperkt hun toegang tot het platform.",
-      "confirmUnverifyButton": "Verificatie Verwijderen",
-      "confirmActivateTitle": "Gebruiker Activeren",
-      "confirmActivateMessage": "Weet u zeker dat u {userName} wilt activeren?",
-      "confirmActivateButton": "Activeren",
-      "confirmDeactivateTitle": "Gebruiker Deactiveren",
-      "confirmDeactivateMessage": "Weet u zeker dat u {userName} wilt deactiveren? Ze kunnen dan niet meer inloggen op hun account.",
-      "confirmDeactivateButton": "Deactiveren",
-      "failedToVerify": "Verifiëren van gebruiker mislukt",
-      "failedToUnverify": "Verwijderen van verificatie mislukt",
-      "failedToActivate": "Activeren van gebruiker mislukt",
-      "failedToDeactivate": "Deactiveren van gebruiker mislukt"
-    },
-    "imageUpload": {
-      "title": "Productafbeeldingen",
-      "uploadFiles": "Bestanden uploaden",
-      "dragAndDrop": "of sleep hierheen",
-      "fileTypes": "PNG, JPG, GIF tot 10MB per stuk",
-      "uploading": "Afbeeldingen uploaden...",
-      "uploadProgress": "{progress}% voltooid",
-      "productImage": "Productafbeelding {index}",
-      "primary": "Primair",
-      "setPrimary": "Instellen als primair",
-      "notAnImage": "{fileName} is geen afbeeldingsbestand.",
-      "fileTooLarge": "{fileName} is te groot (max {size}MB).",
-      "maxImages": "Maximaal {count} afbeeldingen toegestaan.",
-      "uploadFailed": "Uploaden van afbeeldingen mislukt. Probeer het opnieuw."
-    },
-    "products": {
-      "edit": "Product Bewerken",
-      "add": "Nieuw Product Toevoegen",
-      "images": "Productafbeeldingen",
-      "basicInfo": "Basisinformatie",
-      "name": "Productnaam *",
-      "namePlaceholder": "Voer productnaam in",
-      "description": "Omschrijving *",
-      "descriptionPlaceholder": "Voer productomschrijving in",
-      "category": "Categorie *",
-      "selectCategory": "Selecteer een categorie",
-      "brand": "Merk",
-      "brandPlaceholder": "Voer merknaam in",
-      "sku": "Artikelnummer (SKU)",
-      "skuPlaceholder": "Voer SKU in",
-      "partNumber": "Onderdeelnummer",
-      "partNumberPlaceholder": "Voer onderdeelnummer in",
-      "pricing": "Prijzen & Voorraad",
-      "price": "Prijs (€) *",
-      "pricePlaceholder": "0,00",
-      "originalPrice": "Originele Prijs (€)",
-      "comingSoon": "Markeren als binnenkort beschikbaar",
-      "comingSoonHint": "Toon het product maar blokkeer bestellingen tot het beschikbaar is.",
-      "comingSoonManualHint": "Producten met 'binnenkort beschikbaar' kunnen niet besteld worden. Schakel dit uit zodra er voorraad is.",
-      "stock": "Voorraadhoeveelheid *",
-      "stockPlaceholder": "0",
-      "unit": "Eenheid",
-      "unitPlaceholder": "bijv., stuk, kg, meter",
-      "minOrder": "Min. Bestelhoeveelheid",
-      "minOrderPlaceholder": "1",
-      "maxOrder": "Max. Bestelhoeveelheid",
-      "maxOrderPlaceholder": "Geen limiet",
-      "physical": "Fysieke Eigenschappen",
-      "weight": "Gewicht (kg)",
-      "weightPlaceholder": "0,00",
-      "length": "Lengte (cm)",
-      "lengthPlaceholder": "0,0",
-      "width": "Breedte (cm)",
-      "widthPlaceholder": "0,0",
-      "height": "Hoogte (cm)",
-      "heightPlaceholder": "0,0",
-      "tags": "Tags",
-      "productTags": "Producttags",
-      "addTag": "+ Tag Toevoegen",
-      "enterTag": "Voer tag in",
-      "remove": "Verwijderen",
-      "specifications": "Specificaties",
-      "addSpecification": "+ Specificatie Toevoegen",
-      "propertyName": "Eigenschapnaam",
-      "value": "Waarde",
-      "saving": "Opslaan...",
-      "update": "Product Bijwerken",
-      "addProduct": "Product Toevoegen",
-      "managementTitle": "Productbeheer",
-      "managementSubtitle": "Voeg uw productcatalogus toe, bewerk en beheer deze",
-      "searchPlaceholder": "Zoek producten...",
-      "allCategories": "Alle Categorieën",
-      "allStock": "Alle Voorraad",
-      "inStock": "Op Voorraad",
-      "outOfStock": "Niet op Voorraad",
-      "product": "Product",
-      "actions": "Acties",
-      "loading": "Producten laden...",
-      "noProducts": "Geen producten gevonden",
-      "noCategory": "Geen Categorie",
-      "deleteTitle": "Product Verwijderen",
-      "deleteMessage": "Weet u zeker dat u \"{productName}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-      "deleteFailed": "Verwijderen van product mislukt"
+    "validation": {
+      "vatRequired": "BTW/VAT nummer is verplicht",
+      "vatTooShort": "BTW/VAT nummer is te kort",
+      "vatUnknownCountry": "Onbekende landcode: {code}. Alleen EU landen zijn toegestaan.",
+      "vatInvalidFormat": "Ongeldig formaat voor {country}. Verwacht formaat: {format}"
     }
   },
   "products": {
@@ -359,6 +194,7 @@
       "advanced": "Geavanceerde Filters",
       "allProducts": "Alle Producten",
       "category": "Categorie",
+      "category_id": "Categorie",
       "availability": "Beschikbaarheid",
       "priceRange": "Prijsklasse",
       "apply": "Filters Toepassen",
@@ -368,6 +204,7 @@
       "all": "Alle Producten",
       "allCategories": "Alle Categorieën",
       "inStockOnly": "Alleen op Voorraad",
+      "in_stockOnly": "Alleen op Voorraad",
       "anyPrice": "Elke Prijs",
       "hideFilters": "Filters Verbergen"
     },
@@ -643,6 +480,10 @@
       "AT": "Oostenrijk",
       "CH": "Zwitserland",
       "US": "Verenigde Staten"
+    },
+    "validation": {
+      "required": "Dit veld is verplicht",
+      "fillRequired": "Vul alle verplichte velden in om door te gaan"
     }
   },
   "orders": {
@@ -650,6 +491,9 @@
     "subtitle": "Volg uw facturen en bestelstatus",
     "refresh": "Vernieuwen",
     "loading": "Uw bestellingen laden...",
+    "product": "Product",
+    "quantity": "Aantal",
+    "unitPrice": "Stukprijs",
     "error": "Fout bij het laden van bestellingen",
     "noOrders": "Nog geen bestellingen",
     "noOrdersMessage": "Begin met winkelen om uw bestellingen hier te zien.",
@@ -658,6 +502,7 @@
     "orderPlacedOn": "Bestelling geplaatst op",
     "paidOn": "Betaald op",
     "dueOn": "Vervaldatum",
+    "items": "Artikelen",
     "itemsPurchased": "Bestelde artikelen",
     "sku": "SKU",
     "orderSummary": "Bestelsamenvatting",
@@ -722,7 +567,7 @@
     "contactSupport": "Als u vragen heeft of uw informatie wilt bijwerken, neem dan contact op met ons ondersteuningsteam.",
     "signOut": "Uitloggen",
     "needHelp": "Hulp nodig? Neem contact op met ondersteuning:",
-    "supportEmail": "support@4Tparts.com"
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Subcategorieën:",
@@ -743,5 +588,185 @@
     "tryAgain": "Probeer opnieuw",
     "noProducts": "Geen producten beschikbaar",
     "viewAll": "Bekijk alle {title}"
+  },
+  "privacy": {
+    "title": "Privacybeleid",
+    "lastUpdated": "Laatst bijgewerkt: {date}",
+    "introduction": {
+      "title": "Inleiding",
+      "content": "4Tparts B2B Platform ('wij', 'ons' of 'onze') is toegewijd aan het beschermen van uw privacy. Dit Privacybeleid legt uit hoe wij uw informatie verzamelen, gebruiken, openbaar maken en beschermen wanneer u ons B2B e-commerce platform gebruikt."
+    },
+    "dataCollection": {
+      "title": "Informatie die Wij Verzamelen",
+      "personal": {
+        "title": "Persoonlijke Informatie",
+        "content": "Wij verzamelen informatie die u direct aan ons verstrekt, waaronder: naam, e-mailadres, bedrijfsnaam, BTW-nummer, bedrijfsadres, telefoonnummer en betalingsinformatie."
+      },
+      "automatic": {
+        "title": "Automatisch Verzamelde Informatie",
+        "content": "Wanneer u toegang krijgt tot ons platform, verzamelen we automatisch bepaalde informatie over uw apparaat, waaronder informatie over uw webbrowser, IP-adres, tijdzone en cookies die op uw apparaat zijn geïnstalleerd."
+      },
+      "business": {
+        "title": "Bedrijfsinformatie",
+        "content": "Als B2B-platform verzamelen wij bedrijfsgerelateerde informatie zoals bedrijfsregistratiegegevens, BTW-nummers, bestelgeschiedenis en transactiegegevens die nodig zijn voor factuurgeneratie en naleving van belastingwetgeving."
+      }
+    },
+    "dataUse": {
+      "title": "Hoe Wij Uw Informatie Gebruiken",
+      "purposes": {
+        "title": "Wij gebruiken de verzamelde informatie om:",
+        "item1": "Uw bestellingen en facturen te verwerken en uit te voeren",
+        "item2": "Uw bedrijfsgegevens en BTW-registratie te verifiëren",
+        "item3": "Met u te communiceren over producten, diensten en promoties",
+        "item4": "Ons platform te verbeteren en optimaliseren",
+        "item5": "Te voldoen aan wettelijke verplichtingen en belastingvereisten",
+        "item6": "Fraude te voorkomen en de platformbeveiliging te handhaven"
+      }
+    },
+    "dataSharing": {
+      "title": "Informatie Delen en Openbaarmaking",
+      "intro": "Wij kunnen uw informatie delen in de volgende omstandigheden:",
+      "service": "Met dienstverleners die diensten namens ons uitvoeren (betalingsverwerkers, verzendende bedrijven, e-maildiensten)",
+      "legal": "Wanneer vereist door de wet of om te reageren op juridische processen",
+      "business": "In verband met een bedrijfsoverdracht, fusie of overname",
+      "consent": "Met uw toestemming of op uw verzoek"
+    },
+    "gdpr": {
+      "title": "AVG-Naleving",
+      "intro": "Als Europees bedrijf voldoen wij aan de Algemene Verordening Gegevensbescherming (AVG). U heeft het recht om:",
+      "access": "Toegang te krijgen tot uw persoonlijke gegevens",
+      "rectify": "Onjuiste persoonlijke gegevens te rectificeren",
+      "erase": "Verwijdering van uw persoonlijke gegevens te verzoeken",
+      "restrict": "Verwerking van uw persoonlijke gegevens te beperken",
+      "portability": "Gegevensoverdraagbaarheid",
+      "object": "Bezwaar te maken tegen verwerking van uw persoonlijke gegevens",
+      "contact": "Om deze rechten uit te oefenen, neem contact met ons op via privacy@4Tparts.com"
+    },
+    "cookies": {
+      "title": "Cookies en Tracking",
+      "content": "Wij gebruiken cookies en vergelijkbare trackingtechnologieën om activiteit op ons platform te volgen. U kunt uw browser instrueren om alle cookies te weigeren of aan te geven wanneer een cookie wordt verzonden. Als u echter geen cookies accepteert, kunt u mogelijk sommige delen van ons platform niet gebruiken."
+    },
+    "security": {
+      "title": "Gegevensbeveiliging",
+      "content": "Wij implementeren passende technische en organisatorische maatregelen om uw persoonlijke gegevens te beschermen tegen ongeoorloofde of onwettige verwerking, onopzettelijk verlies, vernietiging of schade. Geen enkele methode van verzending via internet is echter 100% veilig."
+    },
+    "retention": {
+      "title": "Gegevensbewaring",
+      "content": "Wij bewaren uw persoonlijke gegevens zolang als nodig is om de doeleinden in dit Privacybeleid te vervullen, tenzij een langere bewaartermijn wettelijk vereist is (bijv. belasting- en boekhoudvereisten)."
+    },
+    "contact": {
+      "title": "Contact",
+      "content": "Als u vragen heeft over dit Privacybeleid, neem dan contact met ons op via:",
+      "email": "E-mail: privacy@4Tparts.com",
+      "phone": "Telefoon: +32 (0) 47 21 2118"
+    }
+  },
+  "terms": {
+    "title": "Servicevoorwaarden",
+    "lastUpdated": "Laatst bijgewerkt: {date}",
+    "introduction": {
+      "title": "Inleiding",
+      "content": "Welkom bij 4Tparts B2B Platform. Deze Servicevoorwaarden ('Voorwaarden') regelen uw toegang tot en gebruik van ons B2B e-commerce platform. Door toegang te krijgen tot of gebruik te maken van ons platform, stemt u ermee in gebonden te zijn aan deze Voorwaarden."
+    },
+    "eligibility": {
+      "title": "Geschiktheid",
+      "content": "Ons platform is uitsluitend bedoeld voor business-to-business transacties. U moet een geregistreerde bedrijfsentiteit zijn met een geldig BTW-nummer om onze diensten te gebruiken. U verklaart dat u de bevoegdheid heeft om uw bedrijf aan deze Voorwaarden te binden."
+    },
+    "account": {
+      "title": "Accountregistratie",
+      "verification": {
+        "title": "Verificatie",
+        "content": "Alle accounts zijn onderhevig aan verificatie. Wij behouden ons het recht voor om een account te weigeren of op te schorten als wij uw bedrijfsgegevens of BTW-registratie niet kunnen verifiëren."
+      },
+      "responsibility": {
+        "title": "Accountverantwoordelijkheid",
+        "content": "U bent verantwoordelijk voor het handhaven van de vertrouwelijkheid van uw accountgegevens en voor alle activiteiten die onder uw account plaatsvinden. U moet ons onmiddellijk op de hoogte stellen van ongeoorloofd gebruik."
+      }
+    },
+    "orders": {
+      "title": "Bestellingen en Prijzen",
+      "placement": {
+        "title": "Bestelling Plaatsen",
+        "content": "Alle bestellingen zijn onderhevig aan acceptatie door ons. Wij behouden ons het recht voor om een bestelling om welke reden dan ook te weigeren of te annuleren, waaronder productbeschikbaarheid, fouten in prijzen of productinformatie, of fraudezorgen."
+      },
+      "pricing": {
+        "title": "Prijzen",
+        "content": "Alle prijzen zijn vermeld in Euro's (EUR) en exclusief BTW, tenzij anders vermeld. Prijzen kunnen zonder voorafgaande kennisgeving worden gewijzigd. De prijs die van toepassing is op uw bestelling is de prijs die wordt weergegeven op het moment van bestelling."
+      },
+      "minimum": {
+        "title": "Minimale Bestelhoeveelheden",
+        "content": "Bepaalde producten kunnen minimale bestelhoeveelheden hebben. Deze vereisten worden duidelijk aangegeven op de productpagina."
+      }
+    },
+    "payment": {
+      "title": "Betalingsvoorwaarden",
+      "invoice": {
+        "title": "Factuurbetaling",
+        "content": "Betaling geschiedt via factuur met standaard betalingstermijnen van 30 dagen vanaf de factuurdatum, tenzij schriftelijk anders overeengekomen. Te late betalingen kunnen onderhevig zijn aan rentekosten."
+      },
+      "vat": {
+        "title": "BTW en Belastingen",
+        "content": "Als B2B-transactie binnen de EU wordt BTW toegepast volgens de toepasselijke regelgeving. U bent verantwoordelijk voor het verstrekken van nauwkeurige BTW-informatie. Verleggingsregelingen kunnen van toepassing zijn voor intracommunautaire transacties."
+      }
+    },
+    "shipping": {
+      "title": "Verzending en Levering",
+      "policy": {
+        "title": "Verzendbeleid",
+        "content": "Verzendkosten worden berekend op basis van gewicht en bestemming. Levertijden zijn schattingen en niet gegarandeerd. Het risico van verlies gaat over op u bij aflevering aan de vervoerder."
+      },
+      "delay": {
+        "title": "Vertragingen",
+        "content": "Wij zijn niet aansprakelijk voor vertragingen veroorzaakt door omstandigheden buiten onze controle, waaronder maar niet beperkt tot vertragingen van de vervoerder, douaneklaring of overmacht."
+      }
+    },
+    "returns": {
+      "title": "Retourzendingen en Terugbetalingen",
+      "policy": {
+        "title": "Retourbeleid",
+        "content": "Retourzendingen worden geaccepteerd binnen 14 dagen na levering voor defecte of onjuiste producten. Producten moeten ongebruikt zijn en in originele verpakking. Aangepaste bestellingen komen niet in aanmerking voor retourzending."
+      },
+      "process": {
+        "title": "Retourproces",
+        "content": "Om een retourzending te initiëren, neem contact op met ons ondersteuningsteam via support@4Tparts.com. Retourverzendkosten zijn de verantwoordelijkheid van de klant, tenzij de retourzending te wijten is aan onze fout."
+      }
+    },
+    "warranty": {
+      "title": "Garanties en Afwijzingen",
+      "limited": {
+        "title": "Beperkte Garantie",
+        "content": "Producten worden geleverd met fabrieksgaranties waar van toepassing. Wij geven geen aanvullende garanties naast die welke door de fabrikant worden verstrekt."
+      },
+      "disclaimer": {
+        "title": "Disclaimer",
+        "content": "VOOR ZOVER TOEGESTAAN DOOR DE WET, WORDEN ONS PLATFORM EN PRODUCTEN GELEVERD 'AS IS' ZONDER GARANTIES VAN WELKE AARD DAN OOK, EXPLICIET OF IMPLICIET."
+      }
+    },
+    "liability": {
+      "title": "Beperking van Aansprakelijkheid",
+      "content": "VOOR ZOVER TOEGESTAAN DOOR DE WET, ZIJN WIJ NIET AANSPRAKELIJK VOOR INDIRECTE, INCIDENTELE, SPECIALE, GEVOLGSCHADE OF PUNITIEVE SCHADE, OF ENIG VERLIES VAN WINST OF INKOMSTEN. ONZE TOTALE AANSPRAKELIJKHEID ZAL NIET HOGER ZIJN DAN HET BEDRAG DAT DOOR U IS BETAALD VOOR HET SPECIFIEKE PRODUCT OF DE DIENST DIE AANLEIDING GEEFT TOT DE CLAIM."
+    },
+    "intellectual": {
+      "title": "Intellectueel Eigendom",
+      "content": "Alle inhoud op ons platform, waaronder tekst, afbeeldingen, logo's en software, is eigendom van 4Tparts of zijn licentiegevers en wordt beschermd door auteurs- en merkrechten. U mag ons intellectueel eigendom niet gebruiken zonder voorafgaande schriftelijke toestemming."
+    },
+    "termination": {
+      "title": "Beëindiging",
+      "content": "Wij behouden ons het recht voor om uw account op elk moment op te schorten of te beëindigen wegens schending van deze Voorwaarden, frauduleuze activiteit of een andere reden naar eigen goeddunken. Bij beëindiging moet u alle openstaande facturen betalen."
+    },
+    "governing": {
+      "title": "Toepasselijk Recht",
+      "content": "Deze Voorwaarden worden beheerst door de wetten van België. Eventuele geschillen zullen worden opgelost in de rechtbanken van België."
+    },
+    "changes": {
+      "title": "Wijzigingen in Voorwaarden",
+      "content": "Wij behouden ons het recht voor om deze Voorwaarden op elk moment te wijzigen. Wij zullen u op de hoogte stellen van materiële wijzigingen via e-mail. Uw voortgezet gebruik van het platform na wijzigingen vormt acceptatie van de gewijzigde Voorwaarden."
+    },
+    "contact": {
+      "title": "Contactinformatie",
+      "content": "Voor vragen over deze Voorwaarden, neem contact met ons op via:",
+      "email": "E-mail: support@4Tparts.com",
+      "phone": "Telefoon: +32 (0) 47 21 2118"
+    }
   }
 }

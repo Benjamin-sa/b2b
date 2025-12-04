@@ -23,7 +23,6 @@
                     </ol>
                 </nav>
                 <div class="mt-2">
-                    <h1 class="text-2xl font-bold text-gray-900">{{ currentCategory.name }}</h1>
                     <p v-if="currentCategory.description" class="text-sm text-gray-600 mt-1">
                         {{ currentCategory.description }}
                     </p>
@@ -31,42 +30,42 @@
             </div>
         </div>
 
-        <ProductsHeader :search-term="filters.searchTerm" :active-category="filters.category"
-            :in-stock-only="filters.inStock" :sort-by="filters.sortBy" :is-loading="productStore.isLoading"
-            :product-count="productStore.products.length" :total-count="productStore.products.length"
+        <ProductsHeader :search-term="filters.search_term" :active-category="currentCategory?.name || ''"
+            :in-stock-only="filters.in_stock" :sort-by="filters.sort_by" :is-loading="productStore.isLoading"
+            :product-count="productStore.products.length" :total-count="productStore.totalItems"
             :view-mode="viewMode" :price-range="priceRange" :has-advanced-filters="showAdvancedFilters"
             @search="handleSearch" @category-change="handleCategoryChange"
             @stock-filter-change="handleStockFilterChange" @sort-change="handleSortChange" @clear-filters="clearFilters"
             @view-mode-change="handleViewModeChange" @toggle-filters="toggleAdvancedFilters" />
 
         <!-- Advanced Filters Panel -->
-        <div v-if="showAdvancedFilters" class="bg-white border-b border-gray-200 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div v-if="showAdvancedFilters" class="bg-gradient-to-br from-white to-gray-50 border-b border-gray-200 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.category')
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{ $t('products.filters.category_id')
                         }}</label>
-                        <select v-model="filters.category"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <select v-model="filters.category_id"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
                             <option value="">{{ $t('products.filters.allCategories') }}</option>
-                            <option v-for="category in categories" :key="category" :value="category">{{ category }}
+                            <option v-for="category in categoryStore.categories" :key="category.id" :value="category.name">{{ category.name }}
                             </option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{
                             $t('products.filters.availability') }}</label>
-                        <select v-model="filters.inStock"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <select v-model="filters.in_stock"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
                             <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
-                            <option :value="true">{{ $t('products.filters.inStockOnly') }}</option>
+                            <option :value="true">{{ $t('products.filters.in_stockOnly') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('products.filters.priceRange')
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">{{ $t('products.filters.priceRange')
                         }}</label>
                         <select v-model="priceRange"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
                             @change="handlePriceRangeChange">
                             <option value="">{{ $t('products.filters.anyPrice') }}</option>
                             <option value="0-50">€0 - €50</option>
@@ -75,13 +74,13 @@
                             <option value="500+">€500+</option>
                         </select>
                     </div>
-                    <div class="flex flex-col space-y-2">
+                    <div class="flex flex-col space-y-3">
                         <button @click="clearFilters"
-                            class="w-full px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-300 rounded-md font-medium">
+                            class="w-full px-4 py-3 text-primary-600 hover:text-white bg-primary-50 hover:bg-primary-600 border border-primary-300 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md">
                             {{ $t('products.filters.clear') }}
                         </button>
                         <button @click="toggleAdvancedFilters"
-                            class="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-md font-medium">
+                            class="w-full px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-300 rounded-lg font-semibold transition-all duration-200">
                             {{ $t('products.filters.hideFilters') }}
                         </button>
                     </div>
@@ -92,21 +91,24 @@
         <!-- Products Grid/List -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div v-if="productStore.isLoading && !productStore.hasProducts" class="text-center py-24">
-                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto">
+                <div class="w-20 h-20 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto shadow-lg">
                 </div>
-                <p class="mt-6 text-lg text-gray-600 font-medium">{{ $t('products.header.loading') }}</p>
+                <p class="mt-8 text-lg text-gray-700 font-semibold">{{ $t('products.header.loading') }}</p>
+                <p class="mt-2 text-sm text-gray-500">Please wait while we fetch the products...</p>
             </div>
 
             <div v-else-if="!productStore.hasProducts" class="text-center py-24">
-                <div class="max-w-md mx-auto">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-4h-3a2 2 0 00-2 2v1m-3 0V9a2 2 0 012-2h3m-6 3h2m-2 0v2a1 1 0 01-1 1h-1a1 1 0 01-1-1v-2z" />
-                    </svg>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">{{ $t('products.empty.title') }}</h3>
-                    <p class="mt-2 text-gray-500">{{ $t('products.empty.description') }}</p>
+                <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-8 border border-gray-100">
+                    <div class="bg-gradient-to-br from-primary-100 to-primary-200 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
+                        <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-4h-3a2 2 0 00-2 2v1m-3 0V9a2 2 0 012-2h3m-6 3h2m-2 0v2a1 1 0 01-1 1h-1a1 1 0 01-1-1v-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="mt-6 text-xl font-bold text-gray-900">{{ $t('products.empty.title') }}</h3>
+                    <p class="mt-3 text-gray-600">{{ $t('products.empty.description') }}</p>
                     <button @click="clearFilters"
-                        class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="mt-6 inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transform transition-all duration-200 hover:scale-105 shadow-md">
                         {{ $t('products.empty.clearFilters') }}
                     </button>
                 </div>
@@ -125,22 +127,22 @@
                     <div v-for="product in productStore.products" :key="product.id"
                         class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
                         <div class="flex items-center space-x-6">
-                            <img :src="product.imageUrl || '/placeholder-product.jpg'" :alt="product.name"
+                            <img :src="product.image_url || '/placeholder-product.jpg'" :alt="product.name"
                                 class="w-24 h-24 object-cover rounded-lg">
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ product.name }}</h3>
                                 <div class="text-gray-600 mt-1 html-content"
-                                    v-html="truncateHtml(product.description, 150)"></div>
+                                    v-html="truncateHtml(product.description || '', 150)"></div>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
-                                    <button :disabled="product.comingSoon || !product.inStock" :class="[
-                                            product.comingSoon || !product.inStock
+                                    <button :disabled="product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0" :class="[
+                                            product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0
                                                 ? 'bg-gray-300 cursor-not-allowed'
                                                 : 'bg-blue-600 hover:bg-blue-700',
                                             'px-4 py-2 text-white rounded-md'
                                         ]">
-                                        <span v-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
-                                        <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                                        <span v-if="product.coming_soon === 1">{{ $t('products.card.comingSoon') }}</span>
+                                        <span v-else-if="(product.inventory?.b2b_stock ?? 0) <= 0">{{ $t('products.card.outOfStock') }}</span>
                                         <span v-else>{{ $t('products.card.addToCart') }}</span>
                                     </button>
                                 </div>
@@ -152,7 +154,7 @@
                 <!-- Load More Button -->
                 <div v-if="productStore.hasMoreProducts" class="mt-12 text-center">
                     <button @click="loadMore" :disabled="productStore.isLoading"
-                        class="px-8 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                        class="px-10 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-primary-800 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                         {{ productStore.isLoading ? $t('common.actions.loading') : $t('products.loadMore') }}
                     </button>
                 </div>
@@ -162,8 +164,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, watch, reactive, computed, nextTick } from 'vue';
+import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProductStore } from '../stores/products';
 import { useCategoryStore } from '../stores/categories';
 import ProductCard from '../components/product/ProductCard.vue';
@@ -179,6 +181,8 @@ const route = useRoute();
 const viewMode = ref<'grid' | 'list'>('grid');
 const showAdvancedFilters = ref(false);
 const priceRange = ref('');
+
+// Remove legacy categories array - we now use categoryStore.categories directly
 
 // Simple debounce implementation
 const debounce = (func: Function, wait: number) => {
@@ -198,49 +202,65 @@ const categoryIdFromRoute = computed(() => route.params.categoryId as string || 
 
 // --- Local State for Filters ---
 const filters = reactive<ProductFilter>({
-    searchTerm: '',
-    categoryId: '',
-    category: '',
-    inStock: undefined,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    search_term: '',
+    category_id: '',
+    in_stock: undefined,
+    sort_by: 'created_at',
+    sort_order: 'desc',
     limit: 12, // How many items to fetch per page
 });
-
-const categories = ref<string[]>([]);
 
 // Watch for route changes to update category filter
 watch(categoryIdFromRoute, (newCategoryId) => {
     if (newCategoryId) {
-        filters.categoryId = newCategoryId;
-        filters.category = ''; // Clear old category filter
+        filters.category_id = newCategoryId;
     } else {
-        filters.categoryId = '';
+        filters.category_id = '';
     }
 }, { immediate: true });
 
 // Get current category info for display
 const currentCategory = computed(() => {
-    if (!filters.categoryId) return null;
-    return categoryStore.categories.find(cat => cat.id === filters.categoryId);
+    if (!filters.category_id) return null;
+    return categoryStore.categories.find(cat => cat.id === filters.category_id);
 });
 
 // --- Event Handlers ---
 const handleSearch = (searchTerm: string) => {
-    filters.searchTerm = searchTerm;
+    filters.search_term = searchTerm;
 };
 
 const handleCategoryChange = (category: string) => {
-    filters.category = category;
-    filters.categoryId = ''; // Clear categoryId when using old category filter
+    filters.category_id = category;
 };
 
 const handleStockFilterChange = (inStock: boolean) => {
-    filters.inStock = inStock || undefined;
+    filters.in_stock = inStock || undefined;
 };
 
 const handleSortChange = (sortBy: string) => {
-    filters.sortBy = sortBy as 'name' | 'price' | 'createdAt' | 'updatedAt';
+    // Map camelCase from UI to snake_case for filter
+    const sortMap: Record<string, 'name' | 'price' | 'created_at' | 'updated_at' | 'stock'> = {
+        'name': 'name',
+        'price': 'price',
+        'createdAt': 'created_at',
+        'created_at': 'created_at',
+        'updatedAt': 'updated_at',
+        'updated_at': 'updated_at',
+        'stock': 'stock',
+        'popularity': 'created_at', // Map popularity to created_at
+    };
+    
+    filters.sort_by = sortMap[sortBy] || 'created_at';
+    
+    // Set appropriate sort order based on field
+    // Newest (createdAt) and popularity should be descending (most recent/popular first)
+    // Price and name should be ascending by default
+    if (sortBy === 'createdAt' || sortBy === 'created_at' || sortBy === 'popularity') {
+        filters.sort_order = 'desc';
+    } else {
+        filters.sort_order = 'asc';
+    }
 };
 
 const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -249,20 +269,20 @@ const handleViewModeChange = (mode: 'grid' | 'list') => {
 
 const handlePriceRangeChange = () => {
     if (priceRange.value === '') {
-        filters.minPrice = undefined;
-        filters.maxPrice = undefined;
+        filters.min_price = undefined;
+        filters.max_price = undefined;
     } else if (priceRange.value === '0-50') {
-        filters.minPrice = 0;
-        filters.maxPrice = 50;
+        filters.min_price = 0;
+        filters.max_price = 50;
     } else if (priceRange.value === '50-100') {
-        filters.minPrice = 50;
-        filters.maxPrice = 100;
+        filters.min_price = 50;
+        filters.max_price = 100;
     } else if (priceRange.value === '100-500') {
-        filters.minPrice = 100;
-        filters.maxPrice = 500;
+        filters.min_price = 100;
+        filters.max_price = 500;
     } else if (priceRange.value === '500+') {
-        filters.minPrice = 500;
-        filters.maxPrice = undefined;
+        filters.min_price = 500;
+        filters.max_price = undefined;
     }
 };
 
@@ -275,11 +295,11 @@ const toggleAdvancedFilters = () => {
 // The single, unified function to fetch data based on current filters
 const applyFiltersAndFetch = (loadMore = false) => {
     console.log('🔍 Applying filters and fetching products with:');
-    console.log('  - Search term:', filters.searchTerm);
-    console.log('  - Category:', filters.category);
-    console.log('  - In stock:', filters.inStock);
-    console.log('  - Price range:', filters.minPrice, 'to', filters.maxPrice);
-    console.log('  - Sort by:', filters.sortBy);
+    console.log('  - Search term:', filters.search_term);
+    console.log('  - Category:', filters.category_id);
+    console.log('  - In stock:', filters.in_stock);
+    console.log('  - Price range:', filters.min_price, 'to', filters.max_price);
+    console.log('  - Sort by:', filters.sort_by);
     console.log('  - Load more:', loadMore);
     productStore.fetchProducts(filters, loadMore);
 };
@@ -297,13 +317,13 @@ const loadMore = () => {
 };
 
 const clearFilters = () => {
-    filters.searchTerm = '';
-    filters.category = '';
-    filters.categoryId = categoryIdFromRoute.value || ''; // Keep category from route
-    filters.inStock = undefined;
-    filters.minPrice = undefined;
-    filters.maxPrice = undefined;
-    filters.sortBy = 'name';
+    filters.search_term = '';
+    filters.category_id = categoryIdFromRoute.value || ''; // Keep category from route
+    filters.in_stock = undefined;
+    filters.min_price = undefined;
+    filters.max_price = undefined;
+    filters.sort_by = 'created_at';
+    filters.sort_order = 'desc';
     priceRange.value = '';
     showAdvancedFilters.value = false;
     // The watch effect will automatically trigger a re-fetch
@@ -314,10 +334,45 @@ onMounted(async () => {
     // Load categories first
     await categoryStore.fetchCategories();
 
-    // Initial fetch when the component loads
-    applyFiltersAndFetch(false);
+    // Check if we're returning from product detail page
+    const navState = productStore.getNavigationState();
+    
+    if (navState.shouldRestore && navState.filters) {
+        // Restore saved state
+        Object.assign(filters, navState.filters);
+        viewMode.value = navState.viewMode;
+        priceRange.value = navState.priceRange;
+        showAdvancedFilters.value = navState.showAdvancedFilters;
+        
+        // Restore scroll position after DOM updates
+        await nextTick();
+        // Small delay to ensure products are rendered
+        setTimeout(() => {
+            window.scrollTo({
+                top: navState.scrollPosition,
+                behavior: 'instant'
+            });
+        }, 50);
+    } else {
+        // Fresh navigation - fetch products
+        applyFiltersAndFetch(false);
+    }
+});
 
-    // Fetch available categories for the dropdown (legacy support)
-    categories.value = await productStore.getCategories();
+// Save state before navigating to product detail
+onBeforeRouteLeave((to, _from, next) => {
+    if (to.name === 'ProductDetail') {
+        // Save current state before navigating to product detail
+        productStore.saveNavigationState(
+            { ...filters },
+            viewMode.value,
+            priceRange.value,
+            showAdvancedFilters.value
+        );
+    } else {
+        // Navigating elsewhere (not to product detail), clear saved state
+        productStore.clearNavigationState();
+    }
+    next();
 });
 </script>

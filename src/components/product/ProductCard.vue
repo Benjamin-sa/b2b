@@ -1,11 +1,11 @@
 <template>
     <div
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden h-full flex flex-col">
+        class="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden h-full flex flex-col border border-gray-100 transform hover:-translate-y-1">
         <RouterLink :to="{ name: 'ProductDetail', params: { id: product.id } }"
-            class="flex flex-col flex-grow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            class="flex flex-col flex-grow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             <!-- Product Image -->
             <div class="relative bg-secondary-200">
-                <img v-if="product.imageUrl" :src="product.imageUrl" :alt="product.name"
+                <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
                     class="w-full h-64 object-contain bg-white" @error="handleImageError" />
                 <div v-else class="w-full h-64 bg-secondary-200 flex items-center justify-center">
                     <svg class="w-12 h-12 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,53 +19,65 @@
 
             <!-- Product Info -->
             <div class="p-4 flex flex-col flex-grow">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-lg font-semibold text-secondary-900 line-clamp-2 flex-shrink-0">
+                <div class="flex flex-col space-y-2 mb-2">
+                    <!-- Title with tooltip for full text -->
+                    <h3 
+                        class="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 hover:text-primary-600 transition-colors cursor-help group relative"
+                        :title="product.name"
+                    >
                         {{ product.name }}
+                        <!-- Tooltip on hover for long titles -->
+                        <span class="invisible group-hover:visible absolute left-0 top-full mt-1 w-max max-w-xs bg-gray-900 text-white text-xs rounded-lg py-2 px-3 z-10 shadow-xl">
+                            {{ product.name }}
+                        </span>
                     </h3>
-                    <span v-if="product.comingSoon"
-                        class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
-                        {{ $t('products.card.comingSoon') }}
-                    </span>
-                    <span v-else-if="!product.inStock"
-                        class="bg-danger-100 text-danger-800 text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ml-2">
-                        {{ $t('products.card.outOfStock') }}
-                    </span>
+                    
+                    <!-- Badges stacked below title -->
+                    <div v-if="product.coming_soon || !product.in_stock" class="flex">
+                        <span v-if="product.coming_soon"
+                            class="bg-warning-100 text-warning-800 border border-warning-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                            {{ $t('products.card.comingSoon') }}
+                        </span>
+                        <span v-else-if="!product.in_stock"
+                            class="bg-danger-100 text-danger-800 border border-danger-200 text-xs font-bold px-2.5 py-1 rounded-full">
+                            {{ $t('products.card.outOfStock') }}
+                        </span>
+                    </div>
                 </div>
 
-                <p class="text-secondary-600 text-sm mb-3 line-clamp-2 flex-shrink-0 html-content"
-                    v-html="truncateHtml(product.description, 100)">
+                <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-shrink-0 html-content"
+                    v-html="truncateHtml(product.description || '', 100)">
                 </p>
 
                 <!-- Pricing -->
                 <div class="mb-4 flex-shrink-0">
                     <div class="flex items-baseline space-x-2">
-                        <span class="text-2xl font-bold text-gray-900">
+                        <span class="text-2xl font-bold text-primary-700">
                             €{{ formatPrice(product.price) }}
                         </span>
-                        <span v-if="product.originalPrice && product.originalPrice > product.price"
+                        <span v-if="product.original_price && product.original_price > product.price"
                             class="text-sm text-gray-500 line-through">
-                            €{{ formatPrice(product.originalPrice) }}
+                            €{{ formatPrice(product.original_price) }}
                         </span>
                     </div>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-sm text-gray-600 font-medium mt-1">
                         {{ product.unit || $t('products.card.perPiece') }}
                     </p>
                 </div>
 
                 <!-- Product Details -->
                 <div class="space-y-1 mb-4 flex-grow">
-                    <div v-if="product.category" class="flex items-center text-sm text-gray-600">
+                    <div v-if="categoryName" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.category') }}:</span>
-                        <span class="ml-1">{{ product.category }}</span>
+                        <span class="ml-1">{{ categoryName }}</span>
                     </div>
-                    <div v-if="product.shopifyVariantId" class="flex items-center text-sm text-gray-600">
+                    <div v-if="product.shopify_variant_id" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.sku') }}:</span>
-                        <span class="ml-1">{{ product.shopifyVariantId }}</span>
+                        <span class="ml-1">{{ product.shopify_variant_id }}</span>
                     </div>
-                    <div v-if="product.minOrderQuantity" class="flex items-center text-sm text-gray-600">
+                    <div v-if="product.min_order_quantity" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>
-                        <span class="ml-1">{{ product.minOrderQuantity }} {{ product.unit || $t('products.card.pieces')
+                        <span class="ml-1">{{ product.min_order_quantity }} {{ product.unit || $t('products.card.pieces')
                         }}</span>
                     </div>
                 </div>
@@ -75,19 +87,19 @@
         <!-- Actions -->
         <div class="px-4 pb-4 pt-0 flex flex-col space-y-2">
             <!-- Quantity Selector -->
-            <div class="flex items-center space-x-2">
-                <label class="text-sm font-medium text-gray-700">{{ $t('products.card.quantity') }}:</label>
-                <div class="flex items-center border rounded-md">
+            <div class="flex items-center justify-between space-x-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <label class="text-sm font-semibold text-gray-700">{{ $t('products.card.quantity') }}:</label>
+                <div class="flex items-center border-2 border-primary-200 rounded-lg bg-white overflow-hidden">
                     <button @click="decreaseQuantity"
-                        :disabled="quantity <= minSelectableQuantity || product.comingSoon"
-                        class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                        :disabled="quantity <= minSelectableQuantity || product.coming_soon === 1"
+                        class="px-3 py-2 text-primary-600 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold">
                         -
                     </button>
                     <input v-model.number="quantity" type="number" :min="minInputValue" :max="maxInputValue"
-                        :disabled="maxAddableQuantity <= 0 || product.comingSoon"
-                        class="w-16 px-2 py-1 text-center border-0 focus:ring-0" @blur="validateQuantity" />
-                    <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.comingSoon"
-                        class="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                        :disabled="maxAddableQuantity <= 0 || product.coming_soon === 1"
+                        class="w-14 px-2 py-2 text-center border-0 focus:ring-0 font-bold text-gray-900" @blur="validateQuantity" />
+                    <button @click="increaseQuantity" :disabled="quantity >= maxAddableQuantity || product.coming_soon === 1"
+                        class="px-3 py-2 text-primary-600 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold">
                         +
                     </button>
                 </div>
@@ -95,11 +107,11 @@
 
             <!-- Add to Cart Button -->
             <button @click="addToCart"
-                :disabled="product.comingSoon || !product.inStock || isLoading || maxAddableQuantity <= 0" :class="[
-                    product.comingSoon || !product.inStock || maxAddableQuantity <= 0
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700',
-                    'w-full text-white py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center'
+                :disabled="product.coming_soon === 1 || product.in_stock === 0 || isLoading || maxAddableQuantity <= 0" :class="[
+                    product.coming_soon === 1 || product.in_stock === 0 || maxAddableQuantity <= 0
+                        ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                        : 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transform hover:scale-105 shadow-md hover:shadow-lg',
+                    'w-full text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center font-semibold'
                 ]">
                 <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none"
                     viewBox="0 0 24 24">
@@ -110,8 +122,8 @@
                     </path>
                 </svg>
                 <span v-if="isLoading">{{ $t('products.card.adding') }}</span>
-                <span v-else-if="product.comingSoon">{{ $t('products.card.comingSoon') }}</span>
-                <span v-else-if="!product.inStock">{{ $t('products.card.outOfStock') }}</span>
+                <span v-else-if="product.coming_soon">{{ $t('products.card.comingSoon') }}</span>
+                <span v-else-if="!product.in_stock">{{ $t('products.card.outOfStock') }}</span>
                 <span v-else-if="maxAddableQuantity <= 0">{{ $t('products.card.outOfStock') }}</span>
                 <span v-else-if="isInCart">{{ $t('products.card.addedToCart') }}</span>
                 <span v-else>{{ $t('products.card.addToCart') }}</span>
@@ -124,6 +136,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCartStore } from '../../stores/cart'
+import { useCategoryStore } from '../../stores/categories'
 import { useNotificationStore } from '../../stores/notifications'
 import { truncateHtml } from '../../utils/htmlUtils'
 import type { Product, CartItem } from '../../types'
@@ -138,21 +151,29 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-    addToCart: [productId: string, quantity: number]
+    addToCart: [product_id: string, quantity: number]
 }>()
 
 const cartStore = useCartStore()
+const categoryStore = useCategoryStore()
 const notificationStore = useNotificationStore()
 const { t } = useI18n()
 
-const minOrder = computed(() => props.product.minOrderQuantity || 1)
+const minOrder = computed(() => props.product.min_order_quantity || 1)
+
+// Get category name from category_id
+const categoryName = computed(() => {
+    if (!props.product.category_id) return null
+    const category = categoryStore.categories.find(cat => cat.id === props.product.category_id)
+    return category?.name || props.product.category_id
+})
 
 const remainingCapacity = computed(() => cartStore.getRemainingQuantity(props.product))
 
 const maxAddableQuantity = computed(() => {
     const remaining = remainingCapacity.value
     if (!Number.isFinite(remaining)) {
-        return props.product.maxOrderQuantity || 999
+        return props.product.max_order_quantity || 999
     }
     return remaining
 })
@@ -165,7 +186,7 @@ const minSelectableQuantity = computed(() => {
 
 const maxInputValue = computed(() => {
     const max = maxAddableQuantity.value
-    return Number.isFinite(max) ? max : props.product.maxOrderQuantity || 999
+    return Number.isFinite(max) ? max : props.product.max_order_quantity || 999
 })
 
 const minInputValue = computed(() => {
@@ -211,7 +232,7 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = async () => {
-    if (!props.product.inStock || props.product.comingSoon || maxAddableQuantity.value <= 0) return
+    if (!props.product.in_stock || props.product.coming_soon || maxAddableQuantity.value <= 0) return
 
     isLoading.value = true
     try {

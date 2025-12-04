@@ -1,0 +1,30 @@
+{
+  "name": "stripe-service",
+  "version": "1.0.0",
+  "description": "Centralized Stripe service for B2B platform - handles products, customers, and invoices",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "tail": "wrangler tail",
+    "tail:dev": "wrangler tail --env dev"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "stripe",
+    "b2b",
+    "payments"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hono": "^4.6.14",
+    "stripe": "^17.5.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.94.0"
+  }
+}

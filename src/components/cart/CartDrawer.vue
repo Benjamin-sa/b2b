@@ -11,47 +11,47 @@
                 <div class="drawer-content absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl"
                     @click.stop>
                     <!-- Header -->
-                    <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                        <h2 class="text-lg font-medium text-gray-900">
+                    <div class="flex items-center justify-between p-4 sm:p-5 border-b-2 border-primary-100 bg-gradient-to-r from-primary-50 to-white">
+                        <h2 class="text-base sm:text-lg font-bold text-gray-900">
                             {{ $t('cart.shoppingCart') }}
-                            <span v-if="cartStore.itemCount > 0" class="text-sm text-gray-500 ml-2">
+                            <span v-if="cartStore.itemCount > 0" class="text-xs sm:text-sm text-primary-600 ml-2 font-medium">
                                 {{ $t('cart.itemCount', { count: cartStore.itemCount }) }}
                             </span>
                         </h2>
                         <button @click="closeDrawer"
-                            class="p-2 -m-2 text-gray-400 hover:text-gray-600 transition-smooth">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="p-2 -m-2 text-gray-400 hover:text-primary-600 transition-colors duration-200">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <!-- Cart content -->
-                    <div class="flex flex-col h-full">
+                    <!-- Cart content with proper height constraints -->
+                    <div class="flex flex-col overflow-hidden" style="height: calc(100% - 73px);">
                         <!-- Empty state -->
                         <Transition name="fade" mode="out-in">
                             <div v-if="cartStore.itemCount === 0" key="empty"
-                                class="flex-1 flex flex-col items-center justify-center p-8">
-                                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor"
+                                class="flex-1 flex flex-col items-center justify-center p-6 sm:p-8">
+                                <svg class="w-14 h-14 sm:w-16 sm:h-16 text-gray-300 mb-4" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9m0 0l1.5-6M7 13h10" />
                                 </svg>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ $t('cart.emptyTitle') }}</h3>
-                                <p class="text-gray-500 text-center mb-6">
+                                <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">{{ $t('cart.emptyTitle') }}</h3>
+                                <p class="text-sm sm:text-base text-gray-500 text-center mb-6">
                                     {{ $t('cart.emptyMessage') }}
                                 </p>
                                 <button @click="goToProducts"
-                                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 btn-animate transition-smooth">
+                                    class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:from-primary-700 hover:to-primary-800 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base font-medium">
                                     {{ $t('cart.browseProducts') }}
                                 </button>
                             </div>
 
-                            <!-- Cart items -->
-                            <div v-else key="items" class="flex-1 flex flex-col">
-                                <!-- Items list -->
-                                <div class="flex-1 overflow-y-auto p-4">
+                            <!-- Cart items with scrollable list -->
+                            <div v-else key="items" class="flex flex-col h-full overflow-hidden">
+                                <!-- Items list (scrollable area) -->
+                                <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 min-h-0">
                                     <div class="space-y-0">
                                         <TransitionGroup name="cart-item" tag="div">
                                             <CartItem v-for="item in cartStore.items" :key="item.productId" :item="item"
@@ -60,8 +60,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Summary section (sticky at bottom) -->
-                                <div class="border-t border-gray-200 p-4 bg-white">
+                                <!-- Summary section (always visible at bottom) -->
+                                <div class="flex-shrink-0 border-t-2 border-primary-100 p-3 sm:p-4 bg-gradient-to-r from-primary-50/50 to-white">
                                     <CartSummary @close="closeDrawer" />
                                 </div>
                             </div>

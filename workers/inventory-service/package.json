@@ -1,22 +1,31 @@
 {
   "name": "inventory-service",
   "version": "1.0.0",
-  "description": "Cloudflare Worker for managing inventory allocation between B2B and B2C",
+  "description": "B2B Inventory Management Service - Product CRUD and stock management",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "build": "wrangler deploy --dry-run",
-    "d1:create": "wrangler d1 create inventory-db",
-    "d1:migrate": "wrangler d1 migrations apply inventory-db",
-    "d1:local": "wrangler d1 execute inventory-db --local --file=./migrations/0001_initial.sql"
+    "dev": "wrangler dev --env dev --port 8791",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "inventory",
+    "products",
+    "d1"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0",
+    "nanoid": "^5.0.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240909.0",
-    "typescript": "^5.2.2",
-    "wrangler": "^4.36.0"
-  },
-  "dependencies": {
-    "hono": "^4.5.8"
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.45.0"
   }
 }

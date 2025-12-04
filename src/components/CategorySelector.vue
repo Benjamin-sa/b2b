@@ -1,20 +1,20 @@
 <template>
-    <div class="bg-white shadow-sm border-b sticky top-0 z-10">
+    <div class="bg-white shadow-sm border-b-2 border-primary-100 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="py-4">
+            <div class="py-3 sm:py-4">
                 <!-- Loading state -->
                 <div v-if="categoryStore.isLoading && !categoryStore.hasCategories" class="flex justify-center">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                    <div class="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-primary-600"></div>
                 </div>
 
                 <!-- Category navigation -->
-                <div v-else class="flex items-center space-x-1 overflow-x-auto scrollbar-hide">
+                <div v-else class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide pb-1">
                     <!-- All Categories -->
                     <button @click="selectCategory(null)" :class="[
-                        'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
+                        'px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all shadow-sm',
                         !selectedCategory
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow'
                     ]">
                         {{ $t('categorySelector.allCategories') }}
                     </button>
@@ -22,29 +22,29 @@
                     <!-- Root Categories -->
                     <template v-for="category in categoryStore.rootCategories" :key="category.id">
                         <button @click="selectCategory(category)" :class="[
-                            'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
+                            'px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all shadow-sm',
                             selectedCategory?.id === category.id
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow'
                         ]">
                             <span v-if="category.color" :style="{ backgroundColor: category.color }"
-                                class="w-3 h-3 rounded-full inline-block mr-2"></span>
+                                class="w-2 h-2 sm:w-3 sm:h-3 rounded-full inline-block mr-1 sm:mr-2 shadow-sm"></span>
                             {{ category.name }}
                         </button>
 
                         <!-- Subcategories (if parent is selected) -->
                         <template v-if="selectedCategory?.id === category.id">
-                            <span class="text-gray-400">→</span>
-                            <div class="flex space-x-1">
+                            <span class="text-primary-400 text-xs sm:text-sm">→</span>
+                            <div class="flex gap-1 sm:gap-1.5">
                                 <button v-for="child in getChildCategories(category.id)" :key="child.id"
                                     @click="selectCategory(child)" :class="[
-                                        'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                                        'px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shadow-sm',
                                         selectedCategory?.id === child.id
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md'
+                                            : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                                     ]">
                                     <span v-if="child.color" :style="{ backgroundColor: child.color }"
-                                        class="w-2 h-2 rounded-full inline-block mr-1"></span>
+                                        class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full inline-block mr-1 shadow-sm"></span>
                                     {{ child.name }}
                                 </button>
                             </div>
@@ -53,14 +53,14 @@
                 </div>
 
                 <!-- Breadcrumb (if subcategory is selected) -->
-                <div v-if="breadcrumb.length > 1" class="mt-2 flex items-center space-x-2 text-sm text-gray-500">
+                <div v-if="breadcrumb.length > 1" class="mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 overflow-x-auto scrollbar-hide">
                     <template v-for="(item, index) in breadcrumb" :key="index">
                         <button v-if="index < breadcrumb.length - 1" @click="selectCategory(item.category)"
-                            class="hover:text-gray-700 transition-colors">
+                            class="hover:text-primary-600 transition-colors whitespace-nowrap font-medium">
                             {{ item.name }}
                         </button>
-                        <span v-else class="text-gray-900 font-medium">{{ item.name }}</span>
-                        <svg v-if="index < breadcrumb.length - 1" class="w-4 h-4 text-gray-400" fill="none"
+                        <span v-else class="text-primary-700 font-bold whitespace-nowrap">{{ item.name }}</span>
+                        <svg v-if="index < breadcrumb.length - 1" class="w-3 h-3 sm:w-4 sm:h-4 text-primary-400 flex-shrink-0" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
@@ -69,7 +69,7 @@
 
                 <!-- Category description -->
                 <div v-if="selectedCategory?.description" class="mt-2">
-                    <p class="text-sm text-gray-600">{{ selectedCategory.description }}</p>
+                    <p class="text-xs sm:text-sm text-gray-600 bg-primary-50 px-3 py-2 rounded-lg border border-primary-100">{{ selectedCategory.description }}</p>
                 </div>
             </div>
         </div>

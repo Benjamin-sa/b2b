@@ -38,32 +38,15 @@
                 <p class="text-blue-800 text-sm" v-html="$t('verificationPending.whatHappensNextMessage')">
                 </p>
             </div>
-
-            <!-- Additional Information -->
-            <div class="text-sm text-gray-600 mb-6">
-                <p class="mb-2" v-html="$t('verificationPending.verificationTime')">
-                </p>
-                <p>
-                    {{ $t('verificationPending.contactSupport') }}
-                </p>
-            </div>
-
             <!-- Action Buttons -->
             <div class="space-y-3">
                 <button @click="logout"
                     class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
                     {{ $t('verificationPending.signOut') }}
                 </button>
-
-                <div class="text-xs text-gray-500 pt-2">
-                    {{ $t('verificationPending.needHelp') }}
-                    <a href="mailto:support@4Tparts.com" class="text-blue-600 hover:text-blue-800 underline">
-                        {{ $t('verificationPending.supportEmail') }}
-                    </a>
                 </div>
             </div>
         </div>
-    </div>
 </template>
 
 <script setup lang="ts">

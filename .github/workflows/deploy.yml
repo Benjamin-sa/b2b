@@ -1,0 +1,254 @@
+name: Deploy Workers
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'workers/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests and deploy directly to production'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '20'    
+
+jobs:
+  # ============================================================================
+  # STAGE 1: Deploy to Development
+  # ============================================================================
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      # Install dependencies for all workers
+      - name: Install dependencies
+        run: |
+          for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
+            echo "📦 Installing dependencies for $worker..."
+            cd workers/$worker
+            npm ci
+            cd ../..
+          done
+
+      # Deploy workers in dependency order
+      - name: Deploy auth-service (dev)
+        working-directory: workers/auth-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy inventory-service (dev)
+        working-directory: workers/inventory-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy stripe-service (dev)
+        working-directory: workers/stripe-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy email-service (dev)
+        working-directory: workers/email-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy telegram-service (dev)
+        working-directory: workers/telegram-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy shopify-sync-service (dev)
+        working-directory: workers/shopify-sync-service
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy r2-bucket (dev)
+        working-directory: workers/r2-bucket
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy api-gateway (dev)
+        working-directory: workers/api-gateway
+        run: wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Dev deployment complete
+        run: echo "✅ All workers deployed to development environment"
+
+  # ============================================================================
+  # STAGE 2: Run Integration Tests
+  # ============================================================================
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install api-gateway dependencies
+        working-directory: workers/api-gateway
+        run: npm ci
+
+      - name: Wait for dev deployment to stabilize
+        run: sleep 10
+
+      - name: Run integration tests
+        working-directory: workers/api-gateway
+        run: npm run test
+        env:
+          TEST_API_URL: ${{ secrets.DEV_API_URL }}
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+      - name: Tests passed
+        run: echo "✅ All integration tests passed"
+
+  # ============================================================================
+  # STAGE 3: Deploy to Production
+  # ============================================================================
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-dev, test]
+    if: ${{ always() && needs.deploy-dev.result == 'success' && (needs.test.result == 'success' || github.event.inputs.skip_tests == 'true') }}
+    environment:
+      name: production
+      url: https://api.b2b.motordash.be
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      # Install dependencies for all workers
+      - name: Install dependencies
+        run: |
+          for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
+            echo "📦 Installing dependencies for $worker..."
+            cd workers/$worker
+            npm ci
+            cd ../..
+          done
+
+      # Deploy workers in dependency order (production = default, no --env flag)
+      - name: Deploy auth-service (prod)
+        working-directory: workers/auth-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy inventory-service (prod)
+        working-directory: workers/inventory-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy stripe-service (prod)
+        working-directory: workers/stripe-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy email-service (prod)
+        working-directory: workers/email-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy telegram-service (prod)
+        working-directory: workers/telegram-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy shopify-sync-service (prod)
+        working-directory: workers/shopify-sync-service
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy r2-bucket (prod)
+        working-directory: workers/r2-bucket
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy api-gateway (prod)
+        working-directory: workers/api-gateway
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Production deployment complete
+        run: |
+          echo "🎉 All workers deployed to production!"
+          echo "======================================="
+          echo "Deployed services:"
+          echo "  - auth-service"
+          echo "  - inventory-service"
+          echo "  - stripe-service"
+          echo "  - email-service"
+          echo "  - telegram-service"
+          echo "  - shopify-sync-service"
+          echo "  - r2-bucket"
+          echo "  - api-gateway"
+
+  # ============================================================================
+  # Notify on failure
+  # ============================================================================
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-dev, test, deploy-prod]
+    if: failure()
+    steps:
+      - name: Deployment failed
+        run: |
+          echo "❌ Deployment pipeline failed!"
+          echo "Check the logs above for details."
+          exit 1

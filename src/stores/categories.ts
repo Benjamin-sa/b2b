@@ -1,22 +1,26 @@
 // src/stores/categories.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { 
-  collection, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy,
-  writeBatch
-} from 'firebase/firestore'
-import { db } from '../init/firebase'
 import type { Category, CategoryFilter, CategoryWithChildren } from '../types/category'
-import { appCache } from '../services/cache'
+
+// Normalize API Gateway URL to ensure it ends with /
+const API_GATEWAY_URL = (import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787')
+  .replace(/\/$/, '') + '/'
+
+// Helper to map D1 category to frontend type
+function mapCategory(dbCategory: any): Category {
+  return {
+    id: dbCategory.id,
+    name: dbCategory.name,
+    description: dbCategory.description,
+    parentId: dbCategory.parent_id,
+    imageUrl: dbCategory.image_url,
+    displayOrder: dbCategory.sort_order,
+    isActive: dbCategory.is_active === 1,
+    createdAt: dbCategory.created_at,
+    updatedAt: dbCategory.updated_at,
+  }
+}
 
 export const useCategoryStore = defineStore('categories', () => {
   // --- State ---
@@ -47,60 +51,40 @@ export const useCategoryStore = defineStore('categories', () => {
     return buildTree()
   })
 
-  // --- Helper Functions ---
-  // No longer need generateSlug function
-
   // --- Actions ---
   const fetchCategories = async (filters: CategoryFilter = {}) => {
-    const cacheKey = appCache.generateKey(filters)
-    const cachedCategories = appCache.get<Category[]>(cacheKey)
-    
-    if (cachedCategories) {
-      categories.value = cachedCategories
-      return
-    }
 
     isLoading.value = true
     error.value = null
 
     try {
-      let q = query(collection(db, 'categories'))
-
-      // Apply filters
+      const params = new URLSearchParams()
+      
       if (filters.parentId !== undefined) {
-        if (filters.parentId === null) {
-          q = query(q, where('parentId', '==', null))
-        } else {
-          q = query(q, where('parentId', '==', filters.parentId))
-        }
+        params.append('parentId', filters.parentId === null ? 'null' : filters.parentId)
       }
-
+      
       if (filters.isActive !== undefined) {
-        q = query(q, where('isActive', '==', filters.isActive))
+        params.append('isActive', filters.isActive ? 'true' : 'false')
       }
-
-      // Apply sorting
-      const sortBy = filters.sortBy || 'displayOrder'
-      const sortOrder = filters.sortOrder || 'asc'
-      q = query(q, orderBy(sortBy, sortOrder))
-
-      const querySnapshot = await getDocs(q)
-      let fetchedCategories = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Category))
-
-      // Client-side search filtering
+      
       if (filters.searchTerm) {
-        const term = filters.searchTerm.toLowerCase()
-        fetchedCategories = fetchedCategories.filter(cat =>
-          cat.name.toLowerCase().includes(term) ||
-          cat.description?.toLowerCase().includes(term)
-        )
+        params.append('search', filters.searchTerm)
       }
+
+      // Only add query string if there are parameters
+      const queryString = params.toString()
+      const url = `${API_GATEWAY_URL}api/categories${queryString ? `?${queryString}` : ''}`
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const fetchedCategories = data.categories.map(mapCategory)
 
       categories.value = fetchedCategories
-      appCache.set(cacheKey, fetchedCategories)
 
     } catch (err) {
       console.error('Error fetching categories:', err)
@@ -110,20 +94,45 @@ export const useCategoryStore = defineStore('categories', () => {
     }
   }
 
-  const getCategoryById = async (id: string): Promise<Category | null> => {
-    const cacheKey = `category_${id}`
-    const cachedCategory = appCache.get<Category>(cacheKey)
-    
-    if (cachedCategory) return cachedCategory
+  const fetchCategoriesTree = async () => {
 
     try {
-      const docSnap = await getDoc(doc(db, 'categories', id))
-      if (docSnap.exists()) {
-        const category = { id: docSnap.id, ...docSnap.data() } as Category
-        appCache.set(cacheKey, category)
-        return category
+      const response = await fetch(`${API_GATEWAY_URL}api/categories/tree`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch category tree: ${response.statusText}`)
       }
-      return null
+
+      const data = await response.json()
+      const tree = data.categories.map((cat: any) => mapCategoryWithChildren(cat))
+      
+      return tree
+    } catch (err) {
+      console.error('Error fetching category tree:', err)
+      throw err
+    }
+  }
+
+  function mapCategoryWithChildren(dbCategory: any): CategoryWithChildren {
+    return {
+      ...mapCategory(dbCategory),
+      children: dbCategory.children?.map((child: any) => mapCategoryWithChildren(child)) || []
+    }
+  }
+
+  const getCategoryById = async (id: string): Promise<Category | null> => {
+    
+    try {
+      const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) return null
+        throw new Error(`Failed to fetch category: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const category = mapCategory(data)
+      return category
     } catch (err) {
       console.error('Error fetching category:', err)
       return null
@@ -132,14 +141,9 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const getCategoryByName = async (name: string): Promise<Category | null> => {
     try {
-      const q = query(collection(db, 'categories'), where('name', '==', name))
-      const querySnapshot = await getDocs(q)
-      
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0]
-        return { id: doc.id, ...doc.data() } as Category
-      }
-      return null
+      // Fetch all categories and filter client-side
+      await fetchCategories({ searchTerm: name })
+      return categories.value.find(cat => cat.name === name) || null
     } catch (err) {
       console.error('Error fetching category by name:', err)
       return null
@@ -148,24 +152,41 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const addCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Check if category name already exists
-      const existingCategory = await getCategoryByName(categoryData.name)
-      if (existingCategory) {
-        throw new Error('A category with this name already exists')
+      // Generate slug from name if not provided
+      const slug = categoryData.name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+
+      const response = await fetch(`${API_GATEWAY_URL}api/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('b2b_access_token')}`
+        },
+        body: JSON.stringify({
+          name: categoryData.name,
+          description: categoryData.description,
+          slug,
+          parentId: categoryData.parentId,
+          imageUrl: categoryData.imageUrl,
+          sortOrder: categoryData.displayOrder,
+          isActive: categoryData.isActive
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create category')
       }
 
-      const newCategory = {
-        ...categoryData,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-
-      const docRef = await addDoc(collection(db, 'categories'), newCategory)
-      const category = { id: docRef.id, ...newCategory } as Category
+      const data = await response.json()
+      const category = mapCategory(data)
       
       // Update local state
       categories.value.push(category)
-      appCache.invalidate() // Clear all caches
       
       return category
     } catch (err) {
@@ -176,28 +197,38 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const updateCategory = async (id: string, updates: Partial<Omit<Category, 'id' | 'createdAt'>>) => {
     try {
-      // Check if new name already exists (excluding current category)
-      if (updates.name) {
-        const existingCategory = await getCategoryByName(updates.name)
-        if (existingCategory && existingCategory.id !== id) {
-          throw new Error('A category with this name already exists')
-        }
+      const payload: any = {}
+      
+      if (updates.name !== undefined) payload.name = updates.name
+      if (updates.description !== undefined) payload.description = updates.description
+      if (updates.parentId !== undefined) payload.parentId = updates.parentId
+      if (updates.imageUrl !== undefined) payload.imageUrl = updates.imageUrl
+      if (updates.displayOrder !== undefined) payload.sortOrder = updates.displayOrder
+      if (updates.isActive !== undefined) payload.isActive = updates.isActive
+
+      const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('b2b_access_token')}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update category')
       }
 
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      }
-
-      await updateDoc(doc(db, 'categories', id), updateData)
+      const data = await response.json()
+      const category = mapCategory(data)
       
       // Update local state
       const index = categories.value.findIndex(cat => cat.id === id)
       if (index !== -1) {
-        categories.value[index] = { ...categories.value[index], ...updateData }
+        categories.value[index] = category
       }
       
-      appCache.invalidate() // Clear all caches
     } catch (err) {
       console.error('Error updating category:', err)
       throw err
@@ -206,21 +237,20 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const deleteCategory = async (id: string) => {
     try {
-      // Check if category has children
-      const childCategories = categories.value.filter(cat => cat.parentId === id)
-      if (childCategories.length > 0) {
-        throw new Error('Cannot delete category with subcategories. Please delete or move subcategories first.')
+      const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('b2b_access_token')}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete category')
       }
-
-      // TODO: Check if category has products assigned
-      // This would require querying the products collection
-      // For now, we'll assume the admin checks this manually
-
-      await deleteDoc(doc(db, 'categories', id))
       
       // Update local state
       categories.value = categories.value.filter(cat => cat.id !== id)
-      appCache.invalidate() // Clear all caches
     } catch (err) {
       console.error('Error deleting category:', err)
       throw err
@@ -229,17 +259,19 @@ export const useCategoryStore = defineStore('categories', () => {
 
   const reorderCategories = async (categoryIds: string[]) => {
     try {
-      const batch = writeBatch(db)
-      
-      categoryIds.forEach((id, index) => {
-        const categoryRef = doc(db, 'categories', id)
-        batch.update(categoryRef, { 
-          displayOrder: index,
-          updatedAt: new Date()
-        })
+      const response = await fetch(`${API_GATEWAY_URL}api/categories/reorder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('b2b_access_token')}`
+        },
+        body: JSON.stringify({ categoryIds })
       })
-      
-      await batch.commit()
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to reorder categories')
+      }
       
       // Update local state
       categoryIds.forEach((id, index) => {
@@ -249,7 +281,6 @@ export const useCategoryStore = defineStore('categories', () => {
         }
       })
       
-      appCache.invalidate()
     } catch (err) {
       console.error('Error reordering categories:', err)
       throw err
@@ -278,6 +309,7 @@ export const useCategoryStore = defineStore('categories', () => {
     categoriesTree,
     // Actions
     fetchCategories,
+    fetchCategoriesTree,
     getCategoryById,
     getCategoryByName,
     addCategory,

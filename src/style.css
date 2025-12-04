@@ -1,4 +1,91 @@
 @import 'tailwindcss';
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+  /* Custom color palette */
+  --color-primary-50: #f0f2f4;
+  --color-primary-100: #e8edef;
+  --color-primary-200: #c5d0d8;
+  --color-primary-300: #a2b3c1;
+  --color-primary-400: #7b909f;
+  --color-primary-500: #466478;
+  --color-primary-600: #3a5563;
+  --color-primary-700: #2d4754;
+  --color-primary-800: #233a45;
+  --color-primary-900: #1a2c36;
+
+  --color-secondary-50: #f8fafc;
+  --color-secondary-100: #f1f5f9;
+  --color-secondary-200: #e2e8f0;
+  --color-secondary-300: #cbd5e1;
+  --color-secondary-400: #94a3b8;
+  --color-secondary-500: #64748b;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1e293b;
+  --color-secondary-900: #0f172a;
+
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #059669;
+  --color-success-600: #047857;
+  --color-success-700: #065f46;
+  --color-success-800: #064e3b;
+  --color-success-900: #064e3b;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #d97706;
+  --color-warning-600: #b45309;
+  --color-warning-700: #92400e;
+  --color-warning-800: #78350f;
+  --color-warning-900: #78350f;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #dc2626;
+  --color-danger-600: #b91c1c;
+  --color-danger-700: #991b1b;
+  --color-danger-800: #7f1d1d;
+  --color-danger-900: #7f1d1d;
+
+  /* Automotive theme colors */
+  --color-automotive-engine-blue: #466478;
+  --color-automotive-brake-red: #dc2626;
+  --color-automotive-suspension-green: #059669;
+  --color-automotive-tools-purple: #7c3aed;
+  --color-automotive-oil-amber: #d97706;
+
+  /* Custom animations */
+  --animate-fade-in: fade-in 0.5s ease-in-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-bounce-subtle: bounce-subtle 2s infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+}
+
 @import './assets/animations.css';
 
 /* 4Tparts Design System - CSS Custom Properties */

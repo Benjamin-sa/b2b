@@ -1,0 +1,38 @@
+{
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "description": "API Gateway for B2B platform - Routes requests to microservices",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "deploy:prod": "wrangler deploy --env prod",
+    "cf-typegen": "wrangler types",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run tests/integration/",
+    "test:integration:health": "vitest run tests/integration/health.test.ts",
+    "test:integration:auth": "vitest run tests/integration/auth.test.ts",
+    "test:integration:products": "vitest run tests/integration/products.test.ts",
+    "test:integration:categories": "vitest run tests/integration/categories.test.ts",
+    "test:integration:invoices": "vitest run tests/integration/invoices.test.ts",
+    "test:integration:admin": "vitest run tests/integration/admin.test.ts",
+    "test:verbose": "TEST_VERBOSE=true vitest run"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "hono-rate-limiter": "^0.4.2",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.3",
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@vitest/ui": "^4.0.6",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.6",
+    "wrangler": "^4.33.2"
+  }
+}

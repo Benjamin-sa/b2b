@@ -8,7 +8,13 @@ export interface UserProfile {
   lastName: string
   phone?: string
   btwNumber: string // Belgian VAT number
-  address: {
+  btwVerification?: {
+    verifiedName: string | null
+    verifiedAddress: string | null
+    verifiedAt: string | null
+    isValidated: boolean
+  }
+  address?: {
     street: string
     houseNumber: string
     postalCode: string
@@ -28,17 +34,48 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string
   password: string
-  confirmPassword: string
-  companyName: string
-  firstName: string
-  lastName: string
+  confirm_password: string
+  company_name: string
+  first_name: string
+  last_name: string
   phone?: string
-  btwNumber: string
+  btw_number: string
   address: {
     street: string
-    houseNumber: string
-    postalCode: string
+    house_number: string
+    postal_code: string
     city: string
     country: string
   }
+}
+
+// JWT Authentication types
+export interface AuthTokens {
+  accessToken: string
+  refreshToken: string
+}
+
+// Response format from auth worker
+export interface AuthResponse {
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  user: UserProfile
+}
+
+export interface ValidationResponse {
+  valid: boolean
+  user: UserProfile
+  permissions: string[]
+  sessionId: string
+}
+
+// Password Reset types
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetConfirm {
+  token: string
+  newPassword: string
 }

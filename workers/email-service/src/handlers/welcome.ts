@@ -1,46 +1,16 @@
-import type { Environment, WelcomeEmailRequest, EmailResponse } from '../types/email';
+import type { Environment, EmailResponse } from '../types/email';
 import { createSendGridClient } from '../utils/sendgrid';
-import { validateRequest, validateFirebaseAuth, jsonResponse, corsHeaders } from '../utils/validators';
 
-export async function handleWelcomeEmail(request: Request, env: Environment): Promise<Response> {
-  const origin = request.headers.get('Origin');
-  const cors = corsHeaders(env, origin || undefined);
-  
-  // Handle OPTIONS request for CORS
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: cors });
-  }
-  
-  if (request.method !== 'POST') {
-    return jsonResponse(
-      { success: false, error: 'Method not allowed' }, 
-      405, 
-      cors
-    );
-  }
-
-  // Validate Firebase authentication
-  if (!validateFirebaseAuth(request, env)) {
-    return jsonResponse(
-      { success: false, error: 'Unauthorized' },
-      401,
-      cors
-    );
-  }
-  
+/**
+ * Core email sending logic - used by both HTTP handler and queue consumer
+ */
+export async function sendWelcomeEmail(
+  env: Environment,
+  to: string,
+  userName: string,
+  companyName: string
+): Promise<EmailResponse> {
   try {
-    const body: WelcomeEmailRequest = await request.json();
-    
-    // Validate request
-    const validation = validateRequest(body, ['to', 'userName', 'companyName']);
-    if (!validation.valid) {
-      return jsonResponse(
-        { success: false, error: validation.error }, 
-        400, 
-        cors
-      );
-    }
-    
     // Create email content with deliverability best practices
     const htmlContent = `
       <!DOCTYPE html>
@@ -82,11 +52,11 @@ export async function handleWelcomeEmail(request: Request, env: Environment): Pr
                 <tr>
                   <td style="padding: 0 40px 40px 40px;">
                     <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
-                      Hello <strong>${body.userName}</strong>,
+                      Hello <strong>${userName}</strong>,
                     </p>
                     
                     <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
-                      Thank you for creating an account with 4Tparts B2B for <strong>${body.companyName}</strong>. 
+                      Thank you for creating an account with 4Tparts B2B for <strong>${companyName}</strong>. 
                       We're excited to welcome you to our business platform!
                     </p>
                     
@@ -127,7 +97,7 @@ export async function handleWelcomeEmail(request: Request, env: Environment): Pr
                 <tr>
                   <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #eee;">
                     <p style="margin: 0; font-size: 12px; color: #666; text-align: center; line-height: 1.5;">
-                      This email was sent to ${body.to} because you created an account on 4Tparts B2B.<br>
+                      This email was sent to ${to} because you created an account on 4Tparts B2B.<br>
                       If you didn't create this account, please contact us immediately.
                     </p>
                   </td>
@@ -143,9 +113,9 @@ export async function handleWelcomeEmail(request: Request, env: Environment): Pr
     const textContent = `
 4Tparts B2B - Welcome!
 
-Hello ${body.userName},
+Hello ${userName},
 
-Thank you for creating an account with 4Tparts B2B for ${body.companyName}. We're excited to welcome you to our business platform!
+Thank you for creating an account with 4Tparts B2B for ${companyName}. We're excited to welcome you to our business platform!
 
 Your account is currently under review by our team. Once verified, you'll receive another email with access to our full B2B platform and exclusive pricing.
 
@@ -160,30 +130,31 @@ Best regards,
 The 4Tparts Team
 
 ---
-This email was sent to ${body.to} because you created an account on 4Tparts B2B.
+This email was sent to ${to} because you created an account on 4Tparts B2B.
 If you didn't create this account, please contact us immediately.
     `;
     
     // Send email via SendGrid
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
-      body.to,
+      to,
       'Welcome to 4Tparts B2B Platform',
       htmlContent,
-      textContent
+      textContent,
+      {
+        clickTracking: true, // Can track clicks for marketing purposes
+        emailType: 'welcome',
+        categories: ['b2b-transactional', 'welcome']
+      }
     );
     
-    return jsonResponse(result, result.success ? 200 : 500, cors);
+    return result;
     
   } catch (error) {
     console.error('Welcome email error:', error);
-    return jsonResponse(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
-      500, 
-      cors
-    );
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    };
   }
 }

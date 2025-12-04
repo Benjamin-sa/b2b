@@ -14,7 +14,9 @@
     "accountSettings": "Account Settings",
     "menu": "Menu",
     "account": "Account",
-    "settings": "Settings"
+    "settings": "Settings",
+    "selectLanguage": "Select Language"
+
   },
   "footer": {
     "company": {
@@ -30,8 +32,8 @@
     },
     "contact": {
       "title": "Contact",
-      "email": "Email: info@4Tparts.com",
-      "phone": "Phone: +31 (0) 20 123 4567"
+      "email": "Email: info{'@'}4Tparts.com",
+      "phone": "Phone: +32 (0) 47 21 2118"
     },
     "bottom": {
       "copyright": "B2B Platform. All rights reserved.",
@@ -82,9 +84,18 @@
     "emailRequired": "Email Required",
     "emailRequiredMessage": "Please enter your email address first to reset your password.",
     "resetEmailSent": "Reset Email Sent",
-    "resetEmailSentMessage": "Password reset instructions have been sent to {email}. Please check your email and follow the instructions.",
+    "resetEmailSentMessage": "Password reset instructions have been sent to your email. Please check your email and follow the instructions.",
     "resetFailed": "Reset Failed",
     "resetFailedMessage": "Failed to send password reset email. Please try again or contact support if the problem persists.",
+    "resetYourPassword": "Reset Your Password",
+    "resetPasswordInstruction": "Enter your new password below",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordTooShort": "Password must be at least 6 characters long",
+    "resetPasswordButton": "Reset Password",
+    "resettingPassword": "Resetting Password...",
+    "backToLogin": "Back to Login",
     "firstName": "First Name",
     "firstNamePlaceholder": "First name",
     "lastName": "Last Name",
@@ -117,6 +128,10 @@
     "validVatRequired": "Valid VAT number required to continue",
     "creatingAccount": "Creating Account...",
     "error": "Authentication Error",
+    "loggedOut": "Logged Out",
+    "loggedOutMessage": "You have been logged out successfully.",
+    "passwordResetSuccess": "Password Reset Successful",
+    "passwordResetSuccessMessage": "Your password has been reset successfully. You can now login with your new password.",
     "errors": {
       "invalidCredentials": "The email or password you entered is incorrect. Please check your credentials and try again.",
       "accountDisabled": "Your account has been disabled. Please contact support for assistance.",
@@ -126,210 +141,17 @@
       "invalidEmail": "Please enter a valid email address.",
       "operationNotAllowed": "This authentication method is not enabled. Please contact support.",
       "networkError": "Network connection failed. Please check your internet connection and try again.",
-      "unexpected": "An unexpected error occurred. Please try again or contact support if the problem persists."
-    }
-  },
-  "admin": {
-    "title": "Admin Panel",
-    "tabs": {
-      "products": "Products",
-      "categories": "Categories",
-      "users": "Users",
-      "orders": "Orders"
+      "unexpected": "An unexpected error occurred. Please try again or contact support if the problem persists.",
+      "notVerified": "Your account has not been verified yet. Please contact support.",
+      "sessionExpired": "Your session has expired. Please login again.",
+      "missingFields": "Please fill in all required fields.",
+      "serverError": "A server error occurred. Please try again later."
     },
-    "orders": {
-      "title": "Orders Management",
-      "comingSoon": "Orders management coming soon..."
-    },
-    "categories": {
-      "category": "Category",
-      "parent": "Parent",
-      "order": "Order",
-      "status": "Status",
-      "products": "Products",
-      "edit": "Edit Category",
-      "create": "Create New Category",
-      "name": "Name *",
-      "namePlaceholder": "Enter category name",
-      "description": "Description",
-      "descriptionPlaceholder": "Optional category description",
-      "noParent": "None (Root Category)",
-      "displayOrder": "Display Order",
-      "displayOrderHint": "Lower numbers appear first",
-      "color": "Color",
-      "image": "Category Image",
-      "imageHint": "Upload a single image to represent this category",
-      "active": "Active",
-      "saving": "Saving...",
-      "update": "Update",
-      "createButton": "Create",
-      "managementTitle": "Category Management",
-      "managementSubtitle": "Manage product categories and subcategories",
-      "add": "Add Category",
-      "loading": "Loading categories...",
-      "tryAgain": "Try Again",
-      "searchPlaceholder": "Search categories...",
-      "allStatus": "All Status",
-      "inactive": "Inactive",
-      "actions": "Actions",
-      "unknown": "Unknown",
-      "delete": "Delete",
-      "noCategories": "No categories found",
-      "noCategoriesMessage": "Get started by creating your first category.",
-      "updated": "Category Updated",
-      "updatedMessage": "The category has been successfully updated.",
-      "created": "Category Created",
-      "createdMessage": "The new category has been successfully created.",
-      "deleted": "Category Deleted",
-      "deletedMessage": "The category has been successfully deleted.",
-      "deleteFailed": "Delete Failed",
-      "deleteFailedMessage": "Failed to delete the category.",
-      "confirmDelete": "Are you sure you want to delete \"{categoryName}\"? This action cannot be undone."
-    },
-    "users": {
-      "managementTitle": "Users Management",
-      "managementSubtitle": "Manage user accounts and verification status",
-      "totalUsers": "Total Users",
-      "pendingVerification": "Pending Verification",
-      "verifiedUsers": "Verified Users",
-      "allUsers": "All Users",
-      "user": "User",
-      "company": "Company",
-      "role": "Role",
-      "status": "Status",
-      "created": "Created",
-      "actions": "Actions",
-      "loading": "Loading users...",
-      "noUsers": "No users found",
-      "vat": "VAT: {vat}",
-      "verified": "Verified",
-      "pending": "Pending",
-      "active": "Active",
-      "inactive": "Inactive",
-      "view": "View",
-      "deactivate": "Deactivate",
-      "activate": "Activate",
-      "detailsTitle": "User Details",
-      "detailsSubtitle": "Manage user verification and account status",
-      "personalInfo": "Personal Information",
-      "fullName": "Full Name",
-      "email": "Email",
-      "phone": "Phone Number",
-      "companyInfo": "Company Information",
-      "companyName": "Company Name",
-      "vatNumber": "VAT Number",
-      "accountStatus": "Account Status",
-      "verificationStatus": "Verification Status",
-      "memberSince": "Member Since",
-      "verificationManagement": "Verification Management",
-      "verificationStatusMessage": "User Verification Status",
-      "verifiedMessage": "This user has been verified and can access all features.",
-      "pendingMessage": "This user is pending verification. Review their information.",
-      "verifyUser": "Verify User",
-      "removeVerification": "Remove Verification",
-      "close": "Close",
-      "confirmVerifyTitle": "Verify User",
-      "confirmVerifyMessage": "Are you sure you want to verify {userName}? This will grant them full access to the platform.",
-      "confirmVerifyButton": "Verify",
-      "confirmUnverifyTitle": "Remove Verification",
-      "confirmUnverifyMessage": "Are you sure you want to remove verification for {userName}? This will restrict their access to the platform.",
-      "confirmUnverifyButton": "Remove Verification",
-      "confirmActivateTitle": "Activate User",
-      "confirmActivateMessage": "Are you sure you want to activate {userName}?",
-      "confirmActivateButton": "Activate",
-      "confirmDeactivateTitle": "Deactivate User",
-      "confirmDeactivateMessage": "Are you sure you want to deactivate {userName}? They will not be able to access their account.",
-      "confirmDeactivateButton": "Deactivate",
-      "failedToVerify": "Failed to verify user",
-      "failedToUnverify": "Failed to unverify user",
-      "failedToActivate": "Failed to activate user",
-      "failedToDeactivate": "Failed to deactivate user"
-    },
-    "imageUpload": {
-      "title": "Product Images",
-      "uploadFiles": "Upload files",
-      "dragAndDrop": "or drag and drop",
-      "fileTypes": "PNG, JPG, GIF up to 10MB each",
-      "uploading": "Uploading images...",
-      "uploadProgress": "{progress}% complete",
-      "productImage": "Product image {index}",
-      "primary": "Primary",
-      "setPrimary": "Set Primary",
-      "notAnImage": "{fileName} is not an image file.",
-      "fileTooLarge": "{fileName} is too large (max {size}MB).",
-      "maxImages": "Maximum {count} images allowed.",
-      "uploadFailed": "Failed to upload images. Please try again."
-    },
-    "products": {
-      "edit": "Edit Product",
-      "add": "Add New Product",
-      "images": "Product Images",
-      "basicInfo": "Basic Information",
-      "name": "Product Name *",
-      "namePlaceholder": "Enter product name",
-      "description": "Description *",
-      "descriptionPlaceholder": "Enter product description",
-      "category": "Category *",
-      "selectCategory": "Select a category",
-      "brand": "Brand",
-      "brandPlaceholder": "Enter brand name",
-      "sku": "SKU",
-      "skuPlaceholder": "Enter SKU",
-      "partNumber": "Part Number",
-      "partNumberPlaceholder": "Enter part number",
-      "pricing": "Pricing & Inventory",
-      "price": "Price (€) *",
-      "pricePlaceholder": "0.00",
-      "originalPrice": "Original Price (€)",
-      "comingSoon": "Mark as Coming Soon",
-      "comingSoonHint": "Show the product to customers while preventing orders until it's available.",
-      "comingSoonManualHint": "Coming soon products can't be ordered. Uncheck this once stock is available.",
-      "stock": "Stock Quantity *",
-      "stockPlaceholder": "0",
-      "unit": "Unit",
-      "unitPlaceholder": "e.g., piece, kg, meter",
-      "minOrder": "Min Order Quantity",
-      "minOrderPlaceholder": "1",
-      "maxOrder": "Max Order Quantity",
-      "maxOrderPlaceholder": "No limit",
-      "physical": "Physical Properties",
-      "weight": "Weight (kg)",
-      "weightPlaceholder": "0.00",
-      "length": "Length (cm)",
-      "lengthPlaceholder": "0.0",
-      "width": "Width (cm)",
-      "widthPlaceholder": "0.0",
-      "height": "Height (cm)",
-      "heightPlaceholder": "0.0",
-      "tags": "Tags",
-      "productTags": "Product Tags",
-      "addTag": "+ Add Tag",
-      "enterTag": "Enter tag",
-      "remove": "Remove",
-      "specifications": "Specifications",
-      "addSpecification": "+ Add Specification",
-      "propertyName": "Property name",
-      "value": "Value",
-      "inventoryLinking": "Link to Inventory Product",
-      "inventoryTest": "Inventory Service Test",
-      "saving": "Saving...",
-      "update": "Update Product",
-      "addProduct": "Add Product",
-      "managementTitle": "Products Management",
-      "managementSubtitle": "Add, edit, and manage your product catalog",
-      "searchPlaceholder": "Search products...",
-      "allCategories": "All Categories",
-      "allStock": "All Stock",
-      "inStock": "In Stock",
-      "outOfStock": "Out of Stock",
-      "product": "Product",
-      "actions": "Actions",
-      "loading": "Loading products...",
-      "noProducts": "No products found",
-      "noCategory": "No Category",
-      "deleteTitle": "Delete Product",
-      "deleteMessage": "Are you sure you want to delete \"{productName}\"? This action cannot be undone.",
-      "deleteFailed": "Failed to delete product"
+    "validation": {
+      "vatRequired": "VAT/BTW number is required",
+      "vatTooShort": "VAT/BTW number is too short",
+      "vatUnknownCountry": "Unknown country code: {code}. Only EU countries are allowed.",
+      "vatInvalidFormat": "Invalid format for {country}. Expected format: {format}"
     }
   },
   "products": {
@@ -373,6 +195,7 @@
       "advanced": "Advanced Filters",
       "allProducts": "All Products",
       "category": "Category",
+      "category_id": "Category",
       "availability": "Availability",
       "priceRange": "Price Range",
       "apply": "Apply Filters",
@@ -382,6 +205,7 @@
       "all": "All Products",
       "allCategories": "All Categories",
       "inStockOnly": "In Stock Only",
+      "in_stockOnly": "In Stock Only",
       "anyPrice": "Any Price",
       "hideFilters": "Hide Filters"
     },
@@ -657,6 +481,10 @@
       "AT": "Austria",
       "CH": "Switzerland",
       "US": "United States"
+    },
+    "validation": {
+      "required": "This field is required",
+      "fillRequired": "Please fill in all required fields to continue"
     }
   },
   "orders": {
@@ -668,11 +496,15 @@
     "noOrders": "No orders yet",
     "noOrdersMessage": "Start shopping to see your orders here.",
     "browseProducts": "Browse Products",
+    "product": "Product",
+    "quantity": "Quantity",
+    "unitPrice": "Unit Price",
     "invoice": "Invoice",
     "orderPlacedOn": "Order placed on",
     "paidOn": "Paid",
-    "dueOn": "Due",
-    "itemsPurchased": "Items purchased",
+    "dueOn": "Due on",
+    "items": "Items",
+    "itemsPurchased": "Items Purchased",
     "sku": "SKU",
     "orderSummary": "Order Summary",
     "subtotal": "Subtotal",
@@ -736,7 +568,7 @@
     "contactSupport": "If you have any questions or need to update your information, please contact our support team.",
     "signOut": "Sign Out",
     "needHelp": "Need help? Contact support:",
-    "supportEmail": "support@4Tparts.com"
+    "supportEmail": "support{'@'}4Tparts.com"
   },
   "categoryCard": {
     "subcategories": "Subcategories:",
@@ -757,5 +589,185 @@
     "tryAgain": "Try Again",
     "noProducts": "No products available",
     "viewAll": "View all {title}"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "4Tparts B2B Platform ('we', 'us', or 'our') is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our B2B e-commerce platform."
+    },
+    "dataCollection": {
+      "title": "Information We Collect",
+      "personal": {
+        "title": "Personal Information",
+        "content": "We collect information that you provide directly to us, including: name, email address, company name, VAT/BTW number, business address, phone number, and payment information."
+      },
+      "automatic": {
+        "title": "Automatically Collected Information",
+        "content": "When you access our platform, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and cookies installed on your device."
+      },
+      "business": {
+        "title": "Business Information",
+        "content": "As a B2B platform, we collect business-related information such as company registration details, VAT numbers, order history, and transaction data necessary for invoice generation and tax compliance."
+      }
+    },
+    "dataUse": {
+      "title": "How We Use Your Information",
+      "purposes": {
+        "title": "We use the information we collect to:",
+        "item1": "Process and fulfill your orders and invoices",
+        "item2": "Verify your business credentials and VAT registration",
+        "item3": "Communicate with you about products, services, and promotions",
+        "item4": "Improve and optimize our platform",
+        "item5": "Comply with legal obligations and tax requirements",
+        "item6": "Prevent fraud and maintain platform security"
+      }
+    },
+    "dataSharing": {
+      "title": "Information Sharing and Disclosure",
+      "intro": "We may share your information in the following circumstances:",
+      "service": "With service providers who perform services on our behalf (payment processors, shipping companies, email services)",
+      "legal": "When required by law or to respond to legal processes",
+      "business": "In connection with a business transfer, merger, or acquisition",
+      "consent": "With your consent or at your direction"
+    },
+    "gdpr": {
+      "title": "GDPR Compliance",
+      "intro": "As a European business, we comply with the General Data Protection Regulation (GDPR). You have the right to:",
+      "access": "Access your personal data",
+      "rectify": "Rectify inaccurate personal data",
+      "erase": "Request erasure of your personal data",
+      "restrict": "Restrict processing of your personal data",
+      "portability": "Data portability",
+      "object": "Object to processing of your personal data",
+      "contact": "To exercise these rights, please contact us at privacy@4Tparts.com"
+    },
+    "cookies": {
+      "title": "Cookies and Tracking",
+      "content": "We use cookies and similar tracking technologies to track activity on our platform. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our platform."
+    },
+    "security": {
+      "title": "Data Security",
+      "content": "We implement appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage. However, no method of transmission over the Internet is 100% secure."
+    },
+    "retention": {
+      "title": "Data Retention",
+      "content": "We retain your personal data for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required by law (e.g., tax and accounting requirements)."
+    },
+    "contact": {
+      "title": "Contact Us",
+      "content": "If you have questions about this Privacy Policy, please contact us at:",
+      "email": "Email: privacy@4Tparts.com",
+      "phone": "Phone: +32 (0) 47 21 2118"
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "Welcome to 4Tparts B2B Platform. These Terms of Service ('Terms') govern your access to and use of our B2B e-commerce platform. By accessing or using our platform, you agree to be bound by these Terms."
+    },
+    "eligibility": {
+      "title": "Eligibility",
+      "content": "Our platform is intended solely for business-to-business transactions. You must be a registered business entity with a valid VAT/BTW number to use our services. You represent that you have the authority to bind your business to these Terms."
+    },
+    "account": {
+      "title": "Account Registration",
+      "verification": {
+        "title": "Verification",
+        "content": "All accounts are subject to verification. We reserve the right to reject or suspend any account if we cannot verify your business credentials or VAT registration."
+      },
+      "responsibility": {
+        "title": "Account Responsibility",
+        "content": "You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must notify us immediately of any unauthorized use."
+      }
+    },
+    "orders": {
+      "title": "Orders and Pricing",
+      "placement": {
+        "title": "Order Placement",
+        "content": "All orders are subject to acceptance by us. We reserve the right to refuse or cancel any order for any reason, including product availability, errors in pricing or product information, or fraud concerns."
+      },
+      "pricing": {
+        "title": "Pricing",
+        "content": "All prices are listed in Euros (EUR) and exclude VAT unless otherwise stated. Prices are subject to change without notice. The price applicable to your order is the price displayed at the time of order placement."
+      },
+      "minimum": {
+        "title": "Minimum Order Quantities",
+        "content": "Certain products may have minimum order quantities. These requirements will be clearly indicated on the product page."
+      }
+    },
+    "payment": {
+      "title": "Payment Terms",
+      "invoice": {
+        "title": "Invoice Payment",
+        "content": "Payment is made via invoice with standard payment terms of 30 days from the invoice date, unless otherwise agreed in writing. Late payments may be subject to interest charges."
+      },
+      "vat": {
+        "title": "VAT and Taxes",
+        "content": "As a B2B transaction within the EU, VAT will be applied according to applicable regulations. You are responsible for providing accurate VAT information. Reverse charge mechanisms may apply for intra-EU transactions."
+      }
+    },
+    "shipping": {
+      "title": "Shipping and Delivery",
+      "policy": {
+        "title": "Shipping Policy",
+        "content": "Shipping costs are calculated based on weight and destination. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery to the carrier."
+      },
+      "delay": {
+        "title": "Delays",
+        "content": "We are not liable for delays caused by circumstances beyond our control, including but not limited to carrier delays, customs clearance, or force majeure events."
+      }
+    },
+    "returns": {
+      "title": "Returns and Refunds",
+      "policy": {
+        "title": "Return Policy",
+        "content": "Returns are accepted within 14 days of delivery for defective or incorrect products. Products must be unused and in original packaging. Custom orders are not eligible for return."
+      },
+      "process": {
+        "title": "Return Process",
+        "content": "To initiate a return, contact our support team at support@4Tparts.com. Return shipping costs are the responsibility of the customer unless the return is due to our error."
+      }
+    },
+    "warranty": {
+      "title": "Warranties and Disclaimers",
+      "limited": {
+        "title": "Limited Warranty",
+        "content": "Products are provided with manufacturer warranties where applicable. We make no additional warranties beyond those provided by the manufacturer."
+      },
+      "disclaimer": {
+        "title": "Disclaimer",
+        "content": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR PLATFORM AND PRODUCTS ARE PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED."
+      }
+    },
+    "liability": {
+      "title": "Limitation of Liability",
+      "content": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT PAID BY YOU FOR THE SPECIFIC PRODUCT OR SERVICE GIVING RISE TO THE CLAIM."
+    },
+    "intellectual": {
+      "title": "Intellectual Property",
+      "content": "All content on our platform, including text, graphics, logos, and software, is the property of 4Tparts or its licensors and is protected by copyright and trademark laws. You may not use our intellectual property without prior written consent."
+    },
+    "termination": {
+      "title": "Termination",
+      "content": "We reserve the right to suspend or terminate your account at any time for violation of these Terms, fraudulent activity, or any other reason at our sole discretion. Upon termination, you must pay all outstanding invoices."
+    },
+    "governing": {
+      "title": "Governing Law",
+      "content": "These Terms are governed by the laws of Belgium. Any disputes shall be resolved in the courts of Belgium."
+    },
+    "changes": {
+      "title": "Changes to Terms",
+      "content": "We reserve the right to modify these Terms at any time. We will notify you of material changes via email. Your continued use of the platform after changes constitutes acceptance of the modified Terms."
+    },
+    "contact": {
+      "title": "Contact Information",
+      "content": "For questions about these Terms, please contact us at:",
+      "email": "Email: support@4Tparts.com",
+      "phone": "Phone: +32 (0) 47 21 2118"
+    }
   }
 }
