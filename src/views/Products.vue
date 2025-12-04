@@ -32,7 +32,7 @@
 
         <ProductsHeader :search-term="filters.search_term" :active-category="currentCategory?.name || ''"
             :in-stock-only="filters.in_stock" :sort-by="filters.sort_by" :is-loading="productStore.isLoading"
-            :product-count="productStore.products.length" :total-count="productStore.products.length"
+            :product-count="productStore.products.length" :total-count="productStore.totalItems"
             :view-mode="viewMode" :price-range="priceRange" :has-advanced-filters="showAdvancedFilters"
             @search="handleSearch" @category-change="handleCategoryChange"
             @stock-filter-change="handleStockFilterChange" @sort-change="handleSortChange" @clear-filters="clearFilters"
@@ -164,8 +164,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, watch, reactive, computed, nextTick } from 'vue';
+import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProductStore } from '../stores/products';
 import { useCategoryStore } from '../stores/categories';
 import ProductCard from '../components/product/ProductCard.vue';
@@ -205,8 +205,8 @@ const filters = reactive<ProductFilter>({
     search_term: '',
     category_id: '',
     in_stock: undefined,
-    sort_by: 'name',
-    sort_order: 'asc',
+    sort_by: 'created_at',
+    sort_order: 'desc',
     limit: 12, // How many items to fetch per page
 });
 
@@ -239,7 +239,28 @@ const handleStockFilterChange = (inStock: boolean) => {
 };
 
 const handleSortChange = (sortBy: string) => {
-    filters.sort_by = sortBy as 'name' | 'price' | 'created_at' | 'updated_at' | 'stock';
+    // Map camelCase from UI to snake_case for filter
+    const sortMap: Record<string, 'name' | 'price' | 'created_at' | 'updated_at' | 'stock'> = {
+        'name': 'name',
+        'price': 'price',
+        'createdAt': 'created_at',
+        'created_at': 'created_at',
+        'updatedAt': 'updated_at',
+        'updated_at': 'updated_at',
+        'stock': 'stock',
+        'popularity': 'created_at', // Map popularity to created_at
+    };
+    
+    filters.sort_by = sortMap[sortBy] || 'created_at';
+    
+    // Set appropriate sort order based on field
+    // Newest (createdAt) and popularity should be descending (most recent/popular first)
+    // Price and name should be ascending by default
+    if (sortBy === 'createdAt' || sortBy === 'created_at' || sortBy === 'popularity') {
+        filters.sort_order = 'desc';
+    } else {
+        filters.sort_order = 'asc';
+    }
 };
 
 const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -301,7 +322,8 @@ const clearFilters = () => {
     filters.in_stock = undefined;
     filters.min_price = undefined;
     filters.max_price = undefined;
-    filters.sort_by = 'name';
+    filters.sort_by = 'created_at';
+    filters.sort_order = 'desc';
     priceRange.value = '';
     showAdvancedFilters.value = false;
     // The watch effect will automatically trigger a re-fetch
@@ -312,7 +334,45 @@ onMounted(async () => {
     // Load categories first
     await categoryStore.fetchCategories();
 
-    // Initial fetch when the component loads
-    applyFiltersAndFetch(false);
+    // Check if we're returning from product detail page
+    const navState = productStore.getNavigationState();
+    
+    if (navState.shouldRestore && navState.filters) {
+        // Restore saved state
+        Object.assign(filters, navState.filters);
+        viewMode.value = navState.viewMode;
+        priceRange.value = navState.priceRange;
+        showAdvancedFilters.value = navState.showAdvancedFilters;
+        
+        // Restore scroll position after DOM updates
+        await nextTick();
+        // Small delay to ensure products are rendered
+        setTimeout(() => {
+            window.scrollTo({
+                top: navState.scrollPosition,
+                behavior: 'instant'
+            });
+        }, 50);
+    } else {
+        // Fresh navigation - fetch products
+        applyFiltersAndFetch(false);
+    }
+});
+
+// Save state before navigating to product detail
+onBeforeRouteLeave((to, _from, next) => {
+    if (to.name === 'ProductDetail') {
+        // Save current state before navigating to product detail
+        productStore.saveNavigationState(
+            { ...filters },
+            viewMode.value,
+            priceRange.value,
+            showAdvancedFilters.value
+        );
+    } else {
+        // Navigating elsewhere (not to product detail), clear saved state
+        productStore.clearNavigationState();
+    }
+    next();
 });
 </script>

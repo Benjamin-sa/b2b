@@ -57,6 +57,14 @@ export const useProductStore = defineStore('products', () => {
   const totalPages = ref(0);
   const hasMoreProducts = ref(true);
 
+  // Navigation state for scroll position persistence
+  const savedScrollPosition = ref(0);
+  const savedFilters = ref<ProductFilter | null>(null);
+  const savedViewMode = ref<'grid' | 'list'>('grid');
+  const savedPriceRange = ref('');
+  const savedShowAdvancedFilters = ref(false);
+  const returningFromDetail = ref(false);
+
   // --- Computed Properties ---
   const hasProducts = computed(() => products.value.length > 0);
 
@@ -454,6 +462,47 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
+  /**
+   * Save current navigation state before navigating to product detail
+   */
+  const saveNavigationState = (filters: ProductFilter, viewMode: 'grid' | 'list', priceRange: string, showAdvancedFilters: boolean) => {
+    savedScrollPosition.value = window.scrollY;
+    savedFilters.value = { ...filters };
+    savedViewMode.value = viewMode;
+    savedPriceRange.value = priceRange;
+    savedShowAdvancedFilters.value = showAdvancedFilters;
+    returningFromDetail.value = true;
+  };
+
+  /**
+   * Get saved navigation state and clear the returningFromDetail flag
+   */
+  const getNavigationState = () => {
+    const state = {
+      scrollPosition: savedScrollPosition.value,
+      filters: savedFilters.value,
+      viewMode: savedViewMode.value,
+      priceRange: savedPriceRange.value,
+      showAdvancedFilters: savedShowAdvancedFilters.value,
+      shouldRestore: returningFromDetail.value && products.value.length > 0,
+    };
+    // Clear the flag after reading
+    returningFromDetail.value = false;
+    return state;
+  };
+
+  /**
+   * Clear saved navigation state (e.g., when navigating from navbar)
+   */
+  const clearNavigationState = () => {
+    savedScrollPosition.value = 0;
+    savedFilters.value = null;
+    savedViewMode.value = 'grid';
+    savedPriceRange.value = '';
+    savedShowAdvancedFilters.value = false;
+    returningFromDetail.value = false;
+  };
+
   return {
     // State
     products,
@@ -477,5 +526,9 @@ export const useProductStore = defineStore('products', () => {
     getCategories,
     // Inventory Information Actions
     getInventoryInfo,
+    // Navigation state actions
+    saveNavigationState,
+    getNavigationState,
+    clearNavigationState,
   };
 });

@@ -148,14 +148,49 @@ products.get("/category/:categoryId", async (c) => {
  * Create a new product (admin only)
  *
  * Orchestration flow:
- * 1. Create product in Stripe (get stripe_product_id, stripe_price_id)
- * 2. Create product in D1 via inventory-service (with Stripe IDs)
- * 3. Trigger Shopify sync (non-blocking)
+ * 1. Validate required fields (name, price)
+ * 2. Create product in Stripe (get stripe_product_id, stripe_price_id)
+ * 3. Create product in D1 via inventory-service (with Stripe IDs)
+ * 4. Trigger Shopify sync (non-blocking)
  */
 products.post("/", async (c) => {
   try {
     // Parse the request body
     const body = await c.req.json();
+
+    // Validate required fields at gateway level
+    if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
+      return c.json(
+        {
+          error: "Validation Error",
+          code: "validation/missing-name",
+          message: "Product name is required",
+        },
+        400
+      );
+    }
+
+    if (body.price === undefined || body.price === null) {
+      return c.json(
+        {
+          error: "Validation Error",
+          code: "validation/missing-price",
+          message: "Product price is required",
+        },
+        400
+      );
+    }
+
+    if (typeof body.price !== 'number' || body.price < 0) {
+      return c.json(
+        {
+          error: "Validation Error",
+          code: "validation/invalid-price",
+          message: "Product price must be a positive number",
+        },
+        400
+      );
+    }
 
     // Generate product ID for Stripe (inventory-service will use this)
     const productId = body.id || crypto.randomUUID().replace(/-/g, "").slice(0, 21);

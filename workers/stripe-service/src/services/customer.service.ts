@@ -138,6 +138,9 @@ export async function createCustomer(
 /**
  * Update an existing Stripe customer
  * 
+ * Note: tax_id_data can only be set during customer creation, not update.
+ * To update tax IDs, use the Tax IDs API separately.
+ * 
  * @param env - Cloudflare environment with Stripe key
  * @param input - Updated customer data with stripe_customer_id
  */
@@ -151,6 +154,10 @@ export async function updateCustomer(
 
     const stripe = getStripeClient(env);
     const customerData = buildCustomerData(input as CustomerInput);
+    
+    // Remove tax_id_data from update - it's only valid for customer creation
+    // To update tax IDs, the Tax IDs API must be used separately
+    delete (customerData as any).tax_id_data;
 
     console.log(`Updating Stripe customer ${input.stripe_customer_id}`);
 

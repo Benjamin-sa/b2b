@@ -146,7 +146,7 @@ describe('Integration: Admin Operations', () => {
         (user: any) => user.role !== 'admin'
       )
 
-      if (nonAdminUser) {
+      if (nonAdminUser && nonAdminUser.uid) {
         const newFirstName = `Test_${Date.now()}`
 
         const response = await adminClient.put(
@@ -154,9 +154,6 @@ describe('Integration: Admin Operations', () => {
           { first_name: newFirstName },
           { auth: true }
         )
-
-        console.log(`[DEBUG] Update response status: ${response.status}`)
-        console.log(`[DEBUG] Update response data:`, JSON.stringify(response.data, null, 2))
 
         expectSuccess(response)
         expect(response.data).toHaveProperty('message')

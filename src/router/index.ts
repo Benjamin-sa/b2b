@@ -162,7 +162,22 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // If browser back/forward button was used and there's a saved position
+    if (savedPosition) {
+      return savedPosition;
+    }
+    // For navigating to Products from ProductDetail, let the component handle scroll restoration
+    if (to.name === 'Products' && from.name === 'ProductDetail') {
+      return false; // Don't scroll, let component handle it
+    }
+    if (to.name === 'CategoryProducts' && from.name === 'ProductDetail') {
+      return false; // Don't scroll, let component handle it
+    }
+    // Default: scroll to top
+    return { top: 0 };
+  }
 })
 
 // Navigation guards

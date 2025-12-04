@@ -189,12 +189,12 @@ categories.post('/reorder', async (c) => {
     // Clone the request to avoid consuming the body stream
     const clonedRequest = c.req.raw.clone();
     
+    const headers = new Headers(c.req.raw.headers);
+    headers.set('X-Service-Token', c.env.SERVICE_SECRET);
+    
     const request = new Request('http://inventory-service/categories/reorder', {
       method: 'POST',
-      headers: {
-          ...c.req.raw.headers,
-          'X-Service-Token': c.env.SERVICE_SECRET,  // 👈 Pass the secret
-        },
+      headers,
       body: clonedRequest.body,
     });
 
