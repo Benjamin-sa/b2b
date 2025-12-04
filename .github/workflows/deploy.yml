@@ -1,4 +1,4 @@
-name: Deploy Workers
+name: Deploy Platform
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
       - main
     paths:
       - 'workers/**'
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - 'wrangler.jsonc'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
     inputs:
@@ -14,17 +19,28 @@ on:
         required: false
         default: 'false'
         type: boolean
+      deploy_frontend_only:
+        description: 'Deploy frontend only (skip workers)'
+        required: false
+        default: 'false'
+        type: boolean
+      deploy_workers_only:
+        description: 'Deploy workers only (skip frontend)'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
-  NODE_VERSION: '20'    
+  NODE_VERSION: '20'
 
 jobs:
   # ============================================================================
-  # STAGE 1: Deploy to Development
+  # STAGE 1a: Deploy Workers to Development
   # ============================================================================
-  deploy-dev:
-    name: Deploy to Development
+  deploy-workers-dev:
+    name: Deploy Workers to Dev
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_frontend_only != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,8 +114,44 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      - name: Dev deployment complete
+      - name: Dev workers deployment complete
         run: echo "✅ All workers deployed to development environment"
+
+  # ============================================================================
+  # STAGE 1b: Build and Deploy Frontend to Development
+  # ============================================================================
+  deploy-frontend-dev:
+    name: Deploy Frontend to Dev
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_workers_only != 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build frontend
+        run: npm run build-only
+        env:
+          VITE_API_GATEWAY_URL: ${{ secrets.DEV_API_URL }}
+
+      - name: Deploy frontend to dev
+        run: npx wrangler deploy --env dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Dev frontend deployment complete
+        run: echo "✅ Frontend deployed to development environment"
 
   # ============================================================================
   # STAGE 2: Run Integration Tests
@@ -107,8 +159,12 @@ jobs:
   test:
     name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: deploy-dev
-    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    needs: [deploy-workers-dev, deploy-frontend-dev]
+    if: |
+      always() && 
+      github.event.inputs.skip_tests != 'true' &&
+      (needs.deploy-workers-dev.result == 'success' || needs.deploy-workers-dev.result == 'skipped') &&
+      (needs.deploy-frontend-dev.result == 'success' || needs.deploy-frontend-dev.result == 'skipped')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -141,13 +197,17 @@ jobs:
         run: echo "✅ All integration tests passed"
 
   # ============================================================================
-  # STAGE 3: Deploy to Production
+  # STAGE 3a: Deploy Workers to Production
   # ============================================================================
-  deploy-prod:
-    name: Deploy to Production
+  deploy-workers-prod:
+    name: Deploy Workers to Prod
     runs-on: ubuntu-latest
-    needs: [deploy-dev, test]
-    if: ${{ always() && needs.deploy-dev.result == 'success' && (needs.test.result == 'success' || github.event.inputs.skip_tests == 'true') }}
+    needs: [deploy-workers-dev, deploy-frontend-dev, test]
+    if: |
+      always() && 
+      github.event.inputs.deploy_frontend_only != 'true' &&
+      (needs.deploy-workers-dev.result == 'success' || needs.deploy-workers-dev.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped' || github.event.inputs.skip_tests == 'true')
     environment:
       name: production
       url: https://api.b2b.motordash.be
@@ -224,7 +284,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      - name: Production deployment complete
+      - name: Production workers deployment complete
         run: |
           echo "🎉 All workers deployed to production!"
           echo "======================================="
@@ -239,12 +299,56 @@ jobs:
           echo "  - api-gateway"
 
   # ============================================================================
+  # STAGE 3b: Deploy Frontend to Production
+  # ============================================================================
+  deploy-frontend-prod:
+    name: Deploy Frontend to Prod
+    runs-on: ubuntu-latest
+    needs: [deploy-workers-dev, deploy-frontend-dev, test]
+    if: |
+      always() && 
+      github.event.inputs.deploy_workers_only != 'true' &&
+      (needs.deploy-frontend-dev.result == 'success' || needs.deploy-frontend-dev.result == 'skipped') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped' || github.event.inputs.skip_tests == 'true')
+    environment:
+      name: production
+      url: https://b2b.motordash.be
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend for production
+        run: npm run build-only
+        env:
+          VITE_API_GATEWAY_URL: ${{ secrets.PROD_API_URL }}
+
+      - name: Deploy frontend to production
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Production frontend deployment complete
+        run: |
+          echo "🎉 Frontend deployed to production!"
+          echo "======================================="
+          echo "URL: https://b2b.motordash.be"
+
+  # ============================================================================
   # Notify on failure
   # ============================================================================
   notify-failure:
     name: Notify on Failure
     runs-on: ubuntu-latest
-    needs: [deploy-dev, test, deploy-prod]
+    needs: [deploy-workers-dev, deploy-frontend-dev, test, deploy-workers-prod, deploy-frontend-prod]
     if: failure()
     steps:
       - name: Deployment failed

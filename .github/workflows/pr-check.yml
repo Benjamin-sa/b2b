@@ -7,6 +7,9 @@ on:
     paths:
       - 'workers/**'
       - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'vite.config.ts'
       - '.github/workflows/**'
 
 env:
@@ -30,6 +33,18 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
+      # Type check frontend first
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Type check frontend
+        run: npm run type-check
+
+      - name: Build frontend
+        run: npm run build-only
+        env:
+          VITE_API_GATEWAY_URL: https://dev-api.example.com
+
       # Type check workers
       - name: Type check workers
         run: |
@@ -41,14 +56,8 @@ jobs:
             cd ../..
           done
 
-      # Type check frontend
-      - name: Type check frontend
-        run: |
-          npm ci
-          npx vue-tsc --noEmit || true
-
   # ============================================================================
-  # Deploy to Dev and Test
+  # Deploy Workers and Frontend to Dev
   # ============================================================================
   deploy-and-test:
     name: Deploy to Dev & Test
@@ -68,8 +77,8 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      # Install dependencies for all workers
-      - name: Install dependencies
+      # Install and deploy workers
+      - name: Install worker dependencies
         run: |
           for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
             echo "📦 Installing dependencies for $worker..."
@@ -78,8 +87,7 @@ jobs:
             cd ../..
           done
 
-      # Deploy all workers to dev
-      - name: Deploy to dev environment
+      - name: Deploy workers to dev
         run: |
           workers=(auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway)
           for worker in "${workers[@]}"; do
@@ -88,6 +96,20 @@ jobs:
             wrangler deploy --env dev
             cd ../..
           done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # Build and deploy frontend
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build-only
+        env:
+          VITE_API_GATEWAY_URL: ${{ secrets.DEV_API_URL }}
+
+      - name: Deploy frontend to dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
