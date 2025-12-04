@@ -52,9 +52,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
       # Install dependencies for all workers
       - name: Install dependencies
         run: |
@@ -65,52 +62,52 @@ jobs:
             cd ../..
           done
 
-      # Deploy workers in dependency order
+      # Deploy workers in dependency order (using npx for local wrangler version)
       - name: Deploy auth-service (dev)
         working-directory: workers/auth-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy inventory-service (dev)
         working-directory: workers/inventory-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy stripe-service (dev)
         working-directory: workers/stripe-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy email-service (dev)
         working-directory: workers/email-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy telegram-service (dev)
         working-directory: workers/telegram-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy shopify-sync-service (dev)
         working-directory: workers/shopify-sync-service
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy r2-bucket (dev)
         working-directory: workers/r2-bucket
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy api-gateway (dev)
         working-directory: workers/api-gateway
-        run: wrangler deploy --env dev
+        run: npx wrangler deploy --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -222,9 +219,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
       # Install dependencies for all workers
       - name: Install dependencies
         run: |
@@ -238,49 +232,49 @@ jobs:
       # Deploy workers in dependency order (production = default, no --env flag)
       - name: Deploy auth-service (prod)
         working-directory: workers/auth-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy inventory-service (prod)
         working-directory: workers/inventory-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy stripe-service (prod)
         working-directory: workers/stripe-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy email-service (prod)
         working-directory: workers/email-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy telegram-service (prod)
         working-directory: workers/telegram-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy shopify-sync-service (prod)
         working-directory: workers/shopify-sync-service
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy r2-bucket (prod)
         working-directory: workers/r2-bucket
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy api-gateway (prod)
         working-directory: workers/api-gateway
-        run: wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -351,8 +345,49 @@ jobs:
     needs: [deploy-workers-dev, deploy-frontend-dev, test, deploy-workers-prod, deploy-frontend-prod]
     if: failure()
     steps:
+      - name: Send Telegram notification
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="HTML" \
+            -d text="❌ <b>B2B Deployment Failed</b>
+
+🔴 <b>Repository:</b> ${{ github.repository }}
+🔴 <b>Branch:</b> ${{ github.ref_name }}
+🔴 <b>Commit:</b> <code>${{ github.sha }}</code>
+🔴 <b>Author:</b> ${{ github.actor }}
+🔴 <b>Message:</b> ${{ github.event.head_commit.message }}
+
+<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Logs</a>"
+
       - name: Deployment failed
         run: |
           echo "❌ Deployment pipeline failed!"
           echo "Check the logs above for details."
           exit 1
+
+  # ============================================================================
+  # Notify on success
+  # ============================================================================
+  notify-success:
+    name: Notify on Success
+    runs-on: ubuntu-latest
+    needs: [deploy-workers-prod, deploy-frontend-prod]
+    if: success()
+    steps:
+      - name: Send Telegram notification
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="HTML" \
+            -d text="✅ <b>B2B Deployment Successful</b>
+
+🟢 <b>Repository:</b> ${{ github.repository }}
+🟢 <b>Branch:</b> ${{ github.ref_name }}
+🟢 <b>Commit:</b> <code>${{ github.sha }}</code>
+🟢 <b>Author:</b> ${{ github.actor }}
+
+🌐 <b>Frontend:</b> https://b2b.motordash.be
+🔗 <b>API:</b> https://api.b2b.motordash.be
+
+<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Logs</a>"
