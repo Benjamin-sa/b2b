@@ -65,49 +65,49 @@ jobs:
       # Deploy workers in dependency order (using npx for local wrangler version)
       - name: Deploy auth-service (dev)
         working-directory: workers/auth-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy inventory-service (dev)
         working-directory: workers/inventory-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy stripe-service (dev)
         working-directory: workers/stripe-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy email-service (dev)
         working-directory: workers/email-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy telegram-service (dev)
         working-directory: workers/telegram-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy shopify-sync-service (dev)
         working-directory: workers/shopify-sync-service
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy r2-bucket (dev)
         working-directory: workers/r2-bucket
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy api-gateway (dev)
         working-directory: workers/api-gateway
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy --config wrangler.toml --env dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -232,49 +232,49 @@ jobs:
       # Deploy workers in dependency order (production = default, no --env flag)
       - name: Deploy auth-service (prod)
         working-directory: workers/auth-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy inventory-service (prod)
         working-directory: workers/inventory-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy stripe-service (prod)
         working-directory: workers/stripe-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy email-service (prod)
         working-directory: workers/email-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy telegram-service (prod)
         working-directory: workers/telegram-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy shopify-sync-service (prod)
         working-directory: workers/shopify-sync-service
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy r2-bucket (prod)
         working-directory: workers/r2-bucket
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy api-gateway (prod)
         working-directory: workers/api-gateway
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
