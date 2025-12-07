@@ -582,5 +582,13 @@
     "tryAgain": "Réessayer",
     "noProducts": "Aucun produit disponible",
     "viewAll": "Voir tous les {title}"
+  },
+  "notFound": {
+    "title": "Page Non Trouvée",
+    "description": "Oups ! La page que vous recherchez n'existe pas ou a été déplacée.",
+    "backHome": "Retour à l'Accueil",
+    "goBack": "Retour",
+    "helpfulLinks": "Liens Utiles",
+    "needHelp": "Besoin d'aide ? Contactez-nous à"
   }
 }

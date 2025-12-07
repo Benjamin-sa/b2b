@@ -673,7 +673,28 @@ await c.env.DB.prepare(`
 4. **Use service bindings** - Never HTTP fetch between workers
 5. **Test locally first** - `wrangler dev` before deploying
 6. **Check types** - Ensure TypeScript compiles without errors
-7. **Deploy to dev** - Test in dev environment before prod
+7. **Update tests** - Check and update integration/unit tests in `/workers/<service>/tests/`
+8. **Deploy to dev** - Test in dev environment before prod
+
+### ⚠️ Test File Maintenance (CRITICAL)
+
+**When modifying workers or API endpoints, ALWAYS check the corresponding test files:**
+
+| Worker/Change | Test Location |
+|---------------|---------------|
+| API Gateway routes | `/workers/api-gateway/tests/integration/` |
+| Auth Service | `/workers/api-gateway/tests/integration/auth.test.ts` |
+| Products API | `/workers/api-gateway/tests/integration/products.test.ts` |
+| Invoices API | `/workers/api-gateway/tests/integration/invoices.test.ts` |
+| Categories API | `/workers/api-gateway/tests/integration/categories.test.ts` |
+| Test helpers | `/workers/api-gateway/tests/helpers/` |
+
+**Checklist when changing API behavior:**
+- [ ] Update request/response types in test validators (`tests/helpers/validators.ts`)
+- [ ] Update test data generators if schema changed (`tests/helpers/test-data.ts`)
+- [ ] Add new test cases for new endpoints/features
+- [ ] Update existing tests if response format changed
+- [ ] Run tests before deploying: `cd workers/api-gateway && npm test`
 
 ---
 

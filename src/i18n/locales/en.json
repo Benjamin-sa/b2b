@@ -769,5 +769,13 @@
       "email": "Email: support@4Tparts.com",
       "phone": "Phone: +32 (0) 47 21 2118"
     }
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Oops! The page you're looking for doesn't exist or has been moved.",
+    "backHome": "Back to Home",
+    "goBack": "Go Back",
+    "helpfulLinks": "Helpful Links",
+    "needHelp": "Need help? Contact us at"
   }
 }

@@ -16,6 +16,7 @@ const VerificationPending = () => import('../views/VerificationPending.vue')
 const Categories = () => import('../views/Categories.vue')
 const Privacy = () => import('../views/Privacy.vue')
 const Terms = () => import('../views/Terms.vue')
+const NotFound = () => import('../views/NotFound.vue')
 
 const routes = [
   {
@@ -156,6 +157,16 @@ const routes = [
       requiresAuth: false,
       transition: 'fade',
       title: 'Terms of Service'
+    }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound,
+    meta: {
+      requiresAuth: false,
+      transition: 'fade',
+      title: 'Page Not Found'
     }
   }
 ]

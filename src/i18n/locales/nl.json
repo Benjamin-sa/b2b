@@ -768,5 +768,13 @@
       "email": "E-mail: support@4Tparts.com",
       "phone": "Telefoon: +32 (0) 47 21 2118"
     }
+  },
+  "notFound": {
+    "title": "Pagina Niet Gevonden",
+    "description": "Oeps! De pagina die je zoekt bestaat niet of is verplaatst.",
+    "backHome": "Terug naar Home",
+    "goBack": "Ga Terug",
+    "helpfulLinks": "Handige Links",
+    "needHelp": "Hulp nodig? Neem contact met ons op via"
   }
 }
