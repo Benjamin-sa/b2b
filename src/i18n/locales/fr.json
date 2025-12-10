@@ -392,7 +392,7 @@
     "free": "Gratuit",
     "vat": "TVA (21%)",
     "total": "Total",
-    "vatInfo": "La TVA sera indiquée sur votre facture. Les prix s'entendent hors TVA.",
+    "vatInfo": "Les prix s'entendent hors TVA.",
     "processing": "Traitement en cours...",
     "checkout": "Passer à la caisse",
     "continueShopping": "Continuer les achats",

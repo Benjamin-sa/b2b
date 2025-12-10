@@ -399,7 +399,7 @@
     "free": "Kostenlos",
     "vat": "MwSt. (21%)",
     "total": "Gesamt",
-    "vatInfo": "Die Mehrwertsteuer wird auf Ihrer Rechnung ausgewiesen. Preise exklusive Mehrwertsteuer.",
+    "vatInfo": "Preise exklusive Mehrwertsteuer.",
     "processing": "Verarbeite...",
     "checkout": "Zur Kasse gehen",
     "continueShopping": "Weiter einkaufen",

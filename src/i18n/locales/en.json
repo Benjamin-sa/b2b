@@ -399,7 +399,7 @@
     "free": "Free",
     "vat": "VAT (21%)",
     "total": "Total",
-    "vatInfo": "VAT will be shown on your invoice. Prices exclude VAT.",
+    "vatInfo": "Prices exclude VAT.",
     "processing": "Processing...",
     "checkout": "Proceed to Checkout",
     "continueShopping": "Continue Shopping",
