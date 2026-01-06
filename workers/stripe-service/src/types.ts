@@ -92,6 +92,7 @@ export interface InvoiceInput {
   items: InvoiceItemInput[];
   shipping_cost_cents?: number;
   notes?: string;
+  locale?: string; // User's active language for invoice localization (e.g., 'nl', 'fr', 'en')
   shipping_address?: {
     company?: string;
     contact_person?: string;

@@ -476,6 +476,10 @@
       "CH": "Suisse",
       "US": "États-Unis"
     },
+    "invoiceLanguage": {
+      "label": "Langue de la facture",
+      "hint": "Votre facture et e-mail seront envoyés dans cette langue"
+    },
     "validation": {
       "required": "Ce champ est requis",
       "fillRequired": "Veuillez remplir tous les champs obligatoires pour continuer"

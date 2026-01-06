@@ -483,6 +483,10 @@
       "CH": "Schweiz",
       "US": "Vereinigte Staaten"
     },
+    "invoiceLanguage": {
+      "label": "Rechnungssprache",
+      "hint": "Ihre Rechnung und E-Mail werden in dieser Sprache gesendet"
+    },
     "validation": {
       "required": "Dieses Feld ist erforderlich",
       "fillRequired": "Bitte füllen Sie alle Pflichtfelder aus, um fortzufahren"

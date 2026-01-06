@@ -60,6 +60,7 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       items: OrderItem[];
       shippingCost?: number;
       taxAmount?: number;
+      locale?: string; // User's active language for invoice localization
       metadata?: {
         notes?: string;
         shippingAddress?: any;
@@ -115,6 +116,7 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
         shipping_cost_cents: body.shippingCost || 0,
         notes: body.metadata?.notes || '',
         shipping_address: body.metadata?.shippingAddress || null,
+        locale: body.locale || null, // User's active language for invoice localization
       }),
     });
 

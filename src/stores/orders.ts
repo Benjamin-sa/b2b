@@ -144,7 +144,8 @@ export const useOrderStore = defineStore('orders', () => {
     _subtotal: number, // Not used - Stripe calculates total from line items
     tax: number,
     shippingCost: number,
-    notes?: string
+    notes?: string,
+    locale?: string // Invoice language (e.g., 'nl', 'fr', 'en', 'de')
   ): Promise<{ success: boolean; invoiceUrl?: string; orderId?: string; error?: string }> => {
     isLoading.value = true
     error.value = null
@@ -192,6 +193,10 @@ export const useOrderStore = defineStore('orders', () => {
       const shippingCostCents = Math.round(shippingCost * 100)
       const taxAmountCents = Math.round(tax * 100)
 
+      // Use provided locale or fall back to localStorage
+      const invoiceLocale = locale || localStorage.getItem('language') || 'nl'
+      console.log(`📍 Creating invoice with locale: ${invoiceLocale}`)
+
       // Call Cloudflare API Gateway to create invoice
       const response = await fetch(`${API_GATEWAY_URL}/api/invoices`, {
         method: 'POST',
@@ -203,7 +208,8 @@ export const useOrderStore = defineStore('orders', () => {
           items: itemsWithMetadata,
           shippingCost: shippingCostCents,
           taxAmount: taxAmountCents,
-          metadata: generalMetadata
+          metadata: generalMetadata,
+          locale: invoiceLocale // User's selected language for invoice localization
         })
       })
 

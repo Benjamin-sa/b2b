@@ -482,6 +482,10 @@
       "CH": "Zwitserland",
       "US": "Verenigde Staten"
     },
+    "invoiceLanguage": {
+      "label": "Factuurtaal",
+      "hint": "Uw factuur en e-mail worden in deze taal verzonden"
+    },
     "validation": {
       "required": "Dit veld is verplicht",
       "fillRequired": "Vul alle verplichte velden in om door te gaan"

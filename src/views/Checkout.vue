@@ -385,7 +385,7 @@
                         </div>
 
                         <!-- Payment Info -->
-                        <div class="bg-blue-50 p-4 rounded-md mb-6">
+                        <div class="bg-blue-50 p-4 rounded-md mb-4">
                             <div class="flex">
                                 <svg class="flex-shrink-0 w-5 h-5 text-blue-400" fill="currentColor"
                                     viewBox="0 0 20 20">
@@ -402,6 +402,30 @@
                                     </p>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Invoice Language Selection -->
+                        <div class="bg-gradient-to-r from-gray-50 to-primary-50/30 p-4 rounded-xl border-2 border-gray-200 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                    </svg>
+                                    <span class="text-sm font-medium text-gray-700">{{ $t('checkout.invoiceLanguage.label') }}</span>
+                                </div>
+                                <select 
+                                    v-model="invoiceLanguage"
+                                    class="px-3 py-1.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                                >
+                                    <option value="nl">🇳🇱 Nederlands</option>
+                                    <option value="fr">🇫🇷 Français</option>
+                                    <option value="de">🇩🇪 Deutsch</option>
+                                    <option value="en">🇬🇧 English</option>
+                                </select>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 ml-7">
+                                {{ $t('checkout.invoiceLanguage.hint') }}
+                            </p>
                         </div>
 
                         <!-- Submit Button -->
@@ -511,6 +535,9 @@ const showSuccessModal = ref(false)
 const invoiceUrl = ref('')
 const isAutoFilled = ref(false)
 const showCartItems = ref(true) // Show cart items by default
+
+// Invoice language - defaults to user's current language setting
+const invoiceLanguage = ref(localStorage.getItem('language') || 'nl')
 
 // Form data
 const form = ref({
@@ -659,7 +686,8 @@ const handleSubmit = async () => {
         cartStore.subtotal,
         cartStore.tax, // Already 0 for non-Belgian customers
         cartStore.shippingCost,
-        form.value.notes
+        form.value.notes,
+        invoiceLanguage.value // User's selected invoice language
     )
 
     if (result.success) {
