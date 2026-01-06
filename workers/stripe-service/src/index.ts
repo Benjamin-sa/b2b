@@ -11,6 +11,7 @@
  */
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import type { Env, StripeServiceResponse } from './types';
 import { StripeServiceError } from './types';
@@ -81,7 +82,7 @@ app.put('/customers', async (c) => {
       success: true,
       data: { message: 'Customer updated successfully' },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -98,7 +99,7 @@ app.delete('/customers/:id', async (c) => {
       success: true,
       data: { message: 'Customer archived successfully' },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -132,7 +133,7 @@ app.post('/products', async (c) => {
       success: true,
       data: result,
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -147,7 +148,7 @@ app.put('/products', async (c) => {
       success: true,
       data: { message: 'Product updated successfully' },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -162,7 +163,7 @@ app.put('/products/price', async (c) => {
       success: true,
       data: { new_price_id: newPriceId },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -179,7 +180,7 @@ app.delete('/products/:id', async (c) => {
       success: true,
       data: { message: 'Product archived successfully' },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -218,7 +219,7 @@ app.post('/invoices', async (c) => {
       success: true,
       data: invoice,
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -233,7 +234,7 @@ app.post('/invoices/:id/void', async (c) => {
       success: true,
       data: { message: 'Invoice voided successfully' },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -256,7 +257,7 @@ app.get('/invoices/:id', async (c) => {
         hosted_invoice_url: invoice.hosted_invoice_url,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     return handleError(c, error);
   }
 });
@@ -272,7 +273,7 @@ app.route('/webhooks', webhooksRoutes);
 // ERROR HANDLING
 // ============================================================================
 
-function handleError(c: any, error: any) {
+function handleError(c: Context<{ Bindings: Env }>, error: unknown) {
   console.error('[Stripe Service Error]', error);
 
   if (error instanceof StripeServiceError) {
@@ -284,7 +285,7 @@ function handleError(c: any, error: any) {
           message: error.message,
         },
       },
-      error.statusCode
+      error.statusCode as any
     );
   }
 
@@ -293,7 +294,7 @@ function handleError(c: any, error: any) {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: error.message || 'An unexpected error occurred',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
       },
     },
     500

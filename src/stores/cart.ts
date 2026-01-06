@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { CartItem, Product } from '../types'
+import { useAuthStore } from './auth'
+
+// LocalStorage key for cart persistence
+const CART_STORAGE_KEY = 'b2b_cart_items'
 
 type CartMutationStatus = 'added' | 'partial' | 'unavailable' | 'adjusted' | 'updated' | 'removed'
 
@@ -13,8 +17,47 @@ export interface CartMutationResult {
   limit: number
 }
 
+// Load cart from localStorage
+const loadCartFromStorage = (): CartItem[] => {
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // Restore Date objects for addedAt
+      return parsed.map((item: any) => ({
+        ...item,
+        addedAt: item.addedAt ? new Date(item.addedAt) : new Date()
+      }))
+    }
+  } catch (err) {
+    console.error('Error loading cart from localStorage:', err)
+  }
+  return []
+}
+
+// Save cart to localStorage
+const saveCartToStorage = (items: CartItem[]) => {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+  } catch (err) {
+    console.error('Error saving cart to localStorage:', err)
+  }
+}
+
 export const useCartStore = defineStore('cart', () => {
-  const items = ref<CartItem[]>([])
+  const authStore = useAuthStore()
+  
+  // Initialize items from localStorage
+  const items = ref<CartItem[]>(loadCartFromStorage())
+
+  // Watch for changes and persist to localStorage
+  watch(
+    items,
+    (newItems) => {
+      saveCartToStorage(newItems)
+    },
+    { deep: true }
+  )
 
   const getItemQuantity = (productId: string): number => {
     const item = items.value.find(i => i.productId === productId)
@@ -84,7 +127,17 @@ export const useCartStore = defineStore('cart', () => {
 
   const subtotal = computed(() => totalPrice.value)
   
-  const tax = computed(() => (totalPrice.value + shippingCost.value) * 0.21) // 21% VAT for BE B2B
+  // VAT/BTW: Only Belgian customers pay 21% VAT
+  // Non-Belgian EU B2B customers are VAT exempt (reverse charge mechanism)
+  const tax = computed(() => {
+    if (!authStore.isBelgianCustomer) {
+      return 0
+    }
+    return (totalPrice.value + shippingCost.value) * 0.21 // 21% VAT for Belgian B2B
+  })
+  
+  // Computed to check if VAT should be displayed in UI
+  const shouldShowVAT = computed(() => authStore.isBelgianCustomer)
   
   const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value)
 
@@ -207,6 +260,7 @@ export const useCartStore = defineStore('cart', () => {
 
   const clearCart = () => {
     items.value = []
+    localStorage.removeItem(CART_STORAGE_KEY)
   }
 
   const isInCart = (productId: string): boolean => {
@@ -221,6 +275,7 @@ export const useCartStore = defineStore('cart', () => {
     shippingCost,
     subtotal,
     tax,
+    shouldShowVAT,
     grandTotal,
     addItem,
     removeItem,

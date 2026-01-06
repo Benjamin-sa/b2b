@@ -50,6 +50,15 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated.value && isActiveUser.value && (isAdmin.value || isVerified.value)
   )
 
+  // VAT/BTW check: Only Belgian customers pay VAT
+  // Based on user's registered country from profile
+  const isBelgianCustomer = computed(() => {
+    const country = userProfile.value?.address?.country?.toUpperCase()
+    if (!country) return true // Default to Belgian (show VAT) if no country set
+    // Support multiple formats: 'BE', 'Belgium', 'BELGIUM', 'BEL'
+    return country === 'BE' || country === 'BELGIUM' || country === 'BEL'
+  })
+
   // ============================================================================
   // LOCALSTORAGE MANAGEMENT
   // ============================================================================
@@ -350,6 +359,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Clear local auth data
       clearAuthData()
+      
+      // Clear cart on logout
+      localStorage.removeItem('b2b_cart_items')
 
       // Show notification
       await notificationStore.info(
@@ -363,6 +375,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Logout error:', err)
       // Still clear local data even on error
       clearAuthData()
+      localStorage.removeItem('b2b_cart_items')
       router.push('/auth')
     } finally {
       loading.value = false
@@ -757,6 +770,7 @@ export const useAuthStore = defineStore('auth', () => {
     isVerified,
     isActiveUser,
     canAccess,
+    isBelgianCustomer, // VAT/BTW: true if user is from Belgium
     
     // Methods
     initAuth,

@@ -373,7 +373,7 @@
                                     cartStore.totalWeight.toFixed(2) }) }}</span>
                                 <span class="text-gray-900 font-semibold">€{{ formatPrice(cartStore.shippingCost) }}</span>
                             </div>
-                            <div class="flex justify-between text-base">
+                            <div v-if="cartStore.shouldShowVAT" class="flex justify-between text-base">
                                 <span class="text-gray-700 font-medium">{{ $t('checkout.summary.vat') }}</span>
                                 <span class="text-gray-900 font-semibold">€{{ formatPrice(cartStore.tax) }}</span>
                             </div>
@@ -527,6 +527,46 @@ const form = ref({
     notes: ''
 })
 
+// Country name to code mapping for dropdown compatibility
+const countryNameToCode: Record<string, string> = {
+    'belgium': 'BE',
+    'nederland': 'NL',
+    'netherlands': 'NL',
+    'germany': 'DE',
+    'deutschland': 'DE',
+    'france': 'FR',
+    'frankrijk': 'FR',
+    'united kingdom': 'GB',
+    'uk': 'GB',
+    'spain': 'ES',
+    'spanje': 'ES',
+    'españa': 'ES',
+    'italy': 'IT',
+    'italië': 'IT',
+    'italia': 'IT',
+    'austria': 'AT',
+    'österreich': 'AT',
+    'oostenrijk': 'AT',
+    'switzerland': 'CH',
+    'zwitserland': 'CH',
+    'schweiz': 'CH',
+    'suisse': 'CH',
+    'united states': 'US',
+    'usa': 'US',
+}
+
+// Convert country name to code (handles both full names and codes)
+const normalizeCountryCode = (country: string | undefined): string => {
+    if (!country) return ''
+    const upper = country.toUpperCase()
+    // If already a valid 2-letter code, return it
+    if (upper.length === 2 && ['BE', 'NL', 'DE', 'FR', 'GB', 'ES', 'IT', 'AT', 'CH', 'US'].includes(upper)) {
+        return upper
+    }
+    // Try to map from full name
+    return countryNameToCode[country.toLowerCase()] || ''
+}
+
 // Function to fill form with user profile data
 const fillFromProfile = () => {
     if (authStore.userProfile) {
@@ -541,7 +581,7 @@ const fillFromProfile = () => {
             city: addr?.city || '',
             state: '', // Not stored in profile, leave empty
             zipCode: addr?.postalCode || '',
-            country: addr?.country || '',
+            country: normalizeCountryCode(addr?.country),
             phone: profile.phone || ''
         }
 
@@ -612,11 +652,12 @@ const handleSubmit = async () => {
 
     orderStore.clearError()
 
+    // Tax is already calculated correctly in cart store based on user's country
     const result = await orderStore.createOrder(
         cartStore.items,
         form.value.shippingAddress,
         cartStore.subtotal,
-        cartStore.tax,
+        cartStore.tax, // Already 0 for non-Belgian customers
         cartStore.shippingCost,
         form.value.notes
     )

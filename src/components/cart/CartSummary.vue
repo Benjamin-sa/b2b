@@ -27,8 +27,8 @@
                 </span>
             </div>
 
-            <!-- Tax -->
-            <div class="flex justify-between text-xs sm:text-sm">
+            <!-- Tax (only for Belgian customers) -->
+            <div v-if="shouldShowVAT" class="flex justify-between text-xs sm:text-sm">
                 <span class="text-gray-600">{{ $t('cart.vat') }}</span>
                 <span class="text-gray-900 font-medium">
                     €{{ formatPrice(tax) }}
@@ -46,9 +46,13 @@
                 </span>
             </div>
 
-            <!-- VAT Info -->
-            <p class="text-xs text-gray-500 mt-2">
+            <!-- VAT Info (only for Belgian customers) -->
+            <p v-if="shouldShowVAT" class="text-xs text-gray-500 mt-2">
                 {{ $t('cart.vatInfo') }}
+            </p>
+            <!-- VAT Exempt notice (for non-Belgian customers) -->
+            <p v-else class="text-xs text-success-600 mt-2 font-medium">
+                {{ $t('cart.vatExempt') || 'VAT exempt (Intra-EU B2B delivery)' }}
             </p>
         </div>
 
@@ -106,6 +110,7 @@ const subtotal = computed(() => cartStore.subtotal)
 const shippingCost = computed(() => cartStore.shippingCost)
 const tax = computed(() => cartStore.tax)
 const grandTotal = computed(() => cartStore.grandTotal)
+const shouldShowVAT = computed(() => cartStore.shouldShowVAT)
 
 
 const formatPrice = (price: number) => {
