@@ -117,12 +117,8 @@ const uploadProgress = ref(0)
 const isDragOver = ref(false)
 const errors = ref<string[]>([])
 
-// Haal de Worker URL op uit de environment variables
-const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL;
-if (!workerUrl) {
-    console.error("VITE_CLOUDFLARE_WORKER_URL is not defined in .env file!");
-}
-
+// Haal de Worker URL op uit de environment variables, met fallback naar productie
+const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://b2b-image-handler.benkee-sauter.workers.dev';
 
 // Initialiseer de component met bestaande afbeeldingen
 watch(() => props.modelValue, (newUrls) => {

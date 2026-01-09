@@ -72,13 +72,27 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
     }
     customerData.metadata.btwNumber = input.btw_number;
     
-    // Detect EU VAT format
+    // Detect EU VAT format (e.g., "BE0123456789", "NL123456789B01")
     const euVatPattern = /^[A-Z]{2}[A-Z0-9]+$/;
     if (euVatPattern.test(input.btw_number)) {
-      // EU B2B reverse charge mechanism
-      customerData.tax_exempt = 'reverse';
+      // Extract country code from VAT number (first 2 characters)
+      const vatCountryCode = input.btw_number.substring(0, 2).toUpperCase();
       
-      // Add as tax_id_data for Stripe Tax
+      // CRITICAL: Only apply reverse charge for cross-border EU B2B transactions
+      // Belgian customers (domestic) should be taxable, not reverse charge
+      if (vatCountryCode !== 'BE') {
+        // Cross-border EU B2B → Reverse charge applies
+        // Customer is responsible for self-assessing VAT in their country
+        customerData.tax_exempt = 'reverse';
+        console.log(`✅ Setting reverse charge for cross-border EU customer: ${vatCountryCode}`);
+      } else {
+        // Belgian customer (domestic) → Normal VAT applies
+        // Explicitly set to 'none' to ensure Belgian VAT is calculated
+        customerData.tax_exempt = 'none';
+        console.log(`✅ Belgian customer - normal VAT applies (belastbaar)`);
+      }
+      
+      // Add as tax_id_data for Stripe Tax validation
       customerData.tax_id_data = [
         {
           type: 'eu_vat',
