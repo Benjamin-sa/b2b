@@ -537,6 +537,7 @@
     "productNotFoundMessage": "The product you're looking for doesn't exist or has been removed.",
     "backToProducts": "Back to Products",
     "sku": "SKU: {sku}",
+    "barcode": "Barcode: {barcode}",
     "partNumber": "Part #: {partNumber}",
     "inStock": "In Stock",
     "outOfStock": "Out of Stock",

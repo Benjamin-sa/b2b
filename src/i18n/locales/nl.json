@@ -536,6 +536,7 @@
     "productNotFoundMessage": "Het product dat u zoekt, bestaat niet of is verwijderd.",
     "backToProducts": "Terug naar Producten",
     "sku": "Artikelnummer: {sku}",
+    "barcode": "Barcode: {barcode}",
     "partNumber": "Onderdeelnr: {partNumber}",
     "inStock": "Op Voorraad",
     "outOfStock": "Niet op Voorraad",
