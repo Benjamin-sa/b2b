@@ -71,6 +71,71 @@ async function getNextB2BSku(db: any): Promise<string> {
 }
 
 /**
+ * Calculate EAN-13 check digit
+ * Uses the standard EAN-13 checksum algorithm
+ */
+function calculateEAN13CheckDigit(first12Digits: string): string {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    const digit = parseInt(first12Digits[i], 10);
+    // Odd positions (1st, 3rd, 5th...) multiply by 1, even positions by 3
+    sum += i % 2 === 0 ? digit : digit * 3;
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return checkDigit.toString();
+}
+
+/**
+ * Generate EAN-13 barcode
+ * Format: 2XXXXXXXXXXXC (13 digits)
+ * - First digit: 2 (internal product identifier)
+ * - Next 11 digits: zero-padded sequential number
+ * - Last digit: EAN-13 check digit
+ * 
+ * Example: 2000000000017 (product #1 with check digit 7)
+ */
+async function generateBarcode(db: any): Promise<string> {
+  try {
+    // Find highest existing barcode
+    const result = await db
+      .prepare(
+        `SELECT barcode 
+         FROM products 
+         WHERE barcode IS NOT NULL 
+           AND barcode LIKE '2%'
+         ORDER BY barcode DESC 
+         LIMIT 1`
+      )
+      .first();
+
+    let sequenceNumber = 1;
+    
+    if (result && result.barcode) {
+      // Extract sequence number (skip first digit '2', take next 11 digits, ignore check digit)
+      const existingBarcode = result.barcode as string;
+      const sequencePart = existingBarcode.substring(1, 12);
+      sequenceNumber = parseInt(sequencePart, 10) + 1;
+    }
+
+    // Build first 12 digits: '2' + 11-digit sequence number
+    const first12 = '2' + sequenceNumber.toString().padStart(11, '0');
+    
+    // Calculate check digit
+    const checkDigit = calculateEAN13CheckDigit(first12);
+    
+    // Return complete 13-digit barcode
+    return first12 + checkDigit;
+  } catch (error) {
+    console.error('[Product Service] Error generating barcode:', error);
+    // Fallback to random barcode if query fails
+    const randomSeq = Math.floor(Math.random() * 99999999999) + 1;
+    const first12 = '2' + randomSeq.toString().padStart(11, '0');
+    const checkDigit = calculateEAN13CheckDigit(first12);
+    return first12 + checkDigit;
+  }
+}
+
+/**
  * Get product by ID with all relations
  */
 export async function getProductById(
@@ -280,6 +345,24 @@ export async function createProduct(
     }
   }
 
+  // ✅ Auto-generate EAN-13 barcode (always generated, never provided by user)
+  let barcode: string;
+  let barcodeRetries = 3;
+  while (barcodeRetries > 0) {
+    try {
+      barcode = await generateBarcode(db);
+      break; // Success, exit retry loop
+    } catch (error) {
+      barcodeRetries--;
+      if (barcodeRetries === 0) {
+        console.error('[Product Service] Failed to generate barcode after retries:', error);
+        throw errors.internalError('Failed to generate barcode');
+      }
+      // Wait a bit before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 100 * (4 - barcodeRetries)));
+    }
+  }
+
   // Prepare statements
   const statements: any[] = [];
 
@@ -290,11 +373,11 @@ export async function createProduct(
       .prepare(
         `INSERT INTO products (
         id, name, description, price, original_price, image_url, category_id,
-        in_stock, coming_soon, stock, brand, part_number, b2b_sku, unit,
+        in_stock, coming_soon, stock, brand, part_number, b2b_sku, barcode, unit,
         min_order_quantity, max_order_quantity, weight,
         shopify_product_id, shopify_variant_id, stripe_product_id, stripe_price_id,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         productId,
@@ -310,6 +393,7 @@ export async function createProduct(
         data.brand || null,
         data.part_number || null,
         b2bSku, // ✅ Auto-generated B2B SKU (format: TP-00001)
+        barcode, // ✅ Auto-generated EAN-13 barcode (13 digits)
         data.unit || null,
         data.min_order_quantity || 1,
         data.max_order_quantity || null,

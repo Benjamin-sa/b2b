@@ -18,6 +18,8 @@ interface ApiProduct {
   image_url: string | null;
   category_id: string | null;
   in_stock: number; // SQLite boolean (0 or 1)
+  b2b_sku: string | null;
+  barcode: string | null;
   coming_soon: number; // SQLite boolean (0 or 1)
   stock: number;
   brand: string | null;
@@ -73,6 +75,8 @@ export function transformApiProduct(apiProduct: ApiProduct): Product {
     category_id: apiProduct.category_id || null,
     // Convert SQLite boolean (0/1) to SQLite number format
     in_stock: apiProduct.in_stock,
+    b2b_sku: apiProduct.b2b_sku || null,
+    barcode: apiProduct.barcode || null,
     coming_soon: apiProduct.coming_soon,
     stock: apiProduct.stock,
     brand: apiProduct.brand || null,

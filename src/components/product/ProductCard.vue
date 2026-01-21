@@ -74,8 +74,10 @@
                     <div v-if="product.b2b_sku" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.sku') }}:</span>
                         <span class="ml-1 font-mono text-primary-700">{{ product.b2b_sku }}</span>
-                    </div>
-                    <div v-if="product.min_order_quantity" class="flex items-center text-sm text-gray-600">
+                    </div>                    <div v-if="product.barcode" class="flex items-center text-sm text-gray-600">
+                        <span class="font-medium">{{ $t('products.card.barcode') }}:</span>
+                        <span class="ml-1 font-mono text-gray-800">{{ product.barcode }}</span>
+                    </div>                    <div v-if="product.min_order_quantity" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>
                         <span class="ml-1">{{ product.min_order_quantity }} {{ product.unit || $t('products.card.pieces')
                         }}</span>

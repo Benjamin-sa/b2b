@@ -83,8 +83,9 @@
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
                                     <span v-if="product.b2b_sku" class="font-mono text-primary-700">
                                         {{ $t('productDetail.sku', { sku: product.b2b_sku }) }}
-                                    </span>
-                                    <span v-if="product.shopify_variant_id">{{ $t('productDetail.shopifySku', {
+                                    </span>                                    <span v-if="product.barcode" class="font-mono text-gray-800">
+                                        {{ $t('productDetail.barcode', { barcode: product.barcode }) }}
+                                    </span>                                    <span v-if="product.shopify_variant_id">{{ $t('productDetail.shopifySku', {
                                         sku: product.shopify_variant_id
                                     }) }}</span>
                                     <span v-if="product.part_number">{{ $t('productDetail.partNumber', {
