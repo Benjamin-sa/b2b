@@ -5,8 +5,11 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "echo 'No build step required for stripe-service'",
+    "type-check": "tsc --noEmit",
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "deploy:prod": "wrangler deploy --config wrangler.toml",
     "tail": "wrangler tail --config wrangler.toml",
     "tail:dev": "wrangler tail --config wrangler.toml --env dev"
   },
@@ -19,7 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "hono": "^4.6.14",
+    "hono": "^4.11.4",
     "stripe": "^17.5.0"
   },
   "devDependencies": {

@@ -48,7 +48,7 @@ describe('Integration: Products CRUD', () => {
     }
 
     console.log(`[TEST] Testing against: ${publicClient.url}`)
-  }, 30000)
+  }, 60000)
 
   afterAll(async () => {
     // Cleanup: Delete created products

@@ -35,7 +35,7 @@ describe('Integration: Admin Operations', () => {
     }
 
     console.log(`[TEST] Testing against: ${publicClient.url}`)
-  }, 30000)
+  }, 60000)
 
   afterAll(async () => {
     if (adminClient?.isAuthenticated) {

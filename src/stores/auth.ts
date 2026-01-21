@@ -116,6 +116,37 @@ export const useAuthStore = defineStore('auth', () => {
   // ============================================================================
 
   /**
+   * Decode JWT token and check if it's expired or about to expire
+   * @param token - JWT token to check
+   * @param bufferSeconds - Consider token expired if it expires within this many seconds (default: 30)
+   * @returns true if token is valid and not expired
+   */
+  const isTokenValid = (token: string | null, bufferSeconds: number = 30): boolean => {
+    if (!token) return false
+
+    try {
+      // Decode JWT payload (base64 decode the middle part)
+      const parts = token.split('.')
+      if (parts.length !== 3) return false
+
+      const payload = JSON.parse(atob(parts[1]))
+      
+      // Check expiration (exp is in seconds, Date.now() is in milliseconds)
+      if (!payload.exp) return false
+      
+      const expirationTime = payload.exp * 1000 // Convert to milliseconds
+      const currentTime = Date.now()
+      const bufferTime = bufferSeconds * 1000
+      
+      // Token is valid if it doesn't expire within the buffer period
+      return expirationTime > (currentTime + bufferTime)
+    } catch (err) {
+      console.error('Error decoding token:', err)
+      return false
+    }
+  }
+
+  /**
    * Refresh the access token using the refresh token
    */
   const refreshAccessToken = async (): Promise<boolean> => {
@@ -197,9 +228,24 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Make an authenticated API request with automatic token refresh
+   * Proactively checks token expiration and refreshes before making the request
    */
   const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    // Add Authorization header
+    // Proactively check if access token is expired or about to expire
+    if (!isTokenValid(accessToken.value)) {
+      console.log('Access token expired or expiring soon, refreshing proactively...')
+      const refreshed = await refreshAccessToken()
+      
+      if (!refreshed) {
+        // Refresh failed - session is truly expired
+        console.log('Refresh token invalid, session expired')
+        clearAuthData()
+        router.push('/auth')
+        throw new Error('Session expired. Please login again.')
+      }
+    }
+
+    // Add Authorization header with valid token
     const headers = {
       ...options.headers,
       'Authorization': `Bearer ${accessToken.value}`
@@ -207,9 +253,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     let response = await fetch(url, { ...options, headers })
 
-    // If 401, try to refresh token and retry once
+    // Fallback: If still 401 (edge case - token expired during request), try refresh once
     if (response.status === 401) {
-      console.log('Access token expired, attempting refresh...')
+      console.log('Received 401, attempting token refresh...')
       const refreshed = await refreshAccessToken()
       
       if (refreshed) {

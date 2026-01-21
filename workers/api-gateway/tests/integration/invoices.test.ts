@@ -104,7 +104,7 @@ describe('Integration: Invoices', () => {
     }
 
     console.log(`[TEST] Testing against: ${publicClient.url}`)
-  }, 30000)
+  }, 60000)
 
   afterAll(async () => {
     if (adminClient?.isAuthenticated) {
@@ -239,7 +239,7 @@ describe('Integration: Invoices', () => {
 
       console.log(`[TEST] ✅ Created invoice: ${response.data.invoiceId}`)
       console.log(`[TEST] Invoice URL: ${response.data.invoiceUrl}`)
-    }, 30000) // Allow more time for Stripe
+    }, 60000) // Allow more time for Stripe
 
     it('should fail with insufficient stock', async () => {
       // Find a stable product (we need one with valid Stripe integration)

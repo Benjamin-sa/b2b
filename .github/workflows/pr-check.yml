@@ -46,15 +46,8 @@ jobs:
           VITE_API_GATEWAY_URL: https://dev-api.example.com
 
       # Type check workers
-      - name: Type check workers
-        run: |
-          for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
-            echo "🔍 Type checking $worker..."
-            cd workers/$worker
-            npm ci
-            npx tsc --noEmit || true
-            cd ../..
-          done
+      - name: Type check workers with Turbo
+        run: npm run type-check
 
   # ============================================================================
   # Deploy Workers and Frontend to Dev
@@ -78,8 +71,9 @@ jobs:
         run: npm install -g wrangler
 
       # Install and deploy workers
-      - name: Install worker dependencies
+      - name: Install dependencies
         run: |
+          npm ci
           for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
             echo "📦 Installing dependencies for $worker..."
             cd workers/$worker
@@ -87,15 +81,8 @@ jobs:
             cd ../..
           done
 
-      - name: Deploy workers to dev
-        run: |
-          workers=(auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway)
-          for worker in "${workers[@]}"; do
-            echo "🚀 Deploying $worker to dev..."
-            cd workers/$worker
-            wrangler deploy --env dev
-            cd ../..
-          done
+      - name: Deploy workers to dev with Turbo
+        run: npm run deploy:dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -114,13 +101,18 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Wait for deployment to stabilize
-        run: sleep 10
+        run: |
+          echo "Waiting for workers to propagate and stabilize..."
+          sleep 20
+          echo "Warming up API Gateway..."
+          curl -s "${{ secrets.DEV_API_URL }}/health" || echo "Warmup failed"
 
       # Run integration tests
       - name: Run integration tests
         working-directory: workers/api-gateway
         run: npm run test
         env:
+          CI: true
           TEST_API_URL: ${{ secrets.DEV_API_URL }}
           TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
           TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}

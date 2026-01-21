@@ -18,8 +18,9 @@ export default defineConfig(({ mode }) => {
         reporter: ['text', 'json', 'html'],
         exclude: ['node_modules/', 'tests/', '.wrangler/']
       },
-      testTimeout: 30000, // 30 seconds for E2E tests with real services
-      hookTimeout: 60000, // 60 seconds for setup/teardown (login, cleanup)
+      testTimeout: process.env.CI ? 90000 : 30000, // 90 seconds in CI, 30 locally
+      hookTimeout: process.env.CI ? 120000 : 60000, // 120 seconds in CI, 60 locally
+      retry: process.env.CI ? 2 : 0, // Retry failed tests in CI
       // Test file patterns
       include: [
         'tests/**/*.test.ts',

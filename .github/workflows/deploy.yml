@@ -17,17 +17,17 @@ on:
       skip_tests:
         description: 'Skip tests and deploy directly to production'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       deploy_frontend_only:
         description: 'Deploy frontend only (skip workers)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       deploy_workers_only:
         description: 'Deploy workers only (skip frontend)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
@@ -56,6 +56,7 @@ jobs:
       # Install dependencies for all workers
       - name: Install dependencies
         run: |
+          npm ci
           for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
             echo "📦 Installing dependencies for $worker..."
             cd workers/$worker
@@ -63,52 +64,9 @@ jobs:
             cd ../..
           done
 
-      # Deploy workers in dependency order (using npx for local wrangler version)
-      - name: Deploy auth-service (dev)
-        working-directory: workers/auth-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy inventory-service (dev)
-        working-directory: workers/inventory-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy stripe-service (dev)
-        working-directory: workers/stripe-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy email-service (dev)
-        working-directory: workers/email-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy telegram-service (dev)
-        working-directory: workers/telegram-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy shopify-sync-service (dev)
-        working-directory: workers/shopify-sync-service
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy r2-bucket (dev)
-        working-directory: workers/r2-bucket
-        run: npx wrangler deploy --config wrangler.toml --env dev
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy api-gateway (dev)
-        working-directory: workers/api-gateway
-        run: npx wrangler deploy --config wrangler.toml --env dev
+      # Deploy workers using Turbo (parallel where possible)
+      - name: Deploy all workers to dev (parallel)
+        run: npm run deploy:dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -224,6 +182,7 @@ jobs:
       # Install dependencies for all workers
       - name: Install dependencies
         run: |
+          npm ci
           for worker in auth-service inventory-service stripe-service email-service telegram-service shopify-sync-service r2-bucket api-gateway; do
             echo "📦 Installing dependencies for $worker..."
             cd workers/$worker
@@ -231,52 +190,9 @@ jobs:
             cd ../..
           done
 
-      # Deploy workers in dependency order (production = default, no --env flag)
-      - name: Deploy auth-service (prod)
-        working-directory: workers/auth-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy inventory-service (prod)
-        working-directory: workers/inventory-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy stripe-service (prod)
-        working-directory: workers/stripe-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy email-service (prod)
-        working-directory: workers/email-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy telegram-service (prod)
-        working-directory: workers/telegram-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy shopify-sync-service (prod)
-        working-directory: workers/shopify-sync-service
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy r2-bucket (prod)
-        working-directory: workers/r2-bucket
-        run: npx wrangler deploy --config wrangler.toml
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Deploy api-gateway (prod)
-        working-directory: workers/api-gateway
-        run: npx wrangler deploy --config wrangler.toml
+      # Deploy workers using Turbo (production)
+      - name: Deploy all workers to prod (parallel)
+        run: npm run deploy:prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
@@ -379,7 +295,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MESSAGE="✅ <b>B2B Deployment Successful</b>%0A%0A🟢 <b>Repository:</b> ${{ github.repository }}%0A🟢 <b>Branch:</b> ${{ github.ref_name }}%0A🟢 <b>Commit:</b> <code>${{ github.sha }}</code>%0A🟢 <b>Author:</b> ${{ github.actor }}%0A%0A🌐  href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>View Logs</a>"
+          MESSAGE="✅ <b>B2B Deployment Successful</b>%0A%0A🟢 <b>Repository:</b> ${{ github.repository }}%0A🟢 <b>Branch:</b> ${{ github.ref_name }}%0A🟢 <b>Commit:</b> <code>${{ github.sha }}</code>%0A🟢 <b>Author:</b> ${{ github.actor }}%0A%0A🌐 <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>View Logs</a>"
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             -d "parse_mode=HTML" \

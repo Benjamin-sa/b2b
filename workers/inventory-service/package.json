@@ -5,10 +5,12 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev --env dev --port 8791",
+    "build": "echo 'No build step required for inventory-service'",
+    "type-check": "tsc --noEmit",
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
-    "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "deploy:prod": "wrangler deploy --config wrangler.toml",
+    "test": "vitest"
   },
   "keywords": [
     "cloudflare-workers",
@@ -19,7 +21,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "hono": "^4.0.0",
+    "hono": "^4.11.4",
     "nanoid": "^5.0.0"
   },
   "devDependencies": {

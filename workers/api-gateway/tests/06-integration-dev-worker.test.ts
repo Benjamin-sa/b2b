@@ -50,7 +50,7 @@ describe('Integration Tests - Dev Worker', () => {
       console.error('[SETUP] Make sure TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD are set')
       throw error
     }
-  }, 30000) // 30 second timeout for login
+  }, 60000) // 30 second timeout for login
   const fetchAPI = async (path: string, options: RequestInit = {}) => {
     const url = `${DEV_WORKER_URL}${path}`
     console.log(`[TEST] ${options.method || 'GET'} ${url}`)

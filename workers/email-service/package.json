@@ -5,8 +5,11 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "echo 'No build step required for email-service'",
+    "type-check": "tsc --noEmit",
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "deploy:prod": "wrangler deploy --config wrangler.toml",
     "test": "vitest"
   },
   "dependencies": {

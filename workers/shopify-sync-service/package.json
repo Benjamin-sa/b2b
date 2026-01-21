@@ -5,8 +5,11 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "echo 'No build step required for shopify-sync-service'",
+    "type-check": "tsc --noEmit",
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
+    "deploy:prod": "wrangler deploy --config wrangler.toml",
     "tail": "wrangler tail",
     "tail:dev": "wrangler tail --env dev"
   },
@@ -20,7 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "hono": "^4.6.14",
+    "hono": "^4.11.4",
     "nanoid": "^5.0.4"
   },
   "devDependencies": {
