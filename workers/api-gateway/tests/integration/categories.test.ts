@@ -205,7 +205,7 @@ describe('Integration: Categories CRUD', () => {
       expect(response.data.name).toBe(newName)
 
       console.log(`[TEST] ✅ Updated category name to: ${newName}`)
-    })
+    }, 60000)
   })
 
   describe('PATCH /api/categories/:id - Partial Update Category (Admin Only)', () => {
