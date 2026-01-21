@@ -34,6 +34,7 @@ export interface CreateStripeProductInput {
   category?: string;
   brand?: string;
   part_number?: string;
+  b2b_sku?: string; // Custom B2B SKU
 }
 
 export interface UpdateStripeProductInput {
@@ -45,6 +46,7 @@ export interface UpdateStripeProductInput {
   category?: string;
   brand?: string;
   part_number?: string;
+  b2b_sku?: string; // Custom B2B SKU
 }
 
 export interface ReplaceStripePriceInput {
@@ -84,6 +86,7 @@ export async function createStripeProduct(
           category: productData.category,
           brand: productData.brand,
           part_number: productData.part_number,
+          b2b_sku: productData.b2b_sku,
         }),
       })
     );
@@ -129,6 +132,7 @@ export async function updateStripeProduct(
           category: productData.category,
           brand: productData.brand,
           part_number: productData.part_number,
+          b2b_sku: productData.b2b_sku,
         }),
       })
     );

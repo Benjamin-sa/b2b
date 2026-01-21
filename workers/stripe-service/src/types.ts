@@ -55,6 +55,7 @@ export interface ProductInput {
   category?: string;
   brand?: string;
   part_number?: string;
+  b2b_sku?: string; // Custom B2B SKU
   shopify_product_id?: string;
   shopify_variant_id?: string;
   product_id: string; // D1 product ID

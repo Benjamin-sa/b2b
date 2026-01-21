@@ -285,17 +285,18 @@ export async function storeOrderLineItems(
     return db.prepare(`
       INSERT INTO order_items (
         id, order_id, product_id,
-        product_name, product_sku, brand, image_url,
+        product_name, product_sku, b2b_sku, brand, image_url,
         quantity, unit_price, total_price, tax_cents,
         shopify_variant_id, stripe_price_id, stripe_invoice_item_id,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       crypto.randomUUID(),
       orderId,
       item.metadata?.product_id || item.metadata?.productId || '',
       item.product_name || '',
       item.sku || '',
+      item.b2b_sku || '', // ✅ Store B2B SKU for historical tracking
       item.brand || '',
       item.image_url || '',
       item.quantity,

@@ -32,6 +32,7 @@ export interface Product {
   stock: number // DEPRECATED - use inventory.total_stock instead
   brand: string | null
   part_number: string | null
+  b2b_sku: string | null // Custom B2B SKU (format: TP-00001)
   unit: string | null
   min_order_quantity: number
   max_order_quantity: number | null

@@ -27,6 +27,50 @@ import { validateRequired, validatePrice } from '../utils/validation';
 import { buildUpdateQuery, buildFieldUpdates, boolToInt } from '../utils/query-builder';
 
 /**
+ * Generate next B2B SKU
+ * Format: TP-00001, TP-00002, etc.
+ * 
+ * Finds the highest existing SKU number and increments it.
+ * If no SKUs exist, starts at TP-00001.
+ */
+async function getNextB2BSku(db: any): Promise<string> {
+  try {
+    // Query to find the highest existing B2B SKU
+    const result = await db
+      .prepare(
+        `SELECT b2b_sku 
+         FROM products 
+         WHERE b2b_sku IS NOT NULL 
+           AND b2b_sku LIKE 'TP-%'
+         ORDER BY b2b_sku DESC 
+         LIMIT 1`
+      )
+      .first();
+
+    if (!result || !result.b2b_sku) {
+      // No existing SKUs, start at TP-00001
+      return 'TP-00001';
+    }
+
+    // Extract the numeric part from format TP-00001
+    const currentSku = result.b2b_sku as string;
+    const numericPart = currentSku.replace('TP-', '');
+    const currentNumber = parseInt(numericPart, 10);
+
+    // Increment and pad with zeros (5 digits)
+    const nextNumber = currentNumber + 1;
+    const paddedNumber = nextNumber.toString().padStart(5, '0');
+
+    return `TP-${paddedNumber}`;
+  } catch (error) {
+    console.error('[Product Service] Error generating B2B SKU:', error);
+    // Fallback to a random SKU if query fails
+    const randomNumber = Math.floor(Math.random() * 99999) + 1;
+    return `TP-${randomNumber.toString().padStart(5, '0')}`;
+  }
+}
+
+/**
  * Get product by ID with all relations
  */
 export async function getProductById(
@@ -111,9 +155,9 @@ export async function getProducts(
   }
 
   if (filters.searchTerm) {
-    conditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ?)');
+    conditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ? OR p.part_number LIKE ? OR p.b2b_sku LIKE ?)');
     const searchPattern = `%${filters.searchTerm}%`;
-    params.push(searchPattern, searchPattern, searchPattern);
+    params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -216,6 +260,26 @@ export async function createProduct(
   const stripeProductId = data.stripe_product_id || null;
   const stripePriceId = data.stripe_price_id || null;
 
+  // ✅ Auto-generate B2B SKU if not provided (with retry logic for constraint violations)
+  let b2bSku = data.b2b_sku || null;
+  if (!b2bSku) {
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        b2bSku = await getNextB2BSku(db);
+        break; // Success, exit retry loop
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          console.error('[Product Service] Failed to generate B2B SKU after retries:', error);
+          throw errors.internalError('Failed to generate B2B SKU');
+        }
+        // Wait a bit before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 100 * (4 - retries)));
+      }
+    }
+  }
+
   // Prepare statements
   const statements: any[] = [];
 
@@ -226,11 +290,11 @@ export async function createProduct(
       .prepare(
         `INSERT INTO products (
         id, name, description, price, original_price, image_url, category_id,
-        in_stock, coming_soon, stock, brand, part_number, unit,
+        in_stock, coming_soon, stock, brand, part_number, b2b_sku, unit,
         min_order_quantity, max_order_quantity, weight,
         shopify_product_id, shopify_variant_id, stripe_product_id, stripe_price_id,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         productId,
@@ -245,6 +309,7 @@ export async function createProduct(
         0, // DEPRECATED: stock - always 0, use product_inventory instead
         data.brand || null,
         data.part_number || null,
+        b2bSku, // ✅ Auto-generated B2B SKU (format: TP-00001)
         data.unit || null,
         data.min_order_quantity || 1,
         data.max_order_quantity || null,
@@ -419,6 +484,7 @@ export async function updateProduct(
     coming_soon: boolToInt(data.coming_soon),
     brand: data.brand,
     part_number: data.part_number,
+    b2b_sku: data.b2b_sku, // ✅ Allow manual update of B2B SKU
     unit: data.unit,
     min_order_quantity: data.min_order_quantity,
     max_order_quantity: data.max_order_quantity,

@@ -142,6 +142,7 @@ jobs:
         run: npm run build-only
         env:
           VITE_API_GATEWAY_URL: ${{ secrets.DEV_API_URL }}
+          VITE_CLOUDFLARE_WORKER_URL: https://b2b-image-handler-dev.benkee-sauter.workers.dev
 
       - name: Deploy frontend to dev
         run: npx wrangler deploy --name b2b-client-dev
@@ -325,6 +326,7 @@ jobs:
         run: npm run build-only
         env:
           VITE_API_GATEWAY_URL: ${{ secrets.PROD_API_URL }}
+          VITE_CLOUDFLARE_WORKER_URL: https://b2b-image-handler.benkee-sauter.workers.dev
 
       - name: Deploy frontend to production
         run: npx wrangler deploy
@@ -335,7 +337,7 @@ jobs:
         run: |
           echo "🎉 Frontend deployed to production!"
           echo "======================================="
-          echo "URL: https://b2b.motordash.be"
+          echo "URL: https://4tparts.com"
 
   # ============================================================================
   # Notify on failure

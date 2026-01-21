@@ -209,6 +209,7 @@ products.post("/", async (c) => {
         category: body.category_id,
         brand: body.brand,
         part_number: body.part_number,
+        b2b_sku: body.b2b_sku,
       });
 
       if (!stripeResult) {
@@ -305,6 +306,7 @@ products.patch("/:id", async (c) => {
             category: body.category_id ?? existingProduct.category_id,
             brand: body.brand ?? existingProduct.brand,
             part_number: body.part_number ?? existingProduct.part_number,
+            b2b_sku: body.b2b_sku ?? existingProduct.b2b_sku,
           });
 
           if (!stripeUpdateSuccess) {

@@ -13,7 +13,8 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "deploy": "npm run build && wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "deploy:dev:all": "cd workers/auth-service && npm run deploy:dev && cd ../inventory-service && npm run deploy:dev && cd ../stripe-service && npm run deploy:dev && cd ../email-service && npm run deploy:dev && cd ../shopify-sync-service && npm run deploy:dev && cd ../api-gateway && npm run deploy:dev && cd ../../"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.879.0",

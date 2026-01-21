@@ -215,6 +215,7 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
       // Extract product details (handle both expanded and non-expanded product)
       let productName = line.description || '';
       let sku = '';
+      let b2bSku = ''; // ✅ B2B SKU
       let brand = '';
       let imageUrl = '';
       let productId = '';
@@ -224,6 +225,7 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
         // Product is expanded
         productName = productName || product.name || '';
         sku = product.metadata?.partNumber || '';
+        b2bSku = product.metadata?.b2bSku || ''; // ✅ Extract B2B SKU from product metadata
         brand = product.metadata?.brand || '';
         imageUrl = product.images?.[0] || '';
         productId = product.metadata?.productId || '';
@@ -234,17 +236,18 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
         env.DB.prepare(`
           INSERT INTO order_items (
             id, order_id, product_id,
-            product_name, product_sku, brand, image_url,
+            product_name, product_sku, b2b_sku, brand, image_url,
             quantity, unit_price, total_price, tax_cents,
             shopify_variant_id, stripe_price_id, stripe_invoice_item_id,
             created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           crypto.randomUUID(),
           orderInternalId,
           productId,
           productName,
           sku,
+          b2bSku, // ✅ Store B2B SKU in order items
           brand,
           imageUrl,
           line.quantity || 1,

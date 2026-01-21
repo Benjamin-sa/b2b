@@ -378,6 +378,17 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter part number" />
                     </div>
+
+                    <!-- B2B SKU -->
+                    <div>
+                        <label for="b2bSku" class="block text-sm font-medium text-gray-700 mb-2">
+                            B2B SKU
+                            <span class="text-xs text-gray-500 ml-1">(Auto-generated if empty)</span>
+                        </label>
+                        <input id="b2bSku" v-model="form.b2b_sku" type="text"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="TP-00001 (auto-generated)" />
+                    </div>
                 </div>
             </div>
 
@@ -651,6 +662,7 @@ const form = reactive({
     coming_soon: false,
     brand: '',
     part_number: '',
+    b2b_sku: '', // Custom B2B SKU
     specifications: [] as Array<{ key: string; value: string }>,
     unit: '',
     min_order_quantity: 1,
@@ -689,6 +701,7 @@ onMounted(async () => {
             coming_soon: props.product.coming_soon === 1,
             brand: props.product.brand || '',
             part_number: props.product.part_number || '',
+            b2b_sku: props.product.b2b_sku || '', // Custom B2B SKU
             images: props.product.images || [],
             specifications: props.product.specifications || [],
             unit: props.product.unit || '',
@@ -1014,6 +1027,7 @@ const submitForm = async () => {
         }
         if (form.brand.trim()) productData.brand = form.brand
         if (form.part_number.trim()) productData.part_number = form.part_number
+        if (form.b2b_sku.trim()) productData.b2b_sku = form.b2b_sku // Custom B2B SKU
         if (form.unit.trim()) productData.unit = form.unit
         if (form.min_order_quantity > 1) productData.min_order_quantity = form.min_order_quantity
         if (form.max_order_quantity && form.max_order_quantity > 1) productData.max_order_quantity = form.max_order_quantity

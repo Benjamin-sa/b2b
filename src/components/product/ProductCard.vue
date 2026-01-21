@@ -71,9 +71,9 @@
                         <span class="font-medium">{{ $t('products.card.category') }}:</span>
                         <span class="ml-1">{{ categoryName }}</span>
                     </div>
-                    <div v-if="product.shopify_variant_id" class="flex items-center text-sm text-gray-600">
+                    <div v-if="product.b2b_sku" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.sku') }}:</span>
-                        <span class="ml-1">{{ product.shopify_variant_id }}</span>
+                        <span class="ml-1 font-mono text-primary-700">{{ product.b2b_sku }}</span>
                     </div>
                     <div v-if="product.min_order_quantity" class="flex items-center text-sm text-gray-600">
                         <span class="font-medium">{{ $t('products.card.minOrder') }}:</span>

@@ -81,13 +81,14 @@
                                 <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                                 <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                     <span v-if="product.brand" class="font-medium">{{ product.brand }}</span>
-                                    <span v-if="product.shopify_variant_id">{{ $t('productDetail.sku', {
-                                        sku:
-                                            product.shopify_variant_id
+                                    <span v-if="product.b2b_sku" class="font-mono text-primary-700">
+                                        {{ $t('productDetail.sku', { sku: product.b2b_sku }) }}
+                                    </span>
+                                    <span v-if="product.shopify_variant_id">{{ $t('productDetail.shopifySku', {
+                                        sku: product.shopify_variant_id
                                     }) }}</span>
                                     <span v-if="product.part_number">{{ $t('productDetail.partNumber', {
-                                        partNumber:
-                                            product.part_number
+                                        partNumber: product.part_number
                                     }) }}</span>
                                 </div>
                             </div>
