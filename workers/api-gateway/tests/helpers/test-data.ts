@@ -38,6 +38,7 @@ export interface TestProductData {
   description?: string
   brand?: string
   part_number?: string
+  b2b_sku?: string
   category_id?: string
   image_url?: string
   images?: string[]

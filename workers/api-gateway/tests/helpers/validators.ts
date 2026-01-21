@@ -142,6 +142,7 @@ export interface Product {
   description?: string
   brand?: string
   part_number?: string
+  b2b_sku?: string | null
   category_id?: string
   image_url?: string
   images?: string[]
