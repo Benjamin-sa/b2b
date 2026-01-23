@@ -12,8 +12,8 @@ const i18n = createI18n({
     nl,
     en,
     fr,
-    de
-  }
+    de,
+  },
 });
 
 export default i18n;

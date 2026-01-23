@@ -51,7 +51,7 @@ app.get('/products', async (c) => {
     method: 'GET',
     headers: addServiceToken(
       {
-        'Authorization': c.req.header('Authorization') || '',
+        Authorization: c.req.header('Authorization') || '',
       },
       c.env.SERVICE_SECRET
     ),
@@ -68,7 +68,7 @@ app.get('/products', async (c) => {
 // workers/<service>/src/types/index.ts
 export interface Env {
   DB: D1Database;
-  SERVICE_SECRET: string;  // 👈 Add this
+  SERVICE_SECRET: string; // 👈 Add this
   // ... other bindings
 }
 ```
@@ -80,14 +80,20 @@ export interface Env {
 app.use('*', createServiceAuthMiddleware());
 
 // Custom: Enforce in all environments
-app.use('*', createServiceAuthMiddleware({
-  enforceInEnv: 'all',
-}));
+app.use(
+  '*',
+  createServiceAuthMiddleware({
+    enforceInEnv: 'all',
+  })
+);
 
 // Custom: Allow additional public paths
-app.use('*', createServiceAuthMiddleware({
-  allowedPaths: ['/', '/health', '/public/status'],
-}));
+app.use(
+  '*',
+  createServiceAuthMiddleware({
+    allowedPaths: ['/', '/health', '/public/status'],
+  })
+);
 ```
 
 ### Testing

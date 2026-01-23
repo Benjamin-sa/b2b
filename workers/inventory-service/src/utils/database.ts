@@ -1,6 +1,6 @@
 /**
  * Database Utilities
- * 
+ *
  * Helper functions for D1 database operations
  */
 
@@ -11,11 +11,7 @@ import { errors } from './errors';
  * Execute a query and return the first result
  * Throws NotFoundError if no result
  */
-export async function getOne<T>(
-  db: D1Database,
-  query: string,
-  params: any[] = []
-): Promise<T> {
+export async function getOne<T>(db: D1Database, query: string, params: any[] = []): Promise<T> {
   const stmt = db.prepare(query);
   const result = await stmt.bind(...params).first<T>();
 
@@ -41,11 +37,7 @@ export async function getOneOrNull<T>(
 /**
  * Execute a query and return all results
  */
-export async function getMany<T>(
-  db: D1Database,
-  query: string,
-  params: any[] = []
-): Promise<T[]> {
+export async function getMany<T>(db: D1Database, query: string, params: any[] = []): Promise<T[]> {
   const stmt = db.prepare(query);
   const result = await stmt.bind(...params).all<T>();
   return result.results || [];
@@ -96,11 +88,7 @@ export async function getPaginated<T>(
 /**
  * Execute an INSERT statement and return the ID
  */
-export async function insert(
-  db: D1Database,
-  query: string,
-  params: any[] = []
-): Promise<string> {
+export async function insert(db: D1Database, query: string, params: any[] = []): Promise<string> {
   const stmt = db.prepare(query);
   const result = await stmt.bind(...params).run();
 
@@ -116,11 +104,7 @@ export async function insert(
 /**
  * Execute an UPDATE statement
  */
-export async function update(
-  db: D1Database,
-  query: string,
-  params: any[] = []
-): Promise<void> {
+export async function update(db: D1Database, query: string, params: any[] = []): Promise<void> {
   const stmt = db.prepare(query);
   const result = await stmt.bind(...params).run();
 
@@ -132,11 +116,7 @@ export async function update(
 /**
  * Execute a DELETE statement
  */
-export async function remove(
-  db: D1Database,
-  query: string,
-  params: any[] = []
-): Promise<void> {
+export async function remove(db: D1Database, query: string, params: any[] = []): Promise<void> {
   const stmt = db.prepare(query);
   const result = await stmt.bind(...params).run();
 

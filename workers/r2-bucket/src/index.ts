@@ -33,21 +33,22 @@ export default {
       // Health check endpoint
       if (path === '/health' || path === '/') {
         return new Response(
-          JSON.stringify({ 
-            status: 'ok', 
+          JSON.stringify({
+            status: 'ok',
             timestamp: new Date().toISOString(),
-            version: '1.0.0' 
-          }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
+            version: '1.0.0',
+          }),
+          {
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       // 404 for unknown routes
       return createErrorResponse('Not Found', 404, request);
-
     } catch (error) {
       console.error('Worker error:', error);
       return createErrorResponse('Internal Server Error', 500, request);
     }
-  }
+  },
 };

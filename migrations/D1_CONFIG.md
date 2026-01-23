@@ -3,6 +3,7 @@
 This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 
 ## Development Database
+
 - **Database Name**: b2b-dev
 - **Database ID**: `0420eb79-c871-4fdb-bbf3-6deb62d5c0c3`
 - **Region**: WEUR (West Europe)
@@ -10,6 +11,7 @@ This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 - **Binding Name**: `DB` or `b2b_dev`
 
 ## Production Database
+
 - **Database Name**: b2b-prod
 - **Database ID**: `7cc12490-bd4c-42dc-a3eb-1dc290a864a0`
 - **Region**: WEUR (West Europe)
@@ -17,6 +19,7 @@ This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 - **Binding Name**: `DB` or `b2b_prod`
 
 ## Database Statistics (Development)
+
 - **Total Tables**: 19
 - **Total Indexes**: 50+
 - **Schema Version**: 001
@@ -25,6 +28,7 @@ This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 ## Tables Created
 
 ### Core Tables
+
 - ✅ users
 - ✅ categories
 - ✅ products
@@ -33,6 +37,7 @@ This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 - ✅ invoices
 
 ### Supporting Tables
+
 - ✅ product_images
 - ✅ product_specifications
 - ✅ product_tags
@@ -40,15 +45,18 @@ This file tracks the Cloudflare D1 database IDs for the B2B platform migration.
 - ✅ order_item_tax_amounts
 
 ### Authentication & Security
+
 - ✅ sessions
 - ✅ password_reset_tokens
 - ✅ email_verification_tokens
 
 ### Audit & Logging
+
 - ✅ stock_history
 - ✅ webhook_events
 
 ### Shopping Cart (Optional)
+
 - ✅ carts
 - ✅ cart_items
 
@@ -71,6 +79,7 @@ database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
 ## Commands
 
 ### Query Development Database
+
 ```bash
 # Remote
 wrangler d1 execute b2b-dev --command="SELECT COUNT(*) FROM users" --remote
@@ -80,11 +89,13 @@ wrangler d1 execute b2b-dev --command="SELECT COUNT(*) FROM users" --local
 ```
 
 ### Apply Schema Updates
+
 ```bash
 wrangler d1 execute b2b-dev --file=./migrations/002_update.sql --remote
 ```
 
 ### Backup Database
+
 ```bash
 # Export to SQL
 wrangler d1 export b2b-dev --output=backup.sql --remote

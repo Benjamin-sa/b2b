@@ -1,9 +1,9 @@
 /**
  * Shared Service Authentication Middleware
- * 
+ *
  * Prevents direct HTTP access to workers in production.
  * Only allows calls from authorized services via service bindings.
- * 
+ *
  * Usage:
  * 1. Add SERVICE_SECRET to each worker's secrets (wrangler secret put SERVICE_SECRET)
  * 2. Import and apply middleware: app.use('*', createServiceAuthMiddleware())
@@ -18,7 +18,7 @@ interface ServiceAuthOptions {
    * Default: ['/', '/health']
    */
   allowedPaths?: string[];
-  
+
   /**
    * Environment where service auth is enforced
    * Default: 'production'
@@ -28,15 +28,12 @@ interface ServiceAuthOptions {
 
 /**
  * Creates service authentication middleware
- * 
+ *
  * @param options Configuration options
  * @returns Hono middleware function
  */
 export function createServiceAuthMiddleware(options: ServiceAuthOptions = {}) {
-  const {
-    allowedPaths = ['/', '/health'],
-    enforceInEnv = 'production',
-  } = options;
+  const { allowedPaths = ['/', '/health'], enforceInEnv = 'production' } = options;
 
   return async (c: Context, next: Next) => {
     const path = c.req.path;
@@ -67,7 +64,7 @@ export function createServiceAuthMiddleware(options: ServiceAuthOptions = {}) {
         ip: c.req.header('CF-Connecting-IP'),
         userAgent: c.req.header('User-Agent'),
       });
-      
+
       return c.json(
         {
           error: 'Forbidden',
@@ -80,7 +77,7 @@ export function createServiceAuthMiddleware(options: ServiceAuthOptions = {}) {
 
     // Validate token
     const expectedToken = c.env.SERVICE_SECRET as string;
-    
+
     if (!expectedToken) {
       console.error('[Service Auth] SERVICE_SECRET not configured');
       return c.json(
@@ -97,7 +94,7 @@ export function createServiceAuthMiddleware(options: ServiceAuthOptions = {}) {
         path,
         method: c.req.method,
       });
-      
+
       return c.json(
         {
           error: 'Forbidden',

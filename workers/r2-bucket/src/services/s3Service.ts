@@ -3,8 +3,8 @@
  * Handles all S3-compatible storage operations
  */
 
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Env } from '../types';
 
 /**
@@ -12,7 +12,7 @@ import type { Env } from '../types';
  */
 export function createS3Client(env: Env): S3Client {
   return new S3Client({
-    region: "auto",
+    region: 'auto',
     endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: env.CLOUDFLARE_R2_ACCESS_KEY_ID,

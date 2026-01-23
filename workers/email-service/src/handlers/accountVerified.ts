@@ -1,6 +1,6 @@
 /**
  * Account Verified Email Handler
- * 
+ *
  * Sends an email notification when an admin verifies/approves a user account
  */
 
@@ -9,7 +9,7 @@ import { createSendGridClient } from '../utils/sendgrid';
 
 /**
  * Send account verified email
- * 
+ *
  * @param env - Worker environment with SendGrid API key
  * @param to - Recipient email address
  * @param firstName - User's first name
@@ -23,7 +23,7 @@ export async function sendAccountVerifiedEmail(
   companyName: string
 ): Promise<EmailResponse> {
   console.log(`📧 [Account Verified Email] Sending to ${to}`);
-  
+
   const subject = '✅ Your B2B Account Has Been Approved';
   const text = `Hello ${firstName},
 
@@ -162,24 +162,18 @@ The B2B Team`;
   try {
     // Send email via SendGrid
     const sendGridClient = createSendGridClient(env);
-    const result = await sendGridClient.sendEmail(
-      to,
-      subject,
-      html,
-      text,
-      {
-        clickTracking: true, // Can track clicks for marketing purposes
-        emailType: 'account-verified',
-        categories: ['b2b-transactional', 'account-verified']
-      }
-    );
-    
+    const result = await sendGridClient.sendEmail(to, subject, html, text, {
+      clickTracking: true, // Can track clicks for marketing purposes
+      emailType: 'account-verified',
+      categories: ['b2b-transactional', 'account-verified'],
+    });
+
     return result;
   } catch (error) {
     console.error('Account verified email error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
     };
   }
 }

@@ -6,9 +6,9 @@
  */
 
 // Re-export test files for easy importing
-export * from './health.test'
-export * from './auth.test'
-export * from './products.test'
-export * from './categories.test'
-export * from './invoices.test'
-export * from './admin.test'
+export * from './health.test';
+export * from './auth.test';
+export * from './products.test';
+export * from './categories.test';
+export * from './invoices.test';
+export * from './admin.test';

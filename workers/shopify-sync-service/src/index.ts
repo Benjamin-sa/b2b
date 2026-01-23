@@ -1,8 +1,8 @@
 /**
  * Shopify Sync Service
- * 
+ *
  * Handles bidirectional inventory synchronization between B2B platform and Shopify
- * 
+ *
  * Routes:
  * - POST /sync/:productId - Sync single product to Shopify
  * - POST /webhooks/inventory-update - Shopify inventory level webhook
@@ -13,10 +13,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
 import type { Env } from './types';
-import {
-  syncToShopify,
-  handleShopifyInventoryUpdate,
-} from './services/sync.service';
+import { syncToShopify, handleShopifyInventoryUpdate } from './services/sync.service';
 import { searchShopifyProducts } from './services/product-search.service';
 import { verifyShopifyWebhook, isWebhookProcessed, markWebhookProcessed } from './utils/webhooks';
 import { getInventoryByInventoryItemId } from './utils/database';
@@ -28,16 +25,22 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 
 // 🔐 Service authentication - blocks direct HTTP access in production
-app.use('*', createServiceAuthMiddleware({
-  allowedPaths: ['/', '/health', '/webhooks/inventory-update'], // Allow Shopify webhooks
-}));
+app.use(
+  '*',
+  createServiceAuthMiddleware({
+    allowedPaths: ['/', '/health', '/webhooks/inventory-update'], // Allow Shopify webhooks
+  })
+);
 
 // CORS
-app.use('*', cors({
-  origin: (origin) => origin, // Allow all origins for webhooks
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Shopify-*'],
-}));
+app.use(
+  '*',
+  cors({
+    origin: (origin) => origin, // Allow all origins for webhooks
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Shopify-*'],
+  })
+);
 
 // Logging
 app.use('*', async (c, next) => {
@@ -156,7 +159,7 @@ app.post('/sync/:productId', async (c) => {
 /**
  * POST /webhooks/inventory-update
  * Handle Shopify inventory_levels/update webhook
- * 
+ *
  * Uses handleShopifyInventoryUpdate from sync.service which properly handles:
  * - 'split' mode: Updates only b2c_stock (B2B stock unchanged)
  * - 'unified' mode: Updates total_stock and b2b_stock (shared pool)
@@ -259,10 +262,13 @@ app.post('/webhooks/inventory-update', async (c) => {
       console.error('❌ Failed to mark webhook as processed:', markError);
     }
 
-    return c.json({
-      success: false,
-      error: error.message || 'Internal server error',
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: error.message || 'Internal server error',
+      },
+      500
+    );
   }
 });
 

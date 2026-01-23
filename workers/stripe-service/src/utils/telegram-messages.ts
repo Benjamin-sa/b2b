@@ -1,6 +1,6 @@
 /**
  * Telegram Message Utilities
- * 
+ *
  * Formats Stripe invoice data for Telegram notifications.
  * Provides clean separation between webhook logic and notification formatting.
  */
@@ -26,7 +26,7 @@ interface InvoiceNotificationData {
 
 /**
  * Send invoice paid notification to Telegram
- * 
+ *
  * @param env - Worker environment bindings
  * @param invoice - Stripe invoice object
  */
@@ -49,7 +49,7 @@ export async function sendInvoicePaidNotification(
 
 /**
  * Send invoice voided notification to Telegram
- * 
+ *
  * @param env - Worker environment bindings
  * @param invoice - Stripe invoice object
  */
@@ -72,7 +72,7 @@ export async function sendInvoiceVoidedNotification(
 
 /**
  * Format invoice data for "paid" notification
- * 
+ *
  * @param invoice - Stripe invoice object
  * @returns Formatted notification payload
  */
@@ -93,7 +93,7 @@ function formatInvoicePaidPayload(invoice: Stripe.Invoice): InvoiceNotificationD
 
 /**
  * Format invoice data for "voided" notification
- * 
+ *
  * @param invoice - Stripe invoice object
  * @returns Formatted notification payload
  */
@@ -112,7 +112,7 @@ function formatInvoiceVoidedPayload(invoice: Stripe.Invoice): InvoiceNotificatio
 
 /**
  * Send notification to Telegram service via service binding
- * 
+ *
  * @param env - Worker environment bindings
  * @param endpoint - Telegram service endpoint path
  * @param payload - Notification data

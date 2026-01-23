@@ -1,6 +1,6 @@
 /**
  * SQL Query Builder Helpers
- * 
+ *
  * Utilities for building dynamic SQL UPDATE statements
  */
 
@@ -16,14 +16,14 @@ interface UpdateQueryResult {
 
 /**
  * Build dynamic UPDATE query from field map
- * 
+ *
  * @example
  * const updates = buildUpdateQuery('products', {
  *   name: 'New Name',
  *   price: 99.99,
  *   updated_at: new Date().toISOString()
  * }, 'id = ?');
- * 
+ *
  * // Returns:
  * // {
  * //   sql: "UPDATE products SET name = ?, price = ?, updated_at = ? WHERE id = ?",

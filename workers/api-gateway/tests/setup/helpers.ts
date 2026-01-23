@@ -1,13 +1,13 @@
 /**
  * Test Helpers
- * 
+ *
  * Utilities for creating test data, making requests, and cleaning up
  */
 
 export const TEST_ENV = {
   API_GATEWAY_URL: 'http://localhost:8787', // Local dev server
   SERVICE_SECRET: 'test-secret-12345',
-}
+};
 
 /**
  * Helper to create test user registration data
@@ -25,9 +25,9 @@ export function createTestUserData(uniqueId = Date.now()) {
       houseNumber: '1',
       postalCode: '1234AB',
       city: 'Amsterdam',
-      country: 'NL'
-    }
-  }
+      country: 'NL',
+    },
+  };
 }
 
 /**
@@ -42,9 +42,9 @@ export function createTestInvoiceData() {
         metadata: {
           productId: 'test_product_1',
           productName: 'Test Product',
-          shopifyVariantId: 'gid://shopify/ProductVariant/123'
-        }
-      }
+          shopifyVariantId: 'gid://shopify/ProductVariant/123',
+        },
+      },
     ],
     shippingCost: 500, // €5.00 in cents
     taxAmount: 420, // €4.20 in cents
@@ -57,10 +57,10 @@ export function createTestInvoiceData() {
         city: 'Amsterdam',
         zipCode: '1234AB',
         country: 'NL',
-        phone: '+31612345678'
-      }
-    }
-  }
+        phone: '+31612345678',
+      },
+    },
+  };
 }
 
 /**
@@ -75,22 +75,22 @@ export async function makeAuthenticatedRequest(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       ...options.headers,
-    }
-  })
+    },
+  });
 }
 
 /**
  * Parse JSON response with error handling
  */
 export async function parseJsonResponse(response: Response) {
-  const text = await response.text()
+  const text = await response.text();
   try {
-    return JSON.parse(text)
+    return JSON.parse(text);
   } catch (e) {
-    console.error('Failed to parse JSON:', text)
-    throw new Error(`Invalid JSON response: ${text}`)
+    console.error('Failed to parse JSON:', text);
+    throw new Error(`Invalid JSON response: ${text}`);
   }
 }
 
@@ -98,12 +98,12 @@ export async function parseJsonResponse(response: Response) {
  * Sleep utility for rate limit tests
  */
 export function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Generate a unique test identifier
  */
 export function generateTestId() {
-  return `test_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  return `test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 }

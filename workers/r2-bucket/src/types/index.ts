@@ -6,13 +6,13 @@ export interface Env {
   // R2 Storage
   IMAGE_BUCKET: any; // R2Bucket type from @cloudflare/workers-types
   R2_BUCKET_NAME: string;
-  
+
   // R2 Credentials
   CLOUDFLARE_ACCOUNT_ID: string;
   CLOUDFLARE_R2_ACCESS_KEY_ID: string;
   CLOUDFLARE_R2_SECRET_ACCESS_KEY: string;
   PUBLIC_R2_URL: string;
-  
+
   // Service-to-service authentication
   SERVICE_SECRET: string;
   ENVIRONMENT: 'development' | 'production';

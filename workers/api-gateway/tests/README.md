@@ -39,6 +39,7 @@ tests/
 ### 1. Prerequisites
 
 - Deploy the dev worker:
+
   ```bash
   cd workers/api-gateway
   npm run deploy:dev
@@ -61,6 +62,7 @@ nano tests/.env
 ```
 
 Required variables:
+
 ```bash
 TEST_ADMIN_EMAIL=your-admin@test.local
 TEST_ADMIN_PASSWORD=YourSecurePassword123!
@@ -89,34 +91,34 @@ npm run test:verbose
 
 ## 📊 Test Coverage
 
-| Endpoint Group | Coverage |
-|---------------|----------|
-| Health Checks | ✅ Complete |
-| Auth Routes | ✅ Complete |
-| Products CRUD | ✅ Complete |
-| Categories CRUD | ✅ Complete |
-| Invoices | ✅ Complete |
+| Endpoint Group   | Coverage    |
+| ---------------- | ----------- |
+| Health Checks    | ✅ Complete |
+| Auth Routes      | ✅ Complete |
+| Products CRUD    | ✅ Complete |
+| Categories CRUD  | ✅ Complete |
+| Invoices         | ✅ Complete |
 | Admin Operations | ✅ Complete |
-| Shopify Routes | ⏳ Planned |
+| Shopify Routes   | ⏳ Planned  |
 
 ## 🔧 API Client
 
 The `ApiClient` class mimics frontend Vue store behavior:
 
 ```typescript
-import { createApiClient, createAdminClient } from './helpers'
+import { createApiClient, createAdminClient } from './helpers';
 
 // Public client (no auth)
-const client = createApiClient()
-const response = await client.get('/api/products')
+const client = createApiClient();
+const response = await client.get('/api/products');
 
 // Admin client (auto-login)
-const admin = await createAdminClient()
-const response = await admin.post('/api/products', productData, { auth: true })
+const admin = await createAdminClient();
+const response = await admin.post('/api/products', productData, { auth: true });
 
 // Manual login
-const client = createApiClient()
-await client.login('user@example.com', 'password')
+const client = createApiClient();
+await client.login('user@example.com', 'password');
 ```
 
 ### Features
@@ -131,17 +133,17 @@ await client.login('user@example.com', 'password')
 Response validators ensure API contracts:
 
 ```typescript
-import { validateProduct, validateProductList, expectSuccess } from './helpers'
+import { validateProduct, validateProductList, expectSuccess } from './helpers';
 
 // Validate response
-const response = await client.get('/api/products')
-expectSuccess(response)
-validateProductList(response.data)
+const response = await client.get('/api/products');
+expectSuccess(response);
+validateProductList(response.data);
 
 // Each product validates against schema
-response.data.items.forEach(product => {
-  validateProduct(product)
-})
+response.data.items.forEach((product) => {
+  validateProduct(product);
+});
 ```
 
 ### Available Validators
@@ -158,15 +160,15 @@ response.data.items.forEach(product => {
 Generate realistic test data:
 
 ```typescript
-import { generateProduct, generateUser, generateCategory } from './helpers'
+import { generateProduct, generateUser, generateCategory } from './helpers';
 
 const product = generateProduct({
-  name: 'Custom Name',  // Override defaults
-})
+  name: 'Custom Name', // Override defaults
+});
 
-const user = generateUser()  // Unique email each time
+const user = generateUser(); // Unique email each time
 
-const category = generateCategory()
+const category = generateCategory();
 ```
 
 ## 🔒 Security Notes
@@ -195,6 +197,7 @@ const category = generateCategory()
 ### Invoice tests skip
 
 Invoice creation requires:
+
 1. User has `stripe_customer_id` set
 2. Product has `stripe_price_id` set
 3. Product has available `b2b_stock`

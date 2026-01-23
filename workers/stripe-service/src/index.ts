@@ -1,12 +1,12 @@
 /**
  * Stripe Service Worker - Main Entry Point
- * 
+ *
  * Centralized Stripe service for B2B platform
  * Provides service binding interface for:
  * - Customer management
  * - Product management
  * - Invoice creation
- * 
+ *
  * Used by: auth-service, inventory-service, order-service (future)
  */
 
@@ -31,9 +31,12 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 
 // 🔐 Service authentication - blocks direct HTTP access in production
-app.use('*', createServiceAuthMiddleware({
-  allowedPaths: ['/', '/health', '/webhooks'], // Allow webhooks (Stripe calls them directly)
-}));
+app.use(
+  '*',
+  createServiceAuthMiddleware({
+    allowedPaths: ['/', '/health', '/webhooks'], // Allow webhooks (Stripe calls them directly)
+  })
+);
 
 // ============================================================================
 // HEALTH CHECK
@@ -62,7 +65,7 @@ app.post('/customers', async (c) => {
   try {
     const input = await c.req.json();
     const customerId = await CustomerService.createCustomer(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { customer_id: customerId },
@@ -77,7 +80,7 @@ app.put('/customers', async (c) => {
   try {
     const input = await c.req.json();
     await CustomerService.updateCustomer(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { message: 'Customer updated successfully' },
@@ -92,9 +95,9 @@ app.delete('/customers/:id', async (c) => {
   try {
     const customerId = c.req.param('id');
     const { user_id, reason } = await c.req.json();
-    
+
     await CustomerService.archiveCustomer(c.env, customerId, user_id, reason);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { message: 'Customer archived successfully' },
@@ -109,7 +112,7 @@ app.post('/customers/get-or-create', async (c) => {
   try {
     const input = await c.req.json();
     const customerId = await CustomerService.getOrCreateCustomer(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { customer_id: customerId },
@@ -128,7 +131,7 @@ app.post('/products', async (c) => {
   try {
     const input = await c.req.json();
     const result = await ProductService.createProductWithPrice(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: result,
@@ -143,7 +146,7 @@ app.put('/products', async (c) => {
   try {
     const input = await c.req.json();
     await ProductService.updateProduct(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { message: 'Product updated successfully' },
@@ -158,7 +161,7 @@ app.put('/products/price', async (c) => {
   try {
     const input = await c.req.json();
     const newPriceId = await ProductService.replacePrice(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { new_price_id: newPriceId },
@@ -173,9 +176,9 @@ app.delete('/products/:id', async (c) => {
   try {
     const productId = c.req.param('id');
     const { price_id } = await c.req.json();
-    
+
     await ProductService.archiveProduct(c.env, productId, price_id);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { message: 'Product archived successfully' },
@@ -190,7 +193,7 @@ app.get('/products/price/:id', async (c) => {
   try {
     const priceId = c.req.param('id');
     const price = await ProductService.getPrice(c.env, priceId);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: {
@@ -214,7 +217,7 @@ app.post('/invoices', async (c) => {
   try {
     const input = await c.req.json();
     const invoice = await InvoiceService.createInvoiceWithItems(c.env, input);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: invoice,
@@ -229,7 +232,7 @@ app.post('/invoices/:id/void', async (c) => {
   try {
     const invoiceId = c.req.param('id');
     await InvoiceService.voidInvoice(c.env, invoiceId);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: { message: 'Invoice voided successfully' },
@@ -244,7 +247,7 @@ app.get('/invoices/:id', async (c) => {
   try {
     const invoiceId = c.req.param('id');
     const invoice = await InvoiceService.getInvoice(c.env, invoiceId);
-    
+
     return c.json<StripeServiceResponse>({
       success: true,
       data: {

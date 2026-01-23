@@ -1,6 +1,6 @@
 /**
  * Admin Routes
- * 
+ *
  * HTTP endpoints for user management (admin only)
  */
 
@@ -8,34 +8,48 @@ import { Hono } from 'hono';
 import type { Env, User } from '../types';
 import { verifyAccessToken } from '../utils/jwt';
 import { getSession } from '../utils/session';
-import { createAuthError, AuthError } from '../utils/errors';
+import { createAuthError, AuthError, getErrorMessage } from '../utils/errors';
 import { updateStripeCustomer, archiveStripeCustomer } from '../services/stripe.service';
 import { hashPassword, validatePassword } from '../utils/password';
+import { createDb } from '@b2b/db';
+import * as userOps from '@b2b/db/operations';
 
-const admin = new Hono<{ Bindings: Env }>();
+const admin = new Hono<{
+  Bindings: Env;
+  Variables: {
+    userId: string;
+    userRole: string;
+  };
+}>();
 
 // Helper function to transform DB user to frontend UserProfile format
 function transformUserToProfile(user: User) {
   // Build address object if any address fields exist
-  const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
-    ? {
-        street: user.address_street || '',
-        houseNumber: user.address_house_number || '',
-        postalCode: user.address_postal_code || '',
-        city: user.address_city || '',
-        country: user.address_country || '',
-      }
-    : undefined;
+  const address =
+    user.address_street ||
+    user.address_house_number ||
+    user.address_postal_code ||
+    user.address_city ||
+    user.address_country
+      ? {
+          street: user.address_street || '',
+          houseNumber: user.address_house_number || '',
+          postalCode: user.address_postal_code || '',
+          city: user.address_city || '',
+          country: user.address_country || '',
+        }
+      : undefined;
 
   // Build BTW verification data if it exists
-  const btwVerification = user.btw_verified_name || user.btw_verified_address
-    ? {
-        verifiedName: user.btw_verified_name || null,
-        verifiedAddress: user.btw_verified_address || null,
-        verifiedAt: user.btw_verified_at || null,
-        isValidated: user.btw_number_validated === 1,
-      }
-    : undefined;
+  const btwVerification =
+    user.btw_verified_name || user.btw_verified_address
+      ? {
+          verifiedName: user.btw_verified_name || null,
+          verifiedAddress: user.btw_verified_address || null,
+          verifiedAt: user.btw_verified_at || null,
+          isValidated: user.btw_number_validated === 1,
+        }
+      : undefined;
 
   return {
     uid: user.id,
@@ -66,7 +80,7 @@ admin.onError((err, c) => {
     {
       error: 'InternalError',
       code: 'admin/internal-error',
-      message: err.message || 'An internal error occurred',
+      message: getErrorMessage(err),
       statusCode: 500,
     },
     500
@@ -79,16 +93,16 @@ admin.onError((err, c) => {
 admin.use('*', async (c, next) => {
   try {
     const authHeader = c.req.header('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw createAuthError('UNAUTHORIZED', 'Missing or invalid authorization header');
     }
 
     const token = authHeader.substring(7);
-    
+
     // Verify token
     const payload = await verifyAccessToken(token, c.env.JWT_SECRET);
-    
+
     // Check session
     const session = await getSession(c.env.SESSIONS, payload.sessionId);
     if (!session) {
@@ -103,7 +117,7 @@ admin.use('*', async (c, next) => {
     // Store user info in context
     c.set('userId', payload.uid);
     c.set('userRole', payload.role);
-    
+
     await next();
   } catch (error) {
     if (error instanceof AuthError) {
@@ -123,42 +137,27 @@ admin.get('/users', async (c) => {
     const offset = parseInt(c.req.query('offset') || '0');
     const search = c.req.query('search') || '';
 
-    let query = `SELECT 
-      id, email, role, company_name, first_name, last_name, phone, 
-      btw_number, btw_number_validated, btw_verified_name, btw_verified_address, btw_verified_at,
-      stripe_customer_id, is_active, is_verified, created_at, updated_at 
-      FROM users`;
-    let countQuery = 'SELECT COUNT(*) as count FROM users';
-    const params: any[] = [];
-
-    if (search) {
-      const searchPattern = `%${search}%`;
-      query += ' WHERE email LIKE ? OR company_name LIKE ? OR first_name LIKE ? OR last_name LIKE ?';
-      countQuery += ' WHERE email LIKE ? OR company_name LIKE ? OR first_name LIKE ? OR last_name LIKE ?';
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
-    }
-
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-
-    const users = await c.env.DB.prepare(query)
-      .bind(...params, limit, offset)
-      .all<User>();
-
-    const countResult = await c.env.DB.prepare(countQuery)
-      .bind(...params)
-      .first<{ count: number }>();
+    const db = createDb(c.env.DB);
+    const result = await userOps.getUsers(db, { limit, offset, search });
 
     // Transform users to frontend format (camelCase)
-    const transformedUsers = (users.results || []).map(transformUserToProfile);
+    const transformedUsers = result.users.map(transformUserToProfile);
 
     return c.json({
       users: transformedUsers,
-      total: countResult?.count || 0,
+      total: result.total,
       limit,
       offset,
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -170,16 +169,8 @@ admin.get('/users/:userId', async (c) => {
   try {
     const userId = c.req.param('userId');
 
-    const user = await c.env.DB.prepare(`
-      SELECT id, email, role, company_name, first_name, last_name, phone, 
-             btw_number, btw_number_validated, btw_verified_name, btw_verified_address, btw_verified_at,
-             address_street, address_house_number, address_postal_code, address_city, address_country,
-             stripe_customer_id, is_active, is_verified, created_at, updated_at
-      FROM users 
-      WHERE id = ?
-    `)
-      .bind(userId)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, userId);
 
     if (!user) {
       throw createAuthError('USER_NOT_FOUND');
@@ -190,7 +181,14 @@ admin.get('/users/:userId', async (c) => {
 
     return c.json({ user: transformedUser });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -203,92 +201,40 @@ admin.put('/users/:userId', async (c) => {
     const userId = c.req.param('userId');
     const data = await c.req.json<Partial<User>>();
 
+    const db = createDb(c.env.DB);
+
     // Fetch existing user
-    const existingUser = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const existingUser = await userOps.getUserById(db, userId);
 
     if (!existingUser) {
       throw createAuthError('USER_NOT_FOUND');
     }
 
-    // Build update query dynamically
-    const updates: string[] = [];
-    const values: any[] = [];
+    // Build update data object
+    const updateData: Partial<Omit<User, 'id' | 'email' | 'password_hash' | 'created_at'>> = {};
 
-    if (data.company_name !== undefined) {
-      updates.push('company_name = ?');
-      values.push(data.company_name);
-    }
-    if (data.first_name !== undefined) {
-      updates.push('first_name = ?');
-      values.push(data.first_name);
-    }
-    if (data.last_name !== undefined) {
-      updates.push('last_name = ?');
-      values.push(data.last_name);
-    }
-    if (data.phone !== undefined) {
-      updates.push('phone = ?');
-      values.push(data.phone);
-    }
-    if (data.btw_number !== undefined) {
-      updates.push('btw_number = ?');
-      values.push(data.btw_number);
-    }
-    if (data.address_street !== undefined) {
-      updates.push('address_street = ?');
-      values.push(data.address_street);
-    }
-    if (data.address_house_number !== undefined) {
-      updates.push('address_house_number = ?');
-      values.push(data.address_house_number);
-    }
-    if (data.address_postal_code !== undefined) {
-      updates.push('address_postal_code = ?');
-      values.push(data.address_postal_code);
-    }
-    if (data.address_city !== undefined) {
-      updates.push('address_city = ?');
-      values.push(data.address_city);
-    }
-    if (data.address_country !== undefined) {
-      updates.push('address_country = ?');
-      values.push(data.address_country);
-    }
-    if (data.role !== undefined) {
-      updates.push('role = ?');
-      values.push(data.role);
-    }
-    if (data.is_verified !== undefined) {
-      updates.push('is_verified = ?');
-      values.push(data.is_verified);
-    }
-    if (data.is_active !== undefined) {
-      updates.push('is_active = ?');
-      values.push(data.is_active);
-    }
+    if (data.company_name !== undefined) updateData.company_name = data.company_name;
+    if (data.first_name !== undefined) updateData.first_name = data.first_name;
+    if (data.last_name !== undefined) updateData.last_name = data.last_name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.btw_number !== undefined) updateData.btw_number = data.btw_number;
+    if (data.address_street !== undefined) updateData.address_street = data.address_street;
+    if (data.address_house_number !== undefined)
+      updateData.address_house_number = data.address_house_number;
+    if (data.address_postal_code !== undefined)
+      updateData.address_postal_code = data.address_postal_code;
+    if (data.address_city !== undefined) updateData.address_city = data.address_city;
+    if (data.address_country !== undefined) updateData.address_country = data.address_country;
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.is_verified !== undefined) updateData.is_verified = data.is_verified;
+    if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       throw createAuthError('INVALID_REQUEST', 'No fields to update');
     }
 
-    // Always update updated_at
-    updates.push('updated_at = ?');
-    values.push(new Date().toISOString());
-
-    // Add userId to values
-    values.push(userId);
-
     // Execute update
-    await c.env.DB.prepare(`
-      UPDATE users SET ${updates.join(', ')} WHERE id = ?
-    `).bind(...values).run();
-
-    // Fetch updated user
-    const updatedUser = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const updatedUser = await userOps.updateUser(db, userId, updateData);
 
     if (!updatedUser) {
       throw createAuthError('DATABASE_ERROR', 'Failed to fetch updated user');
@@ -304,7 +250,14 @@ admin.put('/users/:userId', async (c) => {
       user: updatedUser,
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -316,9 +269,8 @@ admin.post('/users/:userId/verify', async (c) => {
   try {
     const userId = c.req.param('userId');
 
-    const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, userId);
 
     if (!user) {
       throw createAuthError('USER_NOT_FOUND');
@@ -329,21 +281,21 @@ admin.post('/users/:userId/verify', async (c) => {
     }
 
     // Update verification status
-    await c.env.DB.prepare('UPDATE users SET is_verified = ?, updated_at = ? WHERE id = ?')
-      .bind(1, new Date().toISOString(), userId)
-      .run();
-
-    // Fetch updated user
-    const updatedUser = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const updatedUser = await userOps.verifyUser(db, userId);
 
     return c.json({
       message: 'User verified successfully',
       user: updatedUser,
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -354,34 +306,26 @@ admin.post('/users/:userId/verify', async (c) => {
 admin.delete('/users/:userId', async (c) => {
   try {
     const userId = c.req.param('userId');
-    const adminUserId = c.get('userId') as string;
+    const adminUserId = c.get('userId');
 
     // Prevent self-deletion
     if (userId === adminUserId) {
       throw createAuthError('INVALID_REQUEST', 'Cannot delete your own account');
     }
 
-    const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, userId);
 
     if (!user) {
       throw createAuthError('USER_NOT_FOUND');
     }
 
     // Soft delete: deactivate the user
-    await c.env.DB.prepare('UPDATE users SET is_active = ?, updated_at = ? WHERE id = ?')
-      .bind(0, new Date().toISOString(), userId)
-      .run();
+    await userOps.deactivateUser(db, userId);
 
     // Archive Stripe customer if exists
     if (user.stripe_customer_id) {
-      await archiveStripeCustomer(
-        c.env,
-        user.stripe_customer_id,
-        userId,
-        'deleted_by_admin'
-      );
+      await archiveStripeCustomer(c.env, user.stripe_customer_id, userId, 'deleted_by_admin');
     }
 
     return c.json({
@@ -389,7 +333,14 @@ admin.delete('/users/:userId', async (c) => {
       userId,
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -406,9 +357,8 @@ admin.post('/users/:userId/reset-password', async (c) => {
       throw createAuthError('MISSING_FIELDS', 'New password is required');
     }
 
-    const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(userId)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, userId);
 
     if (!user) {
       throw createAuthError('USER_NOT_FOUND');
@@ -427,15 +377,20 @@ admin.post('/users/:userId/reset-password', async (c) => {
     const passwordHash = await hashPassword(data.newPassword);
 
     // Update password
-    await c.env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?')
-      .bind(passwordHash, new Date().toISOString(), userId)
-      .run();
+    await userOps.updateUserPassword(db, userId, passwordHash);
 
     return c.json({
       message: 'Password reset successfully',
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'admin/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 

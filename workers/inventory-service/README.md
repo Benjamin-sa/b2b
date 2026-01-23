@@ -58,6 +58,7 @@ GET /products?page=1&limit=20&sortBy=price&sortOrder=asc
 ```
 
 Query Parameters:
+
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 20, max: 100)
 - `sortBy` - Sort field: name, price, created_at, updated_at, stock
@@ -269,6 +270,7 @@ Configured in `wrangler.toml`:
 ### Auth Service
 
 Validates JWT tokens and provides user context:
+
 ```typescript
 POST /auth/validate
 { "accessToken": "..." }
@@ -278,6 +280,7 @@ POST /auth/validate
 ### API Gateway
 
 Routes requests to this service:
+
 ```
 /api/inventory/* → Inventory Service
 ```
@@ -310,6 +313,7 @@ npm run type-check
 ## Monitoring
 
 All requests are logged with:
+
 - Request method and path
 - Response status code
 - Processing duration

@@ -2,7 +2,11 @@
  * Webhook verification and utilities
  */
 
-import type { Env } from '../types';
+import { createDb, schema } from '@b2b/db';
+import { eq } from 'drizzle-orm';
+import type { D1Database } from '@cloudflare/workers-types';
+
+const { webhook_events } = schema;
 
 /**
  * Verify Shopify webhook HMAC signature
@@ -32,16 +36,15 @@ export async function verifyShopifyWebhook(
 /**
  * Check if webhook has already been processed (deduplication)
  */
-export async function isWebhookProcessed(
-  db: D1Database,
-  webhookId: string
-): Promise<boolean> {
-  const result = await db
-    .prepare('SELECT id FROM webhook_events WHERE event_id = ?')
-    .bind(webhookId)
-    .first();
+export async function isWebhookProcessed(db: D1Database, webhookId: string): Promise<boolean> {
+  const client = createDb(db);
+  const result = await client
+    .select({ id: webhook_events.id })
+    .from(webhook_events)
+    .where(eq(webhook_events.event_id, webhookId))
+    .get();
 
-  return result !== null;
+  return result !== undefined && result !== null;
 }
 
 /**
@@ -55,22 +58,21 @@ export async function markWebhookProcessed(
   success: boolean,
   errorMessage: string | null = null
 ): Promise<void> {
+  const client = createDb(db);
   const now = new Date().toISOString();
 
-  await db
-    .prepare(
-      `INSERT INTO webhook_events (id, event_type, event_id, payload, processed, success, error_message, created_at, processed_at)
-       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)`
-    )
-    .bind(
-      crypto.randomUUID(),
-      eventType,
-      webhookId,
+  await client
+    .insert(webhook_events)
+    .values({
+      id: crypto.randomUUID(),
+      event_type: eventType,
+      event_id: webhookId,
       payload,
-      success ? 1 : 0,
-      errorMessage,
-      now,
-      now
-    )
+      processed: 1,
+      success: success ? 1 : 0,
+      error_message: errorMessage,
+      created_at: now,
+      processed_at: now,
+    })
     .run();
 }

@@ -1,16 +1,13 @@
 /**
  * Logging Middleware
- * 
+ *
  * Log all requests for monitoring and debugging
  */
 
 import { Context, Next } from 'hono';
 import type { Env } from '../types';
 
-export async function loggingMiddleware(
-  c: Context<{ Bindings: Env }>,
-  next: Next
-) {
+export async function loggingMiddleware(c: Context<{ Bindings: Env }>, next: Next) {
   const start = Date.now();
   const { method, url } = c.req;
 

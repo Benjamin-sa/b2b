@@ -104,7 +104,7 @@ export async function sendPasswordResetEmail(
       </body>
       </html>
     `;
-    
+
     const textContent = `
 4Tparts B2B - Password Reset Request
 
@@ -129,7 +129,7 @@ The 4Tparts Security Team
 This password reset was requested for ${to} on 4Tparts B2B.
 If you didn't request this, please contact support immediately.
     `;
-    
+
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
       to,
@@ -139,18 +139,16 @@ If you didn't request this, please contact support immediately.
       {
         clickTracking: false, // CRITICAL: Disable click tracking to preserve reset URL
         emailType: 'password-reset',
-        categories: ['b2b-transactional', 'password-reset']
+        categories: ['b2b-transactional', 'password-reset'],
       }
     );
-    
+
     return result;
-    
   } catch (error) {
     console.error('Password reset email error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Internal server error'
+      error: error instanceof Error ? error.message : 'Internal server error',
     };
   }
 }
-

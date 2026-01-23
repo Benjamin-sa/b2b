@@ -1,6 +1,6 @@
 /**
  * Shopify Admin API Client
- * 
+ *
  * Handles all communication with Shopify's GraphQL Admin API
  */
 
@@ -30,7 +30,7 @@ async function shopifyGraphQL(
     throw new Error(`Shopify GraphQL error: ${response.status} - ${error}`);
   }
 
-  const result = await response.json();
+  const result = (await response.json()) as { data?: any; errors?: any };
 
   if (result.errors) {
     throw new Error(`Shopify GraphQL errors: ${JSON.stringify(result.errors)}`);
@@ -49,7 +49,9 @@ export async function updateShopifyInventory(
 ): Promise<void> {
   const locationId = env.SHOPIFY_LOCATION_ID;
 
-  console.log(`📦 Updating Shopify inventory: item=${inventoryItemId}, location=${locationId}, available=${available}`);
+  console.log(
+    `📦 Updating Shopify inventory: item=${inventoryItemId}, location=${locationId}, available=${available}`
+  );
 
   const mutation = `
     mutation inventorySetOnHandQuantities($input: InventorySetOnHandQuantitiesInput!) {
@@ -97,10 +99,7 @@ export async function updateShopifyInventory(
 /**
  * Get current inventory level from Shopify
  */
-export async function getShopifyInventory(
-  env: Env,
-  inventoryItemId: string
-): Promise<number> {
+export async function getShopifyInventory(env: Env, inventoryItemId: string): Promise<number> {
   const locationId = env.SHOPIFY_LOCATION_ID;
 
   // Shopify inventoryLevel requires an ID in format: gid://shopify/InventoryLevel/?inventory_item_id=X&location_id=Y
@@ -186,10 +185,7 @@ export async function getShopifyVariant(
 /**
  * Search for products by SKU/part number
  */
-export async function searchShopifyProductsBySKU(
-  env: Env,
-  sku: string
-): Promise<ShopifyVariant[]> {
+export async function searchShopifyProductsBySKU(env: Env, sku: string): Promise<ShopifyVariant[]> {
   const query = `
     query searchProducts($query: String!) {
       products(first: 10, query: $query) {

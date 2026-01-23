@@ -14,54 +14,54 @@
 // ============================================================================
 
 export interface TestConfig {
-  baseUrl: string
-  adminEmail?: string
-  adminPassword?: string
-  userEmail?: string
-  userPassword?: string
-  verbose?: boolean
+  baseUrl: string;
+  adminEmail?: string;
+  adminPassword?: string;
+  userEmail?: string;
+  userPassword?: string;
+  verbose?: boolean;
 }
 
 export interface AuthTokens {
-  accessToken: string
-  refreshToken: string
-  expiresIn?: number
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
 }
 
 export interface UserProfile {
-  uid: string
-  email: string
-  role: 'admin' | 'customer'
-  companyName?: string
-  firstName?: string
-  lastName?: string
-  isVerified: boolean
-  isActive: boolean
-  stripeCustomerId?: string
+  uid: string;
+  email: string;
+  role: 'admin' | 'customer';
+  companyName?: string;
+  firstName?: string;
+  lastName?: string;
+  isVerified: boolean;
+  isActive: boolean;
+  stripeCustomerId?: string;
 }
 
 export interface LoginResponse {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-  user: UserProfile
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: UserProfile;
 }
 
 export interface ApiResponse<T = any> {
-  status: number
-  ok: boolean
-  data: T | null
-  error: ApiError | null
-  headers: Headers
-  timing: number
-  raw: Response
+  status: number;
+  ok: boolean;
+  data: T | null;
+  error: ApiError | null;
+  headers: Headers;
+  timing: number;
+  raw: Response;
 }
 
 export interface ApiError {
-  error: string
-  code?: string
-  message?: string
-  details?: any
+  error: string;
+  code?: string;
+  message?: string;
+  details?: any;
 }
 
 // ============================================================================
@@ -69,15 +69,15 @@ export interface ApiError {
 // ============================================================================
 
 export class ApiClient {
-  private baseUrl: string
-  private accessToken: string | null = null
-  private refreshToken: string | null = null
-  private userProfile: UserProfile | null = null
-  private verbose: boolean
+  private baseUrl: string;
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+  private userProfile: UserProfile | null = null;
+  private verbose: boolean;
 
   constructor(config: TestConfig) {
-    this.baseUrl = config.baseUrl.replace(/\/$/, '') // Remove trailing slash
-    this.verbose = config.verbose ?? false
+    this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    this.verbose = config.verbose ?? false;
   }
 
   // ============================================================================
@@ -92,21 +92,21 @@ export class ApiClient {
     const response = await this.post<LoginResponse>('/auth/login', {
       email,
       password,
-    })
+    });
 
     if (!response.ok || !response.data) {
       throw new Error(
         `Login failed: ${response.error?.message || response.error?.error || 'Unknown error'}`
-      )
+      );
     }
 
     // Store tokens (mimics saveAuthData)
-    this.accessToken = response.data.accessToken
-    this.refreshToken = response.data.refreshToken
-    this.userProfile = response.data.user
+    this.accessToken = response.data.accessToken;
+    this.refreshToken = response.data.refreshToken;
+    this.userProfile = response.data.user;
 
-    this.log('✅ Logged in as:', response.data.user.email)
-    return response.data
+    this.log('✅ Logged in as:', response.data.user.email);
+    return response.data;
   }
 
   /**
@@ -114,29 +114,29 @@ export class ApiClient {
    * Mimics: auth.ts register()
    */
   async register(data: {
-    email: string
-    password: string
-    firstName: string
-    lastName: string
-    companyName: string
-    phone?: string
-    btwNumber?: string
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    companyName: string;
+    phone?: string;
+    btwNumber?: string;
   }): Promise<LoginResponse> {
-    const response = await this.post<LoginResponse>('/auth/register', data)
+    const response = await this.post<LoginResponse>('/auth/register', data);
 
     if (!response.ok || !response.data) {
       throw new Error(
         `Registration failed: ${response.error?.message || response.error?.error || 'Unknown error'}`
-      )
+      );
     }
 
     // Store tokens
-    this.accessToken = response.data.accessToken
-    this.refreshToken = response.data.refreshToken
-    this.userProfile = response.data.user
+    this.accessToken = response.data.accessToken;
+    this.refreshToken = response.data.refreshToken;
+    this.userProfile = response.data.user;
 
-    this.log('✅ Registered as:', response.data.user.email)
-    return response.data
+    this.log('✅ Registered as:', response.data.user.email);
+    return response.data;
   }
 
   /**
@@ -145,23 +145,23 @@ export class ApiClient {
    */
   async refreshAccessToken(): Promise<boolean> {
     if (!this.refreshToken) {
-      this.log('⚠️ No refresh token available')
-      return false
+      this.log('⚠️ No refresh token available');
+      return false;
     }
 
     const response = await this.post<{ accessToken: string }>('/auth/refresh', {
       refreshToken: this.refreshToken,
-    })
+    });
 
     if (!response.ok || !response.data?.accessToken) {
-      this.log('❌ Token refresh failed')
-      this.clearAuth()
-      return false
+      this.log('❌ Token refresh failed');
+      this.clearAuth();
+      return false;
     }
 
-    this.accessToken = response.data.accessToken
-    this.log('✅ Access token refreshed')
-    return true
+    this.accessToken = response.data.accessToken;
+    this.log('✅ Access token refreshed');
+    return true;
   }
 
   /**
@@ -171,13 +171,13 @@ export class ApiClient {
   async logout(): Promise<void> {
     if (this.refreshToken) {
       try {
-        await this.post('/auth/logout', { refreshToken: this.refreshToken })
+        await this.post('/auth/logout', { refreshToken: this.refreshToken });
       } catch (e) {
         // Ignore errors during logout
       }
     }
-    this.clearAuth()
-    this.log('✅ Logged out')
+    this.clearAuth();
+    this.log('✅ Logged out');
   }
 
   /**
@@ -186,60 +186,59 @@ export class ApiClient {
    */
   async validateToken(): Promise<{ valid: boolean; user?: UserProfile }> {
     if (!this.accessToken) {
-      return { valid: false }
+      return { valid: false };
     }
 
-    const response = await this.post<{ valid: boolean; user?: UserProfile }>(
-      '/auth/validate',
-      { accessToken: this.accessToken }
-    )
+    const response = await this.post<{ valid: boolean; user?: UserProfile }>('/auth/validate', {
+      accessToken: this.accessToken,
+    });
 
     if (!response.ok || !response.data?.valid) {
-      return { valid: false }
+      return { valid: false };
     }
 
     if (response.data.user) {
-      this.userProfile = response.data.user
+      this.userProfile = response.data.user;
     }
 
-    return response.data
+    return response.data;
   }
 
   /**
    * Clear all auth data
    */
   clearAuth(): void {
-    this.accessToken = null
-    this.refreshToken = null
-    this.userProfile = null
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.userProfile = null;
   }
 
   /**
    * Check if client is authenticated
    */
   get isAuthenticated(): boolean {
-    return !!this.accessToken
+    return !!this.accessToken;
   }
 
   /**
    * Check if current user is admin
    */
   get isAdmin(): boolean {
-    return this.userProfile?.role === 'admin'
+    return this.userProfile?.role === 'admin';
   }
 
   /**
    * Get current user profile
    */
   get user(): UserProfile | null {
-    return this.userProfile
+    return this.userProfile;
   }
 
   /**
    * Get current access token (for manual requests)
    */
   get token(): string | null {
-    return this.accessToken
+    return this.accessToken;
   }
 
   // ============================================================================
@@ -253,15 +252,15 @@ export class ApiClient {
     path: string,
     options: { auth?: boolean; params?: Record<string, string> } = {}
   ): Promise<ApiResponse<T>> {
-    const { auth = false, params } = options
-    let url = path
+    const { auth = false, params } = options;
+    let url = path;
 
     if (params) {
-      const searchParams = new URLSearchParams(params)
-      url = `${path}?${searchParams.toString()}`
+      const searchParams = new URLSearchParams(params);
+      url = `${path}?${searchParams.toString()}`;
     }
 
-    return this.request<T>('GET', url, undefined, auth)
+    return this.request<T>('GET', url, undefined, auth);
   }
 
   /**
@@ -272,7 +271,7 @@ export class ApiClient {
     body?: any,
     options: { auth?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    return this.request<T>('POST', path, body, options.auth ?? false)
+    return this.request<T>('POST', path, body, options.auth ?? false);
   }
 
   /**
@@ -283,7 +282,7 @@ export class ApiClient {
     body?: any,
     options: { auth?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    return this.request<T>('PATCH', path, body, options.auth ?? false)
+    return this.request<T>('PATCH', path, body, options.auth ?? false);
   }
 
   /**
@@ -294,17 +293,14 @@ export class ApiClient {
     body?: any,
     options: { auth?: boolean } = {}
   ): Promise<ApiResponse<T>> {
-    return this.request<T>('PUT', path, body, options.auth ?? false)
+    return this.request<T>('PUT', path, body, options.auth ?? false);
   }
 
   /**
    * Make DELETE request
    */
-  async delete<T = any>(
-    path: string,
-    options: { auth?: boolean } = {}
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>('DELETE', path, undefined, options.auth ?? false)
+  async delete<T = any>(path: string, options: { auth?: boolean } = {}): Promise<ApiResponse<T>> {
+    return this.request<T>('DELETE', path, undefined, options.auth ?? false);
   }
 
   // ============================================================================
@@ -321,30 +317,30 @@ export class ApiClient {
     body?: any,
     auth: boolean = false
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${path}`
-    const startTime = Date.now()
+    const url = `${this.baseUrl}${path}`;
+    const startTime = Date.now();
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-    }
+    };
 
     if (auth && this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
-    this.log(`📤 ${method} ${path}`, body ? JSON.stringify(body).substring(0, 200) : '')
+    this.log(`📤 ${method} ${path}`, body ? JSON.stringify(body).substring(0, 200) : '');
 
-    let response: Response
+    let response: Response;
 
     try {
       response = await fetch(url, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
-      })
+      });
     } catch (fetchError: any) {
-      const timing = Date.now() - startTime
-      this.log(`❌ Network error (${timing}ms):`, fetchError.message)
+      const timing = Date.now() - startTime;
+      this.log(`❌ Network error (${timing}ms):`, fetchError.message);
       return {
         status: 0,
         ok: false,
@@ -353,52 +349,52 @@ export class ApiClient {
         headers: new Headers(),
         timing,
         raw: new Response(null, { status: 0 }),
-      }
+      };
     }
 
-    const timing = Date.now() - startTime
+    const timing = Date.now() - startTime;
 
     // Handle 401 with auto-refresh (mimics authenticatedFetch)
     if (response.status === 401 && auth && this.refreshToken) {
-      this.log('⚠️ Got 401, attempting token refresh...')
-      const refreshed = await this.refreshAccessToken()
+      this.log('⚠️ Got 401, attempting token refresh...');
+      const refreshed = await this.refreshAccessToken();
 
       if (refreshed) {
         // Retry with new token
-        headers['Authorization'] = `Bearer ${this.accessToken}`
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
         response = await fetch(url, {
           method,
           headers,
           body: body ? JSON.stringify(body) : undefined,
-        })
+        });
       }
     }
 
     // Parse response
-    let data: T | null = null
-    let error: ApiError | null = null
+    let data: T | null = null;
+    let error: ApiError | null = null;
 
-    const responseText = await response.text()
+    const responseText = await response.text();
 
     try {
-      const json = JSON.parse(responseText)
+      const json = JSON.parse(responseText);
 
       if (response.ok) {
-        data = json as T
+        data = json as T;
       } else {
-        error = json as ApiError
+        error = json as ApiError;
       }
     } catch {
       // Non-JSON response
       if (!response.ok) {
-        error = { error: 'ParseError', message: responseText || response.statusText }
+        error = { error: 'ParseError', message: responseText || response.statusText };
       }
     }
 
     this.log(
       `📥 ${response.status} ${response.statusText} (${timing}ms)`,
       response.ok ? '' : JSON.stringify(error)
-    )
+    );
 
     return {
       status: response.status,
@@ -408,7 +404,7 @@ export class ApiClient {
       headers: response.headers,
       timing,
       raw: response,
-    }
+    };
   }
 
   // ============================================================================
@@ -417,7 +413,7 @@ export class ApiClient {
 
   private log(...args: any[]): void {
     if (this.verbose) {
-      console.log('[ApiClient]', ...args)
+      console.log('[ApiClient]', ...args);
     }
   }
 
@@ -425,22 +421,22 @@ export class ApiClient {
    * Set tokens manually (for tests that need to skip login)
    */
   setTokens(tokens: AuthTokens): void {
-    this.accessToken = tokens.accessToken
-    this.refreshToken = tokens.refreshToken
+    this.accessToken = tokens.accessToken;
+    this.refreshToken = tokens.refreshToken;
   }
 
   /**
    * Set user profile manually
    */
   setUser(user: UserProfile): void {
-    this.userProfile = user
+    this.userProfile = user;
   }
 
   /**
    * Get base URL
    */
   get url(): string {
-    return this.baseUrl
+    return this.baseUrl;
   }
 }
 
@@ -455,65 +451,65 @@ export function createApiClient(config?: Partial<TestConfig>): ApiClient {
   const baseUrl =
     config?.baseUrl ||
     process.env.API_GATEWAY_DEV_URL ||
-    'https://b2b-api-gateway-dev.benkee-sauter.workers.dev'
+    'https://b2b-api-gateway-dev.benkee-sauter.workers.dev';
 
   return new ApiClient({
     baseUrl,
     verbose: config?.verbose ?? process.env.TEST_VERBOSE === 'true',
     ...config,
-  })
+  });
 }
 
 /**
  * Create an API client and login as admin
  */
 export async function createAdminClient(config?: Partial<TestConfig>): Promise<ApiClient> {
-  const client = createApiClient(config)
+  const client = createApiClient(config);
 
-  const email = process.env.TEST_ADMIN_EMAIL
-  const password = process.env.TEST_ADMIN_PASSWORD
+  const email = process.env.TEST_ADMIN_EMAIL;
+  const password = process.env.TEST_ADMIN_PASSWORD;
 
   if (!email || !password) {
     throw new Error(
       'TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD environment variables are required.\n' +
         'Set them in workers/api-gateway/tests/.env or export them directly.'
-    )
+    );
   }
 
-  await client.login(email, password)
-  return client
+  await client.login(email, password);
+  return client;
 }
 
 /**
  * Create an API client and login as regular user
  */
 export async function createUserClient(config?: Partial<TestConfig>): Promise<ApiClient> {
-  const client = createApiClient(config)
+  const client = createApiClient(config);
 
-  const email = process.env.TEST_USER_EMAIL
-  const password = process.env.TEST_USER_PASSWORD
+  const email = process.env.TEST_USER_EMAIL;
+  const password = process.env.TEST_USER_PASSWORD;
 
   if (!email || !password) {
     throw new Error(
       'TEST_USER_EMAIL and TEST_USER_PASSWORD environment variables are required.\n' +
         'Set them in workers/api-gateway/tests/.env or export them directly.'
-    )
+    );
   }
 
-  await client.login(email, password)
-  return client
+  await client.login(email, password);
+  return client;
 }
 
 /**
  * Check if admin credentials are configured
  */
 export function hasAdminCredentials(): boolean {
-  return !!(process.env.TEST_ADMIN_EMAIL && process.env.TEST_ADMIN_PASSWORD)
+  return !!(process.env.TEST_ADMIN_EMAIL && process.env.TEST_ADMIN_PASSWORD);
 }
 
 /**
  * Check if user credentials are configured
  */
 export function hasUserCredentials(): boolean {
-  return !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD)
+  return !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD);
 }

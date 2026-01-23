@@ -10,12 +10,14 @@
 This API Gateway is a **simple routing layer** that forwards requests to microservices. It does **NOT** verify JWT tokens - each service handles its own authentication.
 
 ### Responsibilities ✅
+
 - Route requests to correct microservice
 - Handle CORS for browser requests
 - Log requests for monitoring
 - Rate limiting (optional)
 
 ### NOT Responsible For ❌
+
 - JWT verification (services do this)
 - Business logic
 - Database access
@@ -78,16 +80,16 @@ Each service is INDEPENDENT and SECURE
 
 ## 📋 Routes
 
-| Path | Target Service | Description |
-|------|---------------|-------------|
-| `/auth/*` | Auth Service | Login, register, token refresh |
-| `/api/products/*` | Products Service | Product CRUD, search |
-| `/api/categories/*` | Products Service | Category management |
-| `/api/orders/*` | Orders Service | Order creation, tracking |
-| `/api/profile/*` | Auth Service | User profile management |
-| `/api/admin/products/*` | Products Service | Admin product management |
-| `/api/admin/orders/*` | Orders Service | Admin order management |
-| `/api/admin/users/*` | Auth Service | Admin user management |
+| Path                    | Target Service   | Description                    |
+| ----------------------- | ---------------- | ------------------------------ |
+| `/auth/*`               | Auth Service     | Login, register, token refresh |
+| `/api/products/*`       | Products Service | Product CRUD, search           |
+| `/api/categories/*`     | Products Service | Category management            |
+| `/api/orders/*`         | Orders Service   | Order creation, tracking       |
+| `/api/profile/*`        | Auth Service     | User profile management        |
+| `/api/admin/products/*` | Products Service | Admin product management       |
+| `/api/admin/orders/*`   | Orders Service   | Admin order management         |
+| `/api/admin/users/*`    | Auth Service     | Admin user management          |
 
 ---
 
@@ -149,16 +151,16 @@ curl http://localhost:8786/api/products
 // 1. Client sends request
 fetch('https://gateway.yourdomain.com/api/products', {
   headers: {
-    'Authorization': 'Bearer eyJhbGc...'  // JWT access token
-  }
+    Authorization: 'Bearer eyJhbGc...', // JWT access token
+  },
 });
 
 // 2. API Gateway forwards request AS-IS
 // No JWT verification here!
 const response = await fetch('https://products.yourdomain.workers.dev/products', {
   headers: {
-    'Authorization': 'Bearer eyJhbGc...'  // Same token
-  }
+    Authorization: 'Bearer eyJhbGc...', // Same token
+  },
 });
 
 // 3. Products Service verifies JWT
@@ -180,10 +182,10 @@ const response = await fetch('https://products.yourdomain.workers.dev/products/c
   method: 'POST',
   headers: {
     // Pass user's token
-    'Authorization': `Bearer ${userToken}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${userToken}`,
+    'Content-Type': 'application/json',
   },
-  body: JSON.stringify({ productIds: ['123', '456'] })
+  body: JSON.stringify({ productIds: ['123', '456'] }),
 });
 
 // Products Service verifies the token
@@ -255,17 +257,18 @@ Both should work because services verify JWT themselves!
 
 ### Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ENVIRONMENT` | development or production | `development` |
-| `AUTH_SERVICE_URL` | Auth service URL | `http://localhost:8787` |
-| `PRODUCTS_SERVICE_URL` | Products service URL | `http://localhost:8788` |
-| `ORDERS_SERVICE_URL` | Orders service URL | `http://localhost:8789` |
-| `ALLOWED_ORIGINS` | CORS origins (comma-separated) | `http://localhost:5173` |
+| Variable               | Description                    | Example                 |
+| ---------------------- | ------------------------------ | ----------------------- |
+| `ENVIRONMENT`          | development or production      | `development`           |
+| `AUTH_SERVICE_URL`     | Auth service URL               | `http://localhost:8787` |
+| `PRODUCTS_SERVICE_URL` | Products service URL           | `http://localhost:8788` |
+| `ORDERS_SERVICE_URL`   | Orders service URL             | `http://localhost:8789` |
+| `ALLOWED_ORIGINS`      | CORS origins (comma-separated) | `http://localhost:5173` |
 
 ### No Secrets Required!
 
 Unlike traditional API gateways, this one doesn't need secrets because:
+
 - ✅ No JWT verification (services do it)
 - ✅ No database access
 - ✅ No external API calls
@@ -331,25 +334,29 @@ Every request is logged:
 ## 🎯 Best Practices
 
 ### 1. Keep Gateway Simple
+
 ✅ DO: Route requests  
 ✅ DO: Handle CORS  
 ✅ DO: Log requests  
 ❌ DON'T: Verify JWT  
 ❌ DON'T: Add business logic  
-❌ DON'T: Access database  
+❌ DON'T: Access database
 
 ### 2. Let Services Be Independent
+
 ✅ Each service verifies JWT  
 ✅ Each service checks permissions  
-✅ Each service handles errors  
+✅ Each service handles errors
 
 ### 3. Share JWT_SECRET Across Services
+
 ```bash
 # Same secret in all services
 JWT_SECRET = "s87R+vvfw+qLIp5S7lyb+cGrIKjPz8AIWpjRt1rXL2o="
 ```
 
 ### 4. Use Direct Service Calls When Possible
+
 ```typescript
 // Instead of: Client → Gateway → Service1 → Gateway → Service2
 // Do: Client → Gateway → Service1 → Service2 (direct)
@@ -359,14 +366,14 @@ JWT_SECRET = "s87R+vvfw+qLIp5S7lyb+cGrIKjPz8AIWpjRt1rXL2o="
 
 ## 🔄 Comparison with Old Approach
 
-| Aspect | Old (JWT in Gateway) | New (JWT in Services) |
-|--------|---------------------|----------------------|
-| Gateway Complexity | High | Low |
-| Service Independence | Low | High |
-| Single Point of Failure | Yes | No |
-| Service-to-Service | Via Gateway | Direct |
-| Security | Trust headers | Verify everything |
-| Microservices Best Practice | No | Yes |
+| Aspect                      | Old (JWT in Gateway) | New (JWT in Services) |
+| --------------------------- | -------------------- | --------------------- |
+| Gateway Complexity          | High                 | Low                   |
+| Service Independence        | Low                  | High                  |
+| Single Point of Failure     | Yes                  | No                    |
+| Service-to-Service          | Via Gateway          | Direct                |
+| Security                    | Trust headers        | Verify everything     |
+| Microservices Best Practice | No                   | Yes                   |
 
 ---
 
@@ -385,6 +392,7 @@ JWT_SECRET = "s87R+vvfw+qLIp5S7lyb+cGrIKjPz8AIWpjRt1rXL2o="
 **Problem**: `Service Unavailable` error
 
 **Solution**:
+
 1. Check service is running: `curl http://localhost:8787/health`
 2. Check service URL in `wrangler.toml`
 3. Check logs: `wrangler tail`
@@ -394,6 +402,7 @@ JWT_SECRET = "s87R+vvfw+qLIp5S7lyb+cGrIKjPz8AIWpjRt1rXL2o="
 **Problem**: Browser blocks request
 
 **Solution**:
+
 1. Add your domain to `ALLOWED_ORIGINS` in `wrangler.toml`
 2. Restart gateway
 
@@ -402,10 +411,11 @@ JWT_SECRET = "s87R+vvfw+qLIp5S7lyb+cGrIKjPz8AIWpjRt1rXL2o="
 **Problem**: Gateway times out after 30 seconds
 
 **Solution**:
+
 1. Service might be slow - check service logs
 2. Increase timeout in `src/utils/proxy.ts`:
    ```typescript
-   timeout = 30000 // 30 seconds (default)
+   timeout = 30000; // 30 seconds (default)
    ```
 
 ---

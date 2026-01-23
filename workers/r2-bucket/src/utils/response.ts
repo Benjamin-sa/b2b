@@ -16,47 +16,40 @@ export function createSuccessResponse<T>(
   const response: ApiResponse<T> = {
     success: true,
     data,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   return new Response(JSON.stringify(response), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...getCorsHeaders(request)
-    }
+      ...getCorsHeaders(request),
+    },
   });
 }
 
 /**
  * Create an error response
  */
-export function createErrorResponse(
-  error: string,
-  status: number,
-  request: Request
-): Response {
+export function createErrorResponse(error: string, status: number, request: Request): Response {
   const response: ApiResponse = {
     success: false,
     error,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   return new Response(JSON.stringify(response), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...getCorsHeaders(request)
-    }
+      ...getCorsHeaders(request),
+    },
   });
 }
 
 /**
  * Create a validation error response
  */
-export function createValidationError(
-  message: string,
-  request: Request
-): Response {
+export function createValidationError(message: string, request: Request): Response {
   return createErrorResponse(`Validation Error: ${message}`, 400, request);
 }

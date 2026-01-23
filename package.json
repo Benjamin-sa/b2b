@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
+    "packages/*",
     "workers/*"
   ],
   "engines": {
@@ -11,19 +12,20 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "turbo run build",
+    "build": "vite build",
     "build:frontend": "run-p type-check \"build-only {@}\" --",
     "preview": "npm run build:frontend && wrangler dev",
     "build-only": "vite build",
-    "type-check": "turbo run type-check",
-    "deploy": "turbo run deploy",
-    "deploy:dev": "turbo run deploy:dev",
-    "deploy:prod": "turbo run deploy:prod",
-    "test": "turbo run test",
-    "cf-typegen": "wrangler types",
-    "deploy:dev:all": "turbo run deploy:dev"
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "deploy:frontend": "wrangler pages deploy dist",
+    "test": "vitest",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@b2b/db": "workspace:*",
     "@aws-sdk/client-s3": "^3.879.0",
     "@aws-sdk/s3-request-presigner": "^3.879.0",
     "@heroicons/vue": "^2.2.0",
@@ -36,16 +38,26 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.13.15",
+    "@eslint/js": "^9.39.2",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.18.6",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^10.7.0",
+    "globals": "^17.0.0",
     "npm-run-all2": "^8.0.4",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.12",
-    "turbo": "^2.7.5",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.53.1",
     "vite": "^7.1.7",
     "vite-plugin-vue-devtools": "^8.0.2",
+    "vue-eslint-parser": "^10.2.0",
     "vue-tsc": "^3.1.0",
     "wrangler": "^4.45.0"
   }

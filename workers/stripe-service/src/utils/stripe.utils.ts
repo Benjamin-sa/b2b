@@ -32,12 +32,9 @@ export function handleStripeError(error: any, operation: string): never {
   console.error(`❌ Stripe ${operation} failed:`, error);
 
   if (error.type === 'StripeCardError') {
-    throw new StripeServiceError(
-      'CARD_ERROR',
-      error.message || 'Card error occurred',
-      402,
-      { decline_code: error.decline_code }
-    );
+    throw new StripeServiceError('CARD_ERROR', error.message || 'Card error occurred', 402, {
+      decline_code: error.decline_code,
+    });
   }
 
   if (error.type === 'StripeInvalidRequestError') {
@@ -50,36 +47,21 @@ export function handleStripeError(error: any, operation: string): never {
   }
 
   if (error.type === 'StripeAPIError') {
-    throw new StripeServiceError(
-      'STRIPE_API_ERROR',
-      'Stripe API error occurred',
-      502
-    );
+    throw new StripeServiceError('STRIPE_API_ERROR', 'Stripe API error occurred', 502);
   }
 
   if (error.type === 'StripeConnectionError') {
-    throw new StripeServiceError(
-      'CONNECTION_ERROR',
-      'Failed to connect to Stripe',
-      503
-    );
+    throw new StripeServiceError('CONNECTION_ERROR', 'Failed to connect to Stripe', 503);
   }
 
   if (error.type === 'StripeAuthenticationError') {
-    throw new StripeServiceError(
-      'AUTHENTICATION_ERROR',
-      'Stripe authentication failed',
-      401
-    );
+    throw new StripeServiceError('AUTHENTICATION_ERROR', 'Stripe authentication failed', 401);
   }
 
   // Generic error
-  throw new StripeServiceError(
-    'STRIPE_ERROR',
-    error.message || `Failed to ${operation}`,
-    500,
-    { type: error.type }
-  );
+  throw new StripeServiceError('STRIPE_ERROR', error.message || `Failed to ${operation}`, 500, {
+    type: error.type,
+  });
 }
 
 /**
@@ -90,7 +72,7 @@ export function validateRequired<T extends Record<string, any>>(
   fields: (keyof T)[]
 ): void {
   const missing = fields.filter((field) => !data[field]);
-  
+
   if (missing.length > 0) {
     throw new StripeServiceError(
       'VALIDATION_ERROR',

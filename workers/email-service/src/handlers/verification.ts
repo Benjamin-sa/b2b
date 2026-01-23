@@ -101,7 +101,7 @@ export async function sendVerificationEmail(
       </body>
       </html>
     `;
-    
+
     const textContent = `
 4Tparts B2B - Account Verified!
 
@@ -129,7 +129,7 @@ The 4Tparts Team
 This verification email was sent to ${to} for your 4Tparts B2B account.
 You're receiving this because your account was recently approved.
     `;
-    
+
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
       to,
@@ -139,18 +139,16 @@ You're receiving this because your account was recently approved.
       {
         clickTracking: false, // CRITICAL: Disable click tracking to preserve verification URL
         emailType: 'email-verification',
-        categories: ['b2b-transactional', 'email-verification']
+        categories: ['b2b-transactional', 'email-verification'],
       }
     );
-    
+
     return result;
-    
   } catch (error) {
     console.error('Verification email error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Internal server error'
+      error: error instanceof Error ? error.message : 'Internal server error',
     };
   }
 }
-

@@ -1,6 +1,6 @@
 /**
  * Password Utilities
- * 
+ *
  * Password hashing and validation using bcryptjs
  */
 
@@ -18,17 +18,17 @@ export async function hashPassword(password: string): Promise<string> {
 /**
  * Verify a password against a hash
  */
-export async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return await bcrypt.compare(password, hash);
 }
 
 /**
  * Validate password requirements
  */
-export function validatePassword(password: string, minLength: number = 8): {
+export function validatePassword(
+  password: string,
+  minLength: number = 8
+): {
   valid: boolean;
   errors: string[];
 } {

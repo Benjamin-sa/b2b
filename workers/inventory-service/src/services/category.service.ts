@@ -1,10 +1,13 @@
 /**
  * Category Service
- * 
+ *
  * Business logic for category management
  */
 
 import { nanoid } from 'nanoid';
+import { createDb, schema } from '@b2b/db';
+import { and, asc, eq, isNull, like, or } from 'drizzle-orm';
+import type { D1Database } from '@cloudflare/workers-types';
 import type {
   Category,
   CategoryWithChildren,
@@ -12,84 +15,91 @@ import type {
   UpdateCategoryRequest,
   CategoryFilters,
 } from '../types';
-import { getOne, getOneOrNull, getMany, batch } from '../utils/database';
 import { errors } from '../utils/errors';
 import { validateRequired } from '../utils/validation';
+
+const { categories, products } = schema;
 
 /**
  * Get category by ID
  */
-export async function getCategoryById(
-  db: any,
-  categoryId: string
-): Promise<Category> {
-  return getOne<Category>(
-    db,
-    'SELECT * FROM categories WHERE id = ?',
-    [categoryId]
-  );
+export async function getCategoryById(db: D1Database, categoryId: string): Promise<Category> {
+  const client = createDb(db);
+  const category = await client
+    .select()
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .get();
+
+  if (!category) {
+    throw errors.notFound('Category', categoryId);
+  }
+
+  return category as Category;
 }
 
 /**
  * Get all categories with filters
  */
-export async function getCategories(
-  db: any,
-  filters: CategoryFilters
-): Promise<Category[]> {
-  const conditions: string[] = [];
-  const params: any[] = [];
+export async function getCategories(db: D1Database, filters: CategoryFilters): Promise<Category[]> {
+  const client = createDb(db);
+  const conditions: any[] = [];
 
   if (filters.parentId !== undefined) {
     if (filters.parentId === null) {
-      conditions.push('parent_id IS NULL');
+      conditions.push(isNull(categories.parent_id));
     } else {
-      conditions.push('parent_id = ?');
-      params.push(filters.parentId);
+      conditions.push(eq(categories.parent_id, filters.parentId));
     }
   }
 
   if (filters.isActive !== undefined) {
-    conditions.push('is_active = ?');
-    params.push(filters.isActive ? 1 : 0);
+    conditions.push(eq(categories.is_active, filters.isActive ? 1 : 0));
   }
 
   if (filters.searchTerm) {
-    conditions.push('(name LIKE ? OR description LIKE ?)');
     const searchPattern = `%${filters.searchTerm}%`;
-    params.push(searchPattern, searchPattern);
+    conditions.push(
+      or(like(categories.name, searchPattern), like(categories.description, searchPattern))
+    );
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const query = `SELECT * FROM categories ${whereClause} ORDER BY sort_order ASC, name ASC`;
+  const query = client
+    .select()
+    .from(categories)
+    .orderBy(asc(categories.sort_order), asc(categories.name));
 
-  return getMany<Category>(db, query, params);
+  if (conditions.length > 0) {
+    return (await query.where(and(...conditions))) as Category[];
+  }
+
+  return (await query) as Category[];
 }
 
 /**
  * Get category tree structure with children
  */
-export async function getCategoriesTree(db: any): Promise<CategoryWithChildren[]> {
-  // Get all active categories
-  const allCategories = await getMany<Category>(
-    db,
-    'SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC',
-    []
-  );
+export async function getCategoriesTree(db: D1Database): Promise<CategoryWithChildren[]> {
+  const client = createDb(db);
+  const allCategories = (await client
+    .select()
+    .from(categories)
+    .where(eq(categories.is_active, 1))
+    .orderBy(asc(categories.sort_order), asc(categories.name))) as Category[];
 
   // Build tree structure
   const categoryMap = new Map<string, CategoryWithChildren>();
   const rootCategories: CategoryWithChildren[] = [];
 
   // First pass: Create map of all categories
-  allCategories.forEach(cat => {
+  allCategories.forEach((cat) => {
     categoryMap.set(cat.id, { ...cat, children: [] });
   });
 
   // Second pass: Build tree structure
-  allCategories.forEach(cat => {
+  allCategories.forEach((cat) => {
     const categoryWithChildren = categoryMap.get(cat.id)!;
-    
+
     if (cat.parent_id) {
       const parent = categoryMap.get(cat.parent_id);
       if (parent) {
@@ -109,38 +119,36 @@ export async function getCategoriesTree(db: any): Promise<CategoryWithChildren[]
 /**
  * Get category by slug
  */
-export async function getCategoryBySlug(
-  db: any,
-  slug: string
-): Promise<Category | null> {
-  return getOneOrNull<Category>(
-    db,
-    'SELECT * FROM categories WHERE slug = ?',
-    [slug]
-  );
+export async function getCategoryBySlug(db: D1Database, slug: string): Promise<Category | null> {
+  const client = createDb(db);
+  return (await client
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, slug))
+    .get()) as Category | null;
 }
 
 /**
  * Get category by name
  */
-export async function getCategoryByName(
-  db: any,
-  name: string
-): Promise<Category | null> {
-  return getOneOrNull<Category>(
-    db,
-    'SELECT * FROM categories WHERE name = ?',
-    [name]
-  );
+export async function getCategoryByName(db: D1Database, name: string): Promise<Category | null> {
+  const client = createDb(db);
+  return (await client
+    .select()
+    .from(categories)
+    .where(eq(categories.name, name))
+    .get()) as Category | null;
 }
 
 /**
  * Create a new category
  */
 export async function createCategory(
-  db: any,
+  db: D1Database,
   data: CreateCategoryRequest
 ): Promise<Category> {
+  const client = createDb(db);
+
   validateRequired(data, ['name', 'slug']);
 
   // Check if category name already exists
@@ -157,11 +165,11 @@ export async function createCategory(
 
   // Verify parent exists if specified
   if (data.parentId) {
-    const parent = await getOneOrNull<Category>(
-      db,
-      'SELECT id FROM categories WHERE id = ?',
-      [data.parentId]
-    );
+    const parent = await client
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.id, data.parentId))
+      .get();
     if (!parent) {
       throw errors.notFound('Parent category', data.parentId);
     }
@@ -170,24 +178,20 @@ export async function createCategory(
   const categoryId = nanoid();
   const now = new Date().toISOString();
 
-  await db
-    .prepare(
-      `INSERT INTO categories (
-        id, name, description, slug, parent_id, image_url, sort_order, is_active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(
-      categoryId,
-      data.name,
-      data.description || null,
-      data.slug,
-      data.parentId || null,
-      data.imageUrl || null,
-      data.sortOrder || 0,
-      data.isActive !== false ? 1 : 0,
-      now,
-      now
-    )
+  await client
+    .insert(categories)
+    .values({
+      id: categoryId,
+      name: data.name,
+      description: data.description || null,
+      slug: data.slug,
+      parent_id: data.parentId || null,
+      image_url: data.imageUrl || null,
+      sort_order: data.sortOrder || 0,
+      is_active: data.isActive !== false ? 1 : 0,
+      created_at: now,
+      updated_at: now,
+    })
     .run();
 
   return getCategoryById(db, categoryId);
@@ -197,16 +201,18 @@ export async function createCategory(
  * Update a category
  */
 export async function updateCategory(
-  db: any,
+  db: D1Database,
   categoryId: string,
   data: UpdateCategoryRequest
 ): Promise<Category> {
+  const client = createDb(db);
+
   // Check if category exists
-  const existing = await getOneOrNull<Category>(
-    db,
-    'SELECT * FROM categories WHERE id = ?',
-    [categoryId]
-  );
+  const existing = await client
+    .select()
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .get();
 
   if (!existing) {
     throw errors.notFound('Category', categoryId);
@@ -233,58 +239,30 @@ export async function updateCategory(
     if (data.parentId === categoryId) {
       throw errors.badRequest('Category cannot be its own parent');
     }
-    const parent = await getOneOrNull<Category>(
-      db,
-      'SELECT id FROM categories WHERE id = ?',
-      [data.parentId]
-    );
+    const parent = await client
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.id, data.parentId))
+      .get();
     if (!parent) {
       throw errors.notFound('Parent category', data.parentId);
     }
   }
 
   const now = new Date().toISOString();
-  const updateFields: string[] = [];
-  const updateParams: any[] = [];
+  const updates: Record<string, unknown> = {};
 
-  if (data.name !== undefined) {
-    updateFields.push('name = ?');
-    updateParams.push(data.name);
-  }
-  if (data.description !== undefined) {
-    updateFields.push('description = ?');
-    updateParams.push(data.description);
-  }
-  if (data.slug !== undefined) {
-    updateFields.push('slug = ?');
-    updateParams.push(data.slug);
-  }
-  if (data.parentId !== undefined) {
-    updateFields.push('parent_id = ?');
-    updateParams.push(data.parentId);
-  }
-  if (data.imageUrl !== undefined) {
-    updateFields.push('image_url = ?');
-    updateParams.push(data.imageUrl);
-  }
-  if (data.sortOrder !== undefined) {
-    updateFields.push('sort_order = ?');
-    updateParams.push(data.sortOrder);
-  }
-  if (data.isActive !== undefined) {
-    updateFields.push('is_active = ?');
-    updateParams.push(data.isActive ? 1 : 0);
-  }
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.description !== undefined) updates.description = data.description;
+  if (data.slug !== undefined) updates.slug = data.slug;
+  if (data.parentId !== undefined) updates.parent_id = data.parentId;
+  if (data.imageUrl !== undefined) updates.image_url = data.imageUrl;
+  if (data.sortOrder !== undefined) updates.sort_order = data.sortOrder;
+  if (data.isActive !== undefined) updates.is_active = data.isActive ? 1 : 0;
 
-  updateFields.push('updated_at = ?');
-  updateParams.push(now);
-
-  if (updateFields.length > 1) { // More than just updated_at
-    updateParams.push(categoryId);
-    await db
-      .prepare(`UPDATE categories SET ${updateFields.join(', ')} WHERE id = ?`)
-      .bind(...updateParams)
-      .run();
+  if (Object.keys(updates).length > 0) {
+    updates.updated_at = now;
+    await client.update(categories).set(updates).where(eq(categories.id, categoryId)).run();
   }
 
   return getCategoryById(db, categoryId);
@@ -293,24 +271,25 @@ export async function updateCategory(
 /**
  * Delete a category
  */
-export async function deleteCategory(db: any, categoryId: string): Promise<void> {
+export async function deleteCategory(db: D1Database, categoryId: string): Promise<void> {
+  const client = createDb(db);
+
   // Check if category exists
-  const existing = await getOneOrNull<Category>(
-    db,
-    'SELECT id FROM categories WHERE id = ?',
-    [categoryId]
-  );
+  const existing = await client
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .get();
 
   if (!existing) {
     throw errors.notFound('Category', categoryId);
   }
 
   // Check if category has children
-  const children = await getMany<Category>(
-    db,
-    'SELECT id FROM categories WHERE parent_id = ?',
-    [categoryId]
-  );
+  const children = await client
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.parent_id, categoryId));
 
   if (children.length > 0) {
     throw errors.badRequest(
@@ -319,37 +298,32 @@ export async function deleteCategory(db: any, categoryId: string): Promise<void>
   }
 
   // Check if category has products
-  const products = await getMany(
-    db,
-    'SELECT id FROM products WHERE category_id = ?',
-    [categoryId]
-  );
+  const productsInCategory = await client
+    .select({ id: products.id })
+    .from(products)
+    .where(eq(products.category_id, categoryId));
 
-  if (products.length > 0) {
+  if (productsInCategory.length > 0) {
     throw errors.badRequest(
-      `Cannot delete category with ${products.length} product(s). Please reassign or delete products first.`
+      `Cannot delete category with ${productsInCategory.length} product(s). Please reassign or delete products first.`
     );
   }
 
-  await db
-    .prepare('DELETE FROM categories WHERE id = ?')
-    .bind(categoryId)
-    .run();
+  await client.delete(categories).where(eq(categories.id, categoryId)).run();
 }
 
 /**
  * Reorder categories
  */
-export async function reorderCategories(
-  db: any,
-  categoryIds: string[]
-): Promise<void> {
-  const statements = categoryIds.map((id, index) => {
-    const now = new Date().toISOString();
-    return db
-      .prepare('UPDATE categories SET sort_order = ?, updated_at = ? WHERE id = ?')
-      .bind(index, now, id);
-  });
+export async function reorderCategories(db: D1Database, categoryIds: string[]): Promise<void> {
+  const client = createDb(db);
+  const now = new Date().toISOString();
 
-  await batch(db, statements);
+  for (const [index, id] of categoryIds.entries()) {
+    await client
+      .update(categories)
+      .set({ sort_order: index, updated_at: now })
+      .where(eq(categories.id, id))
+      .run();
+  }
 }

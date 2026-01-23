@@ -18,11 +18,6 @@
       "@/*": ["r2-bucket/src/*"]
     }
   },
-  "include": [
-    "r2-bucket/src/**/*"
-, "r2-bucket/src/handlers/imageHandler.ts"  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["r2-bucket/src/**/*", "r2-bucket/src/handlers/imageHandler.ts"],
+  "exclude": ["node_modules", "dist"]
 }

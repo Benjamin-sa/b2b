@@ -1,12 +1,12 @@
 /**
  * Stripe Customer Service
- * 
+ *
  * Handles all Stripe customer operations:
  * - Create customer with full B2B details
  * - Update customer information
  * - Archive/soft-delete customer
  * - Get or create customer (for migrations)
- * 
+ *
  * Maintains compatibility with Firebase Functions implementation
  */
 
@@ -22,13 +22,13 @@ import { getCountryCode, getPreferredLocale } from '../utils/country-codes';
 function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
   // Build individual name
   const individualName = `${input.first_name || ''} ${input.last_name || ''}`.trim();
-  
+
   // Convert country name to ISO code for Stripe (e.g., "Belgium" -> "BE")
   const countryCode = getCountryCode(input.address_country);
-  
+
   // Get appropriate language code for preferred_locales (e.g., "BE" -> "nl")
   const languageCode = countryCode ? getPreferredLocale(countryCode) : undefined;
-  
+
   const customerData: Stripe.CustomerCreateParams = {
     email: input.email,
     name: input.company_name || individualName || undefined,
@@ -43,25 +43,23 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
     },
     // Use language code (RFC-4646) NOT country code
     // e.g., "nl" for Belgium (Dutch), "fr" for France, "de" for Germany
-    preferred_locales: languageCode 
-      ? [languageCode] 
-      : undefined,
+    preferred_locales: languageCode ? [languageCode] : undefined,
   };
 
   // Add address if available (required for automatic tax calculation)
   if (input.address_street || input.address_city || input.address_postal_code) {
     customerData.address = {
       line1: input.address_street || undefined,
-      line2: input.address_house_number 
-        ? `Unit ${input.address_house_number}` 
-        : undefined,
+      line2: input.address_house_number ? `Unit ${input.address_house_number}` : undefined,
       city: input.address_city || undefined,
       postal_code: input.address_postal_code || undefined,
       country: countryCode, // ISO 3166-1 alpha-2 (e.g., "BE")
     };
-    
+
     if (!countryCode && input.address_country) {
-      console.warn(`⚠️ Unknown country name: "${input.address_country}". Tax calculation may fail.`);
+      console.warn(
+        `⚠️ Unknown country name: "${input.address_country}". Tax calculation may fail.`
+      );
     }
   }
 
@@ -71,13 +69,13 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
       customerData.metadata = {};
     }
     customerData.metadata.btwNumber = input.btw_number;
-    
+
     // Detect EU VAT format (e.g., "BE0123456789", "NL123456789B01")
     const euVatPattern = /^[A-Z]{2}[A-Z0-9]+$/;
     if (euVatPattern.test(input.btw_number)) {
       // Extract country code from VAT number (first 2 characters)
       const vatCountryCode = input.btw_number.substring(0, 2).toUpperCase();
-      
+
       // CRITICAL: Only apply reverse charge for cross-border EU B2B transactions
       // Belgian customers (domestic) should be taxable, not reverse charge
       if (vatCountryCode !== 'BE') {
@@ -91,7 +89,7 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
         customerData.tax_exempt = 'none';
         console.log(`✅ Belgian customer - normal VAT applies (belastbaar)`);
       }
-      
+
       // Add as tax_id_data for Stripe Tax validation
       customerData.tax_id_data = [
         {
@@ -107,9 +105,8 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
     customerData.tax = {
       ip_address: input.ip_address,
       // Validate immediately if we have complete address
-      validate_location: (input.address_country && input.address_postal_code) 
-        ? 'immediately' 
-        : 'deferred',
+      validate_location:
+        input.address_country && input.address_postal_code ? 'immediately' : 'deferred',
     };
   }
 
@@ -118,15 +115,12 @@ function buildCustomerData(input: CustomerInput): Stripe.CustomerCreateParams {
 
 /**
  * Create a Stripe customer
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Customer data from registration
  * @returns Stripe customer ID
  */
-export async function createCustomer(
-  env: Env,
-  input: CustomerInput
-): Promise<string> {
+export async function createCustomer(env: Env, input: CustomerInput): Promise<string> {
   try {
     // Validate required fields
     validateRequired(input, ['email']);
@@ -151,24 +145,21 @@ export async function createCustomer(
 
 /**
  * Update an existing Stripe customer
- * 
+ *
  * Note: tax_id_data can only be set during customer creation, not update.
  * To update tax IDs, use the Tax IDs API separately.
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Updated customer data with stripe_customer_id
  */
-export async function updateCustomer(
-  env: Env,
-  input: CustomerUpdateInput
-): Promise<void> {
+export async function updateCustomer(env: Env, input: CustomerUpdateInput): Promise<void> {
   try {
     // Validate required fields
     validateRequired(input, ['stripe_customer_id', 'email']);
 
     const stripe = getStripeClient(env);
     const customerData = buildCustomerData(input as CustomerInput);
-    
+
     // Remove tax_id_data from update - it's only valid for customer creation
     // To update tax IDs, the Tax IDs API must be used separately
     delete (customerData as any).tax_id_data;
@@ -185,9 +176,9 @@ export async function updateCustomer(
 
 /**
  * Archive/soft-delete a Stripe customer
- * 
+ *
  * We don't actually delete to preserve transaction history
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param stripeCustomerId - Stripe customer ID to archive
  * @param userId - Our internal user ID
@@ -229,15 +220,12 @@ export async function archiveCustomer(
 /**
  * Get or create Stripe customer
  * Useful for migrating existing users without Stripe customer IDs
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Customer data
  * @returns Stripe customer ID (existing or newly created)
  */
-export async function getOrCreateCustomer(
-  env: Env,
-  input: CustomerInput
-): Promise<string> {
+export async function getOrCreateCustomer(env: Env, input: CustomerInput): Promise<string> {
   try {
     // Validate required fields
     validateRequired(input, ['email']);

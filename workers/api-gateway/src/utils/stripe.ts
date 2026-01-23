@@ -5,7 +5,7 @@
  * Used by orchestration routes to manage Stripe products and prices.
  */
 
-import type { Env } from "../types";
+import type { Env } from '../types';
 
 // ============================================================================
 // TYPES
@@ -71,11 +71,11 @@ export async function createStripeProduct(
     console.log(`[Stripe] Creating Stripe product: ${productData.name}`);
 
     const response = await env.STRIPE_SERVICE.fetch(
-      new Request("http://stripe-service/products", {
-        method: "POST",
+      new Request('http://stripe-service/products', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "X-Service-Token": env.SERVICE_SECRET,
+          'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
         },
         body: JSON.stringify({
           product_id: productData.product_id,
@@ -94,14 +94,14 @@ export async function createStripeProduct(
     const result = (await response.json()) as StripeServiceResponse<CreateStripeProductResponse>;
 
     if (!result.success) {
-      console.error("[Stripe] Product creation failed:", result.error);
+      console.error('[Stripe] Product creation failed:', result.error);
       return null;
     }
 
     console.log(`[Stripe] ✅ Product created: ${result.data?.stripe_product_id}`);
     return result.data!;
   } catch (error: any) {
-    console.error("[Stripe] ❌ Failed to create product:", error);
+    console.error('[Stripe] ❌ Failed to create product:', error);
     return null;
   }
 }
@@ -117,11 +117,11 @@ export async function updateStripeProduct(
     console.log(`[Stripe] Updating product: ${productData.stripe_product_id}`);
 
     const response = await env.STRIPE_SERVICE.fetch(
-      new Request("http://stripe-service/products", {
-        method: "PUT",
+      new Request('http://stripe-service/products', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          "X-Service-Token": env.SERVICE_SECRET,
+          'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
         },
         body: JSON.stringify({
           product_id: productData.product_id,
@@ -140,14 +140,14 @@ export async function updateStripeProduct(
     const result = (await response.json()) as StripeServiceResponse;
 
     if (!result.success) {
-      console.error("[Stripe] Product update failed:", result.error);
+      console.error('[Stripe] Product update failed:', result.error);
       return false;
     }
 
     console.log(`[Stripe] ✅ Product updated`);
     return true;
   } catch (error: any) {
-    console.error("[Stripe] ❌ Failed to update product:", error);
+    console.error('[Stripe] ❌ Failed to update product:', error);
     return false;
   }
 }
@@ -163,11 +163,11 @@ export async function replaceStripePrice(
     console.log(`[Stripe] Replacing price: ${priceData.stripe_price_id}`);
 
     const response = await env.STRIPE_SERVICE.fetch(
-      new Request("http://stripe-service/products/price", {
-        method: "PUT",
+      new Request('http://stripe-service/products/price', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          "X-Service-Token": env.SERVICE_SECRET,
+          'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
         },
         body: JSON.stringify(priceData),
       })
@@ -176,14 +176,14 @@ export async function replaceStripePrice(
     const result = (await response.json()) as StripeServiceResponse<{ new_price_id: string }>;
 
     if (!result.success) {
-      console.error("[Stripe] Price replacement failed:", result.error);
+      console.error('[Stripe] Price replacement failed:', result.error);
       return null;
     }
 
     console.log(`[Stripe] ✅ New price created: ${result.data?.new_price_id}`);
     return result.data!.new_price_id;
   } catch (error: any) {
-    console.error("[Stripe] ❌ Failed to replace price:", error);
+    console.error('[Stripe] ❌ Failed to replace price:', error);
     return null;
   }
 }
@@ -201,10 +201,10 @@ export async function archiveStripeProduct(
 
     const response = await env.STRIPE_SERVICE.fetch(
       new Request(`http://stripe-service/products/${stripeProductId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          "Content-Type": "application/json",
-          "X-Service-Token": env.SERVICE_SECRET,
+          'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
         },
         body: JSON.stringify({
           price_id: stripePriceId,
@@ -215,14 +215,14 @@ export async function archiveStripeProduct(
     const result = (await response.json()) as StripeServiceResponse;
 
     if (!result.success) {
-      console.error("[Stripe] Product archive failed:", result.error);
+      console.error('[Stripe] Product archive failed:', result.error);
       return false;
     }
 
     console.log(`[Stripe] ✅ Product archived`);
     return true;
   } catch (error: any) {
-    console.error("[Stripe] ❌ Failed to archive product:", error);
+    console.error('[Stripe] ❌ Failed to archive product:', error);
     return false;
   }
 }

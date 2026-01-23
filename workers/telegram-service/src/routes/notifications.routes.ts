@@ -21,7 +21,7 @@ const notifications = new Hono<{ Bindings: Env }>();
 notifications.post('/invoice/created', async (c) => {
   try {
     const invoice = await c.req.json<InvoiceNotification>();
-    
+
     if (!invoice.id || !invoice.amount_due || !invoice.currency) {
       return c.json(
         {
@@ -59,7 +59,7 @@ notifications.post('/invoice/created', async (c) => {
 notifications.post('/invoice/paid', async (c) => {
   try {
     const invoice = await c.req.json<InvoiceNotification>();
-    
+
     if (!invoice.id || !invoice.currency) {
       return c.json(
         {
@@ -97,7 +97,7 @@ notifications.post('/invoice/paid', async (c) => {
 notifications.post('/invoice/voided', async (c) => {
   try {
     const invoice = await c.req.json<InvoiceNotification>();
-    
+
     if (!invoice.id || !invoice.currency) {
       return c.json(
         {
@@ -139,7 +139,7 @@ notifications.post('/invoice/voided', async (c) => {
 notifications.post('/user/registered', async (c) => {
   try {
     const body = await c.req.json<{ userData: UserRegistrationNotification; userId: string }>();
-    
+
     if (!body.userId || !body.userData) {
       return c.json(
         {
@@ -184,7 +184,7 @@ notifications.post('/custom', async (c) => {
       message: string;
       parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
     }>();
-    
+
     if (!body.message) {
       return c.json(
         {

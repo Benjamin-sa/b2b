@@ -7,7 +7,7 @@
  * Run: npm test integration/health
  */
 
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   createApiClient,
   ApiClient,
@@ -18,89 +18,89 @@ import {
   expectStatus,
   expectFastResponse,
   validateCorsHeaders,
-} from '../helpers'
+} from '../helpers';
 
 describe('Integration: Health Checks', () => {
-  let client: ApiClient
+  let client: ApiClient;
 
   beforeAll(() => {
-    client = createApiClient({ verbose: true })
-    console.log(`[TEST] Testing against: ${client.url}`)
-  })
+    client = createApiClient({ verbose: true });
+    console.log(`[TEST] Testing against: ${client.url}`);
+  });
 
   describe('GET / - Root Health Check', () => {
     it('should return healthy status with service info', async () => {
-      const response = await client.get('/')
+      const response = await client.get('/');
 
-      expectSuccess(response)
-      expectStatus(response, 200)
-      expectFastResponse(response.timing, 3000)
+      expectSuccess(response);
+      expectStatus(response, 200);
+      expectFastResponse(response.timing, 3000);
 
       // Validate response structure
-      validateHealthCheck(response.data)
+      validateHealthCheck(response.data);
 
       // Log service info
       console.log('[TEST] Service info:', {
         service: response.data.service,
         version: response.data.version,
         environment: response.data.environment,
-      })
-    })
+      });
+    });
 
     it('should include CORS headers', async () => {
-      const response = await client.get('/')
+      const response = await client.get('/');
 
-      expectSuccess(response)
-      validateCorsHeaders(response.headers)
-    })
+      expectSuccess(response);
+      validateCorsHeaders(response.headers);
+    });
 
     it('should have valid timestamp in ISO format', async () => {
-      const response = await client.get('/')
+      const response = await client.get('/');
 
-      expectSuccess(response)
-      expect(response.data).toHaveProperty('timestamp')
+      expectSuccess(response);
+      expect(response.data).toHaveProperty('timestamp');
 
-      const timestamp = new Date(response.data.timestamp)
-      expect(timestamp.toISOString()).toBe(response.data.timestamp)
+      const timestamp = new Date(response.data.timestamp);
+      expect(timestamp.toISOString()).toBe(response.data.timestamp);
 
       // Timestamp should be recent (within last minute)
-      const now = Date.now()
-      const responseTime = timestamp.getTime()
-      expect(now - responseTime).toBeLessThan(60000)
-    })
-  })
+      const now = Date.now();
+      const responseTime = timestamp.getTime();
+      expect(now - responseTime).toBeLessThan(60000);
+    });
+  });
 
   describe('GET /health - Simple Health Check', () => {
     it('should return ok status', async () => {
-      const response = await client.get('/health')
+      const response = await client.get('/health');
 
-      expectSuccess(response)
-      expectStatus(response, 200)
-      expectFastResponse(response.timing, 2000)
+      expectSuccess(response);
+      expectStatus(response, 200);
+      expectFastResponse(response.timing, 2000);
 
-      validateSimpleHealth(response.data)
-    })
-  })
+      validateSimpleHealth(response.data);
+    });
+  });
 
   describe('404 Error Handling', () => {
     it('should return 404 for unknown endpoints', async () => {
-      const response = await client.get('/api/unknown-endpoint-xyz')
+      const response = await client.get('/api/unknown-endpoint-xyz');
 
-      expectStatus(response, 404)
-      expect(response.ok).toBe(false)
+      expectStatus(response, 404);
+      expect(response.ok).toBe(false);
 
       // Validate error response structure
-      validate404Error(response.error || response.data)
-    })
+      validate404Error(response.error || response.data);
+    });
 
     it('should include path in 404 error response', async () => {
-      const testPath = '/api/this-does-not-exist'
-      const response = await client.get(testPath)
+      const testPath = '/api/this-does-not-exist';
+      const response = await client.get(testPath);
 
-      expectStatus(response, 404)
-      expect(response.error || response.data).toHaveProperty('path')
-    })
-  })
+      expectStatus(response, 404);
+      expect(response.error || response.data).toHaveProperty('path');
+    });
+  });
 
   describe('CORS Preflight', () => {
     it('should handle OPTIONS preflight requests', async () => {
@@ -112,41 +112,41 @@ describe('Integration: Health Checks', () => {
           'Access-Control-Request-Method': 'POST',
           'Access-Control-Request-Headers': 'Content-Type, Authorization',
         },
-      })
+      });
 
       // OPTIONS should return 200 or 204
-      expect([200, 204]).toContain(response.status)
+      expect([200, 204]).toContain(response.status);
 
       // Check CORS headers
-      const corsOrigin = response.headers.get('access-control-allow-origin')
-      const corsMethods = response.headers.get('access-control-allow-methods')
+      const corsOrigin = response.headers.get('access-control-allow-origin');
+      const corsMethods = response.headers.get('access-control-allow-methods');
 
-      expect(corsOrigin).toBeDefined()
+      expect(corsOrigin).toBeDefined();
       if (corsMethods) {
-        expect(corsMethods.toLowerCase()).toContain('post')
+        expect(corsMethods.toLowerCase()).toContain('post');
       }
-    })
-  })
+    });
+  });
 
   describe('Response Timing', () => {
     it('should respond quickly to health checks', async () => {
-      const timings: number[] = []
+      const timings: number[] = [];
 
       // Make 5 requests and check average timing
       for (let i = 0; i < 5; i++) {
-        const response = await client.get('/health')
-        expectSuccess(response)
-        timings.push(response.timing)
+        const response = await client.get('/health');
+        expectSuccess(response);
+        timings.push(response.timing);
       }
 
-      const avgTiming = timings.reduce((a, b) => a + b, 0) / timings.length
+      const avgTiming = timings.reduce((a, b) => a + b, 0) / timings.length;
       console.log(
         `[TEST] Health check timings: avg=${avgTiming.toFixed(0)}ms, ` +
           `min=${Math.min(...timings)}ms, max=${Math.max(...timings)}ms`
-      )
+      );
 
       // Average should be under 2 seconds
-      expect(avgTiming).toBeLessThan(2000)
-    })
-  })
-})
+      expect(avgTiming).toBeLessThan(2000);
+    });
+  });
+});

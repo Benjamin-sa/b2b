@@ -5,7 +5,7 @@
  * All generated data uses unique identifiers to prevent conflicts.
  */
 
-import { expect } from 'vitest'
+import { expect } from 'vitest';
 
 // ============================================================================
 // ID GENERATORS
@@ -15,17 +15,17 @@ import { expect } from 'vitest'
  * Generate a unique test ID with prefix
  */
 export function generateTestId(prefix: string = 'test'): string {
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 8)
-  return `${prefix}_${timestamp}_${random}`
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix}_${timestamp}_${random}`;
 }
 
 /**
  * Generate a unique email for testing
  */
 export function generateTestEmail(prefix: string = 'test'): string {
-  const id = generateTestId(prefix)
-  return `${id}@test.local`
+  const id = generateTestId(prefix);
+  return `${id}@test.local`;
 }
 
 // ============================================================================
@@ -33,30 +33,30 @@ export function generateTestEmail(prefix: string = 'test'): string {
 // ============================================================================
 
 export interface TestProductData {
-  name: string
-  price: number
-  description?: string
-  brand?: string
-  part_number?: string
-  b2b_sku?: string
-  category_id?: string
-  image_url?: string
-  images?: string[]
-  total_stock?: number
-  b2b_stock?: number
-  b2c_stock?: number
-  min_order_quantity?: number
-  max_order_quantity?: number
-  specifications?: Array<{ key: string; value: string }>
-  tags?: string[]
+  name: string;
+  price: number;
+  description?: string;
+  brand?: string;
+  part_number?: string;
+  b2b_sku?: string;
+  category_id?: string;
+  image_url?: string;
+  images?: string[];
+  total_stock?: number;
+  b2b_stock?: number;
+  b2c_stock?: number;
+  min_order_quantity?: number;
+  max_order_quantity?: number;
+  specifications?: Array<{ key: string; value: string }>;
+  tags?: string[];
 }
 
 /**
  * Generate a valid product for creation tests
  */
 export function generateProduct(overrides: Partial<TestProductData> = {}): TestProductData {
-  const timestamp = Date.now()
-  const id = Math.random().toString(36).substring(2, 8).toUpperCase()
+  const timestamp = Date.now();
+  const id = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   return {
     name: `Integration Test Product ${timestamp}`,
@@ -81,7 +81,7 @@ export function generateProduct(overrides: Partial<TestProductData> = {}): TestP
     ],
     tags: ['test', 'integration'],
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -95,7 +95,7 @@ export function generateMinimalProduct(overrides: Partial<TestProductData> = {})
     b2b_stock: 10,
     b2c_stock: 0,
     ...overrides,
-  }
+  };
 }
 
 /**
@@ -105,7 +105,7 @@ export function generateInvalidProduct(): Partial<TestProductData> {
   return {
     // Missing required 'name'
     price: -10, // Invalid negative price
-  }
+  };
 }
 
 // ============================================================================
@@ -113,20 +113,20 @@ export function generateInvalidProduct(): Partial<TestProductData> {
 // ============================================================================
 
 export interface TestCategoryData {
-  name: string
-  slug?: string
-  description?: string
-  image_url?: string
-  parent_id?: string
-  sort_order?: number
+  name: string;
+  slug?: string;
+  description?: string;
+  image_url?: string;
+  parent_id?: string;
+  sort_order?: number;
 }
 
 /**
  * Generate a valid category for creation tests
  */
 export function generateCategory(overrides: Partial<TestCategoryData> = {}): TestCategoryData {
-  const timestamp = Date.now()
-  const slug = `test-category-${timestamp}`
+  const timestamp = Date.now();
+  const slug = `test-category-${timestamp}`;
 
   return {
     name: `Test Category ${timestamp}`,
@@ -135,7 +135,7 @@ export function generateCategory(overrides: Partial<TestCategoryData> = {}): Tes
     image_url: 'https://via.placeholder.com/200x200.png?text=Category',
     sort_order: 0,
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -143,20 +143,20 @@ export function generateCategory(overrides: Partial<TestCategoryData> = {}): Tes
 // ============================================================================
 
 export interface TestUserData {
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-  companyName: string
-  phone?: string
-  btwNumber?: string
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  phone?: string;
+  btwNumber?: string;
 }
 
 /**
  * Generate a valid user for registration tests
  */
 export function generateUser(overrides: Partial<TestUserData> = {}): TestUserData {
-  const id = generateTestId('user')
+  const id = generateTestId('user');
 
   return {
     email: `${id}@test.local`,
@@ -166,7 +166,7 @@ export function generateUser(overrides: Partial<TestUserData> = {}): TestUserDat
     companyName: `Test Company ${Date.now()}`,
     phone: '+31612345678',
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -174,23 +174,23 @@ export function generateUser(overrides: Partial<TestUserData> = {}): TestUserDat
 // ============================================================================
 
 export interface TestInvoiceItem {
-  stripePriceId: string
-  quantity: number
+  stripePriceId: string;
+  quantity: number;
   metadata: {
-    productId: string
-    productName: string
-    shopifyVariantId?: string
-  }
+    productId: string;
+    productName: string;
+    shopifyVariantId?: string;
+  };
 }
 
 export interface TestInvoiceData {
-  items: TestInvoiceItem[]
-  shippingCost?: number
+  items: TestInvoiceItem[];
+  shippingCost?: number;
   metadata?: {
-    notes?: string
-    shippingAddress?: any
-    billingAddress?: any
-  }
+    notes?: string;
+    shippingAddress?: any;
+    billingAddress?: any;
+  };
 }
 
 /**
@@ -214,7 +214,7 @@ export function generateInvoice(
       },
     },
     ...overrides,
-  }
+  };
 }
 
 // ============================================================================
@@ -225,38 +225,38 @@ export function generateInvoice(
  * Track created resources for cleanup
  */
 export class TestResourceTracker {
-  private products: string[] = []
-  private categories: string[] = []
-  private users: string[] = []
+  private products: string[] = [];
+  private categories: string[] = [];
+  private users: string[] = [];
 
   trackProduct(id: string): void {
-    this.products.push(id)
+    this.products.push(id);
   }
 
   trackCategory(id: string): void {
-    this.categories.push(id)
+    this.categories.push(id);
   }
 
   trackUser(id: string): void {
-    this.users.push(id)
+    this.users.push(id);
   }
 
   getProducts(): string[] {
-    return [...this.products]
+    return [...this.products];
   }
 
   getCategories(): string[] {
-    return [...this.categories]
+    return [...this.categories];
   }
 
   getUsers(): string[] {
-    return [...this.users]
+    return [...this.users];
   }
 
   clear(): void {
-    this.products = []
-    this.categories = []
-    this.users = []
+    this.products = [];
+    this.categories = [];
+    this.users = [];
   }
 }
 
@@ -268,7 +268,7 @@ export class TestResourceTracker {
  * Check if a response time is acceptable
  */
 export function isAcceptableResponseTime(ms: number, threshold: number = 5000): boolean {
-  return ms < threshold
+  return ms < threshold;
 }
 
 /**
@@ -279,14 +279,14 @@ export function expectedError(code: string, messagePattern?: string): object {
     error: expect.any(String),
     code,
     ...(messagePattern && { message: expect.stringMatching(messagePattern) }),
-  }
+  };
 }
 
 /**
  * Wait for a specified amount of time
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -297,18 +297,18 @@ export async function retry<T>(
   maxAttempts: number = 3,
   delayMs: number = 1000
 ): Promise<T> {
-  let lastError: Error | null = null
+  let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await fn()
+      return await fn();
     } catch (error) {
-      lastError = error as Error
+      lastError = error as Error;
       if (attempt < maxAttempts) {
-        await sleep(delayMs)
+        await sleep(delayMs);
       }
     }
   }
 
-  throw lastError || new Error('Retry failed')
+  throw lastError || new Error('Retry failed');
 }

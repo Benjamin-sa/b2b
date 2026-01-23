@@ -1,6 +1,6 @@
 /**
  * Product Transformation Utilities
- * 
+ *
  * Transforms between API (snake_case, DB format) and Frontend (camelCase, UI format)
  */
 
@@ -86,10 +86,11 @@ export function transformApiProduct(apiProduct: ApiProduct): Product {
     max_order_quantity: apiProduct.max_order_quantity || null,
     weight: apiProduct.weight || null,
     // Transform specifications array
-    specifications: apiProduct.specifications?.map((spec) => ({
-      key: spec.spec_key,
-      value: spec.spec_value,
-    })) || [],
+    specifications:
+      apiProduct.specifications?.map((spec) => ({
+        key: spec.spec_key,
+        value: spec.spec_value,
+      })) || [],
     tags: apiProduct.tags || [],
     // Transform dimensions
     dimensions: apiProduct.dimensions
@@ -126,17 +127,19 @@ export function transformProductToApi(product: Partial<Product>): any {
   if (product.original_price !== undefined) apiProduct.original_price = product.original_price;
   if (product.image_url !== undefined) apiProduct.image_url = product.image_url;
   if (product.category_id !== undefined) apiProduct.category_id = product.category_id;
-  
+
   // Convert boolean to SQLite format (not needed for API request, service handles it)
   if (product.in_stock !== undefined) apiProduct.in_stock = product.in_stock;
   if (product.coming_soon !== undefined) apiProduct.coming_soon = product.coming_soon;
-  
+
   if (product.stock !== undefined) apiProduct.stock = product.stock;
   if (product.brand !== undefined) apiProduct.brand = product.brand;
   if (product.part_number !== undefined) apiProduct.part_number = product.part_number;
   if (product.unit !== undefined) apiProduct.unit = product.unit;
-  if (product.min_order_quantity !== undefined) apiProduct.min_order_quantity = product.min_order_quantity;
-  if (product.max_order_quantity !== undefined) apiProduct.max_order_quantity = product.max_order_quantity;
+  if (product.min_order_quantity !== undefined)
+    apiProduct.min_order_quantity = product.min_order_quantity;
+  if (product.max_order_quantity !== undefined)
+    apiProduct.max_order_quantity = product.max_order_quantity;
   if (product.weight !== undefined) apiProduct.weight = product.weight;
 
   // Arrays
@@ -162,9 +165,12 @@ export function transformProductToApi(product: Partial<Product>): any {
   }
 
   // Integration IDs
-  if (product.shopify_product_id !== undefined) apiProduct.shopify_product_id = product.shopify_product_id;
-  if (product.shopify_variant_id !== undefined) apiProduct.shopify_variant_id = product.shopify_variant_id;
-  if (product.stripe_product_id !== undefined) apiProduct.stripe_product_id = product.stripe_product_id;
+  if (product.shopify_product_id !== undefined)
+    apiProduct.shopify_product_id = product.shopify_product_id;
+  if (product.shopify_variant_id !== undefined)
+    apiProduct.shopify_variant_id = product.shopify_variant_id;
+  if (product.stripe_product_id !== undefined)
+    apiProduct.stripe_product_id = product.stripe_product_id;
   if (product.stripe_price_id !== undefined) apiProduct.stripe_price_id = product.stripe_price_id;
 
   return apiProduct;

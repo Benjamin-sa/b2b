@@ -1,21 +1,15 @@
 /**
- * Database Utilities for Invoice Management
- * 
- * Handles D1 database operations for:
- * - Product inventory management
- * - Order creation and retrieval
- * - Order line items
- * - Inventory audit logging
+ * Database Utilities for Stock Management
+ *
+ * SIMPLIFIED: Shopify is the single source of truth.
+ * Single 'stock' column, atomic updates.
  */
 
 import type { Env } from '../types';
 
 export interface InventoryItem {
   product_id: string;
-  total_stock: number;
-  b2b_stock: number;
-  b2c_stock: number;
-  reserved_stock: number;
+  stock: number;
 }
 
 export interface OrderItem {
@@ -34,11 +28,12 @@ export interface StockUpdateResult {
 }
 
 /**
- * Validate stock availability and prepare stock updates for multiple items
+ * Validate stock availability and prepare ATOMIC stock updates
+ * Uses conditional UPDATE to prevent race conditions
  */
 export async function validateAndPrepareStockUpdates(
-  db: D1Database, 
-  items: OrderItem[], 
+  db: D1Database,
+  items: OrderItem[],
   userId: string
 ): Promise<{
   success: boolean;
@@ -55,79 +50,78 @@ export async function validateAndPrepareStockUpdates(
     const productId = item.metadata.productId;
     const quantity = item.quantity;
 
-    // Get current inventory
-    const inventory = await db.prepare(
-      'SELECT total_stock, b2b_stock, b2c_stock FROM product_inventory WHERE product_id = ?'
-    ).bind(productId).first();
+    // Get current inventory (using new 'stock' column)
+    const inventory = await db
+      .prepare('SELECT stock FROM product_inventory WHERE product_id = ?')
+      .bind(productId)
+      .first();
 
     if (!inventory) {
       stockValidationErrors.push(`Product ${productId} has no inventory record`);
       continue;
     }
 
-    const currentB2BStock = (inventory as any).b2b_stock;
-    const currentB2CStock = (inventory as any).b2c_stock;
-    const currentTotalStock = (inventory as any).total_stock;
+    const currentStock = (inventory as any).stock as number;
 
-    // Validate sufficient B2B stock
-    if (currentB2BStock < quantity) {
+    // Validate sufficient stock
+    if (currentStock < quantity) {
       stockValidationErrors.push(
-        `Insufficient stock for product ${productId}: need ${quantity}, have ${currentB2BStock} available`
+        `Insufficient stock for product ${productId}: need ${quantity}, have ${currentStock} available`
       );
       continue;
     }
 
-    // Calculate new stock levels
-    const newB2BStock = currentB2BStock - quantity;
-    const newTotalStock = currentTotalStock - quantity;
+    const newStock = currentStock - quantity;
 
-    // Prepare stock update query
+    // ATOMIC stock update - uses WHERE clause to prevent race conditions
     stockUpdates.push(
-      db.prepare(`
+      db
+        .prepare(
+          `
         UPDATE product_inventory
         SET 
-          total_stock = ?,
-          b2b_stock = ?,
+          stock = stock - ?,
           updated_at = ?
-        WHERE product_id = ?
-      `).bind(newTotalStock, newB2BStock, now, productId)
+        WHERE product_id = ? AND stock >= ?
+      `
+        )
+        .bind(quantity, now, productId, quantity)
     );
 
     // Prepare audit log entry
     stockLogs.push(
-      db.prepare(`
+      db
+        .prepare(
+          `
         INSERT INTO inventory_sync_log (
           id, product_id, action, source,
-          total_change, b2b_change, b2c_change,
-          total_stock_after, b2b_stock_after, b2c_stock_after,
+          stock_change, stock_after,
           reference_id, reference_type, created_at, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        crypto.randomUUID(),
-        productId,
-        'b2b_order',
-        'invoice_creation',
-        -quantity,
-        -quantity,
-        0,
-        newTotalStock,
-        newB2BStock,
-        currentB2CStock,
-        'pending', // Will be updated with invoice ID after creation
-        'invoice',
-        now,
-        userId
-      )
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+        )
+        .bind(
+          crypto.randomUUID(),
+          productId,
+          'b2b_order',
+          'invoice_creation',
+          -quantity,
+          newStock,
+          'pending', // Will be updated with invoice ID after creation
+          'invoice',
+          now,
+          userId
+        )
     );
 
-    console.log(`📉 Stock reduction prepared for ${productId}: ${currentB2BStock} → ${newB2BStock} (-${quantity})`);
+    console.log(`📉 Stock reduction prepared for ${productId}: ${currentStock} → ${newStock} (-${quantity})`);
   }
 
   return {
     success: stockValidationErrors.length === 0,
     errors: stockValidationErrors,
     updates: stockUpdates,
-    logs: stockLogs
+    logs: stockLogs,
   };
 }
 
@@ -141,49 +135,48 @@ export async function executeStockUpdates(
 ): Promise<void> {
   if (updates.length === 0) return;
 
-  await db.batch([...updates, ...logs]);
+  const results = await db.batch([...updates, ...logs]);
+  
+  // Check if all updates succeeded (changes > 0)
+  for (let i = 0; i < updates.length; i++) {
+    const result = results[i];
+    if (result.meta?.changes === 0) {
+      throw new Error(`Stock update failed for item ${i + 1} - possible race condition or insufficient stock`);
+    }
+  }
+  
   console.log(`✅ Reduced stock for ${updates.length} products`);
 }
 
 /**
  * Rollback stock changes for given items (restore inventory)
  */
-export async function rollbackStockChanges(
-  db: D1Database,
-  items: OrderItem[]
-): Promise<void> {
+export async function rollbackStockChanges(db: D1Database, items: OrderItem[]): Promise<void> {
   if (items.length === 0) return;
 
   console.log('⚠️  Rolling back stock changes...');
   const rollbackUpdates: D1PreparedStatement[] = [];
-  
+
   for (const item of items) {
     const productId = item.metadata.productId;
     const quantity = item.quantity;
-    
-    // Get current stock (after our reduction)
-    const currentInventory = await db.prepare(
-      'SELECT total_stock, b2b_stock FROM product_inventory WHERE product_id = ?'
-    ).bind(productId).first();
-    
-    if (currentInventory) {
-      const currentTotal = (currentInventory as any).total_stock;
-      const currentB2B = (currentInventory as any).b2b_stock;
-      
-      // Restore stock
-      rollbackUpdates.push(
-        db.prepare(`
+
+    // Restore stock (atomic increment)
+    rollbackUpdates.push(
+      db
+        .prepare(
+          `
           UPDATE product_inventory
           SET 
-            total_stock = ?,
-            b2b_stock = ?,
+            stock = stock + ?,
             updated_at = ?
           WHERE product_id = ?
-        `).bind(currentTotal + quantity, currentB2B + quantity, new Date().toISOString(), productId)
-      );
-    }
+        `
+        )
+        .bind(quantity, new Date().toISOString(), productId)
+    );
   }
-  
+
   if (rollbackUpdates.length > 0) {
     await db.batch(rollbackUpdates);
     console.log('✅ Stock rollback completed');
@@ -200,14 +193,18 @@ export async function updateInventoryLogWithInvoiceId(
   createdAt: string
 ): Promise<void> {
   try {
-    const updateLogQueries = items.map(item => 
-      db.prepare(`
+    const updateLogQueries = items.map((item) =>
+      db
+        .prepare(
+          `
         UPDATE inventory_sync_log
         SET reference_id = ?
         WHERE product_id = ? AND reference_id = 'pending' AND created_at = ?
-      `).bind(invoiceId, item.metadata.productId, createdAt)
+      `
+        )
+        .bind(invoiceId, item.metadata.productId, createdAt)
     );
-    
+
     await db.batch(updateLogQueries);
     console.log('✅ Updated inventory logs with invoice ID');
   } catch (error) {
@@ -234,7 +231,9 @@ export async function storeOrder(
   const now = new Date().toISOString();
   const shippingAddr = orderData.shippingAddress;
 
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     INSERT INTO orders (
       id, user_id, stripe_invoice_id, status, stripe_status,
       total_amount, subtotal, tax, shipping,
@@ -242,30 +241,35 @@ export async function storeOrder(
       shipping_address_street, shipping_address_city, shipping_address_zip_code, shipping_address_country,
       created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    orderData.orderId,
-    orderData.userId,
-    orderData.stripeInvoiceId,
-    'pending', // Order status
-    'draft', // Stripe status (webhook will update to 'open' when finalized)
-    orderData.totalAmount / 100, // Convert cents to euros
-    orderData.totalAmount / 100, // Subtotal (we'll calculate from items later)
-    0, // Tax (we'll calculate from items later)
-    0, // Shipping (we'll calculate from items later)
-    now, // order_date
-    orderData.invoiceUrl,
-    orderData.invoicePdf,
-    orderData.invoiceNumber,
-    null, // due_date (webhook will set this)
-    shippingAddr?.street || '',
-    shippingAddr?.city || '',
-    shippingAddr?.zipCode || '',
-    shippingAddr?.country || '',
-    now,
-    now
-  ).run();
+  `
+    )
+    .bind(
+      orderData.orderId,
+      orderData.userId,
+      orderData.stripeInvoiceId,
+      'pending', // Order status
+      'draft', // Stripe status (webhook will update to 'open' when finalized)
+      orderData.totalAmount / 100, // Convert cents to euros
+      orderData.totalAmount / 100, // Subtotal (we'll calculate from items later)
+      0, // Tax (we'll calculate from items later)
+      0, // Shipping (we'll calculate from items later)
+      now, // order_date
+      orderData.invoiceUrl,
+      orderData.invoicePdf,
+      orderData.invoiceNumber,
+      null, // due_date (webhook will set this)
+      shippingAddr?.street || '',
+      shippingAddr?.city || '',
+      shippingAddr?.zipCode || '',
+      shippingAddr?.country || '',
+      now,
+      now
+    )
+    .run();
 
-  console.log(`✅ Stored order ${orderData.orderId} with Stripe invoice ${orderData.stripeInvoiceId} in D1`);
+  console.log(
+    `✅ Stored order ${orderData.orderId} with Stripe invoice ${orderData.stripeInvoiceId} in D1`
+  );
 }
 
 /**
@@ -279,10 +283,12 @@ export async function storeOrderLineItems(
   if (lineItems.length === 0) return;
 
   const now = new Date().toISOString();
-  
+
   // Batch insert all line items (more efficient than individual inserts)
   const lineItemInserts = lineItems.map((item: any) => {
-    return db.prepare(`
+    return db
+      .prepare(
+        `
       INSERT INTO order_items (
         id, order_id, product_id,
         product_name, product_sku, b2b_sku, brand, image_url,
@@ -290,24 +296,26 @@ export async function storeOrderLineItems(
         shopify_variant_id, stripe_price_id, stripe_invoice_item_id,
         created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      crypto.randomUUID(),
-      orderId,
-      item.metadata?.product_id || item.metadata?.productId || '',
-      item.product_name || '',
-      item.sku || '',
-      item.b2b_sku || '', // ✅ Store B2B SKU for historical tracking
-      item.brand || '',
-      item.image_url || '',
-      item.quantity,
-      item.unit_price_cents / 100, // Convert cents to euros
-      item.total_price_cents / 100, // Convert cents to euros
-      item.tax_cents,
-      item.metadata?.shopify_variant_id || item.metadata?.shopifyVariantId || '',
-      item.metadata?.stripe_price_id || item.metadata?.stripePriceId || '',
-      item.id, // Stripe line item ID
-      now
-    );
+    `
+      )
+      .bind(
+        crypto.randomUUID(),
+        orderId,
+        item.metadata?.product_id || item.metadata?.productId || '',
+        item.product_name || '',
+        item.sku || '',
+        item.b2b_sku || '', // ✅ Store B2B SKU for historical tracking
+        item.brand || '',
+        item.image_url || '',
+        item.quantity,
+        item.unit_price_cents / 100, // Convert cents to euros
+        item.total_price_cents / 100, // Convert cents to euros
+        item.tax_cents,
+        item.metadata?.shopify_variant_id || item.metadata?.shopifyVariantId || '',
+        item.metadata?.stripe_price_id || item.metadata?.stripePriceId || '',
+        item.id, // Stripe line item ID
+        now
+      );
   });
 
   await db.batch(lineItemInserts);
@@ -323,7 +331,9 @@ export async function fetchUserInvoices(
   limit = 100
 ): Promise<any[]> {
   // Query D1 database for user's orders (which contain invoice data)
-  const ordersResult = await db.prepare(`
+  const ordersResult = await db
+    .prepare(
+      `
     SELECT 
       id,
       stripe_invoice_id,
@@ -346,18 +356,23 @@ export async function fetchUserInvoices(
     WHERE user_id = ? AND stripe_invoice_id IS NOT NULL
     ORDER BY created_at DESC
     LIMIT ?
-  `).bind(userId, limit).all();
+  `
+    )
+    .bind(userId, limit)
+    .all();
 
   console.log(`📋 Fetched ${ordersResult.results?.length || 0} orders/invoices for user ${userId}`);
-  
+
   // Fetch order items for all orders in a single query (more efficient)
   const orderIds = (ordersResult.results || []).map((order: any) => order.id);
-  let lineItemsMap = new Map<string, any[]>();
+  const lineItemsMap = new Map<string, any[]>();
 
   if (orderIds.length > 0) {
     // Build dynamic query with placeholders for all order IDs
     const placeholders = orderIds.map(() => '?').join(',');
-    const lineItemsResult = await db.prepare(`
+    const lineItemsResult = await db
+      .prepare(
+        `
       SELECT 
         order_id,
         id,
@@ -376,7 +391,10 @@ export async function fetchUserInvoices(
       FROM order_items
       WHERE order_id IN (${placeholders})
       ORDER BY created_at ASC
-    `).bind(...orderIds).all();
+    `
+      )
+      .bind(...orderIds)
+      .all();
 
     // Group line items by order_id
     (lineItemsResult.results || []).forEach((item: any) => {
@@ -388,7 +406,7 @@ export async function fetchUserInvoices(
 
     console.log(`📦 Fetched line items for ${lineItemsMap.size} orders`);
   }
-  
+
   // Transform to frontend format (camelCase) and attach line items
   return (ordersResult.results || []).map((order: any) => {
     const items = (lineItemsMap.get(order.id) || []).map((item: any) => ({
@@ -429,14 +447,14 @@ export async function fetchUserInvoices(
       paidAt: order.paid_at,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      
+
       // Financial breakdown
       subtotal: order.subtotal || subtotal, // Use DB value if available, else calculate
       tax: order.tax || totalTax, // Tax in euros (from DB or calculated)
       shipping: order.shipping || 0, // Shipping in euros
       shippingCents: order.shipping_cost_cents || 0, // Shipping in cents (for precision)
       totalAmount: order.total_amount, // Total in euros
-      
+
       items, // ⭐ Include line items with historical pricing
     };
   });

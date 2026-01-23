@@ -18,13 +18,13 @@ export {
   type LoginResponse,
   type ApiResponse,
   type ApiError,
-} from './api-client'
+} from './api-client';
 
 // Legacy auth helper (for backwards compatibility)
-export { getFreshAdminToken, loginAsUser, loginAsAdmin, verifyToken } from './auth'
+export { getFreshAdminToken, loginAsUser, loginAsAdmin, verifyToken } from './auth';
 
 // Validators
-export * from './validators'
+export * from './validators';
 
 // Test Data Generators
-export * from './test-data'
+export * from './test-data';

@@ -1,6 +1,6 @@
 /**
  * Auth Service - Main Entry Point
- * 
+ *
  * JWT-based authentication service for B2B platform
  * Replaces Firebase Authentication with Cloudflare Workers + D1 + KV
  */
@@ -18,10 +18,12 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 
 // 🔐 Service authentication - blocks direct HTTP access in ALL environments
-app.use('*', createServiceAuthMiddleware({
-  enforceInEnv: 'all', // Enforce in both dev and production
-}));
-
+app.use(
+  '*',
+  createServiceAuthMiddleware({
+    enforceInEnv: 'all', // Enforce in both dev and production
+  })
+);
 
 // ============================================================================
 // HEALTH CHECK

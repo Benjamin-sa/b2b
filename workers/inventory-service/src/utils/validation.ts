@@ -1,6 +1,6 @@
 /**
  * Validation Utilities
- * 
+ *
  * Input validation helpers
  */
 
@@ -9,20 +9,16 @@ import { errors } from './errors';
 /**
  * Validate required fields in an object
  */
-export function validateRequired(
-  data: Record<string, any>,
-  requiredFields: string[]
-): void {
+export function validateRequired(data: Record<string, any>, requiredFields: string[]): void {
   const missing = requiredFields.filter((field) => {
     const value = data[field];
     return value === undefined || value === null || value === '';
   });
 
   if (missing.length > 0) {
-    throw errors.validationError(
-      `Missing required fields: ${missing.join(', ')}`,
-      { missingFields: missing }
-    );
+    throw errors.validationError(`Missing required fields: ${missing.join(', ')}`, {
+      missingFields: missing,
+    });
   }
 }
 
@@ -34,7 +30,6 @@ export function validatePrice(price: any): void {
     throw errors.validationError('Price must be a positive number');
   }
 }
-
 
 /**
  * Validate pagination parameters
@@ -52,9 +47,7 @@ export function validatePagination(
   }
 
   if (parsedLimit < 1 || parsedLimit > maxLimit) {
-    throw errors.validationError(
-      `Limit must be between 1 and ${maxLimit}`
-    );
+    throw errors.validationError(`Limit must be between 1 and ${maxLimit}`);
   }
 
   return { page: parsedPage, limit: parsedLimit };
@@ -95,9 +88,7 @@ export function validateSort(
   }
 
   if (!allowedFields.includes(field)) {
-    throw errors.validationError(
-      `Invalid sort field. Allowed: ${allowedFields.join(', ')}`
-    );
+    throw errors.validationError(`Invalid sort field. Allowed: ${allowedFields.join(', ')}`);
   }
 
   return { sortBy: field, sortOrder: order };

@@ -1,9 +1,17 @@
 /**
  * Database utility functions for inventory operations
+ *
+ * SIMPLIFIED: Shopify is the single source of truth.
+ * Only one 'stock' column matters now.
  */
 
 import type { ProductInventory } from '../types';
 import { nanoid } from 'nanoid';
+import { createDb, schema } from '@b2b/db';
+import { eq } from 'drizzle-orm';
+import type { D1Database } from '@cloudflare/workers-types';
+
+const { product_inventory, inventory_sync_log } = schema;
 
 /**
  * Get product inventory by product ID
@@ -12,60 +20,15 @@ export async function getInventoryByProductId(
   db: D1Database,
   productId: string
 ): Promise<ProductInventory | null> {
-  const result = await db
-    .prepare('SELECT * FROM product_inventory WHERE product_id = ?')
-    .bind(productId)
-    .first<ProductInventory>();
+  const client = createDb(db);
+  const result = await client
+    .select()
+    .from(product_inventory)
+    .where(eq(product_inventory.product_id, productId))
+    .get();
 
-  return result || null;
+  return (result as ProductInventory | null) || null;
 }
-/**
- * Log inventory change to audit trail
- */
-export async function logInventorySync(
-  db: D1Database,
-  productId: string,
-  action: string,
-  source: string,
-  totalChange: number,
-  b2bChange: number,
-  b2cChange: number,
-  inventory: ProductInventory,
-  syncedToShopify: boolean,
-  syncError: string | null = null,
-  referenceId: string | null = null,
-  referenceType: string | null = null
-): Promise<void> {
-  await db
-    .prepare(
-      `INSERT INTO inventory_sync_log (
-        id, product_id, action, source,
-        total_change, b2b_change, b2c_change,
-        total_stock_after, b2b_stock_after, b2c_stock_after,
-        synced_to_shopify, sync_error,
-        reference_id, reference_type, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(
-      nanoid(),
-      productId,
-      action,
-      source,
-      totalChange,
-      b2bChange,
-      b2cChange,
-      inventory.total_stock,
-      inventory.b2b_stock,
-      inventory.b2c_stock,
-      syncedToShopify ? 1 : 0,
-      syncError,
-      referenceId,
-      referenceType,
-      new Date().toISOString()
-    )
-    .run();
-}
-
 
 /**
  * Get product inventory by Shopify variant ID
@@ -74,12 +37,14 @@ export async function getInventoryByShopifyVariantId(
   db: D1Database,
   variantId: string
 ): Promise<ProductInventory | null> {
-  const result = await db
-    .prepare('SELECT * FROM product_inventory WHERE shopify_variant_id = ?')
-    .bind(variantId)
-    .first<ProductInventory>();
+  const client = createDb(db);
+  const result = await client
+    .select()
+    .from(product_inventory)
+    .where(eq(product_inventory.shopify_variant_id, variantId))
+    .get();
 
-  return result || null;
+  return (result as ProductInventory | null) || null;
 }
 
 /**
@@ -89,12 +54,51 @@ export async function getInventoryByInventoryItemId(
   db: D1Database,
   inventoryItemId: string
 ): Promise<ProductInventory | null> {
-  const result = await db
-    .prepare('SELECT * FROM product_inventory WHERE shopify_inventory_item_id = ?')
-    .bind(inventoryItemId)
-    .first<ProductInventory>();
+  const client = createDb(db);
+  const result = await client
+    .select()
+    .from(product_inventory)
+    .where(eq(product_inventory.shopify_inventory_item_id, inventoryItemId))
+    .get();
 
-  return result || null;
+  return (result as ProductInventory | null) || null;
+}
+
+/**
+ * Update stock from Shopify webhook
+ * Shopify is the source of truth - just set the stock value directly
+ */
+export async function updateStockFromShopify(
+  db: D1Database,
+  productId: string,
+  newStock: number
+): Promise<{ previousStock: number; newStock: number }> {
+  const client = createDb(db);
+  const now = new Date().toISOString();
+
+  // Get current inventory
+  const current = await getInventoryByProductId(db, productId);
+  if (!current) {
+    throw new Error(`Product ${productId} not found in inventory`);
+  }
+
+  const previousStock = current.stock;
+
+  console.log(`📥 Shopify stock update for ${productId}: ${previousStock} → ${newStock}`);
+
+  // Update the single stock column (Shopify is master)
+  await client
+    .update(product_inventory)
+    .set({
+      stock: newStock,
+      last_synced_at: now,
+      sync_error: null,
+      updated_at: now,
+    })
+    .where(eq(product_inventory.product_id, productId))
+    .run();
+
+  return { previousStock, newStock };
 }
 
 /**
@@ -105,90 +109,67 @@ export async function updateLastSyncTime(
   productId: string,
   error: string | null = null
 ): Promise<void> {
-  await db
-    .prepare(
-      'UPDATE product_inventory SET last_synced_at = ?, sync_error = ?, updated_at = ? WHERE product_id = ?'
-    )
-    .bind(new Date().toISOString(), error, new Date().toISOString(), productId)
+  const client = createDb(db);
+  const now = new Date().toISOString();
+  await client
+    .update(product_inventory)
+    .set({ last_synced_at: now, sync_error: error, updated_at: now })
+    .where(eq(product_inventory.product_id, productId))
     .run();
 }
 
 /**
- * Update B2C stock from Shopify webhook (SPLIT MODE)
- * This automatically adjusts total_stock to accommodate the new B2C stock level
- * while keeping B2B stock unchanged
+ * Log inventory change to audit trail
  */
-export async function updateB2CStock(
+export async function logInventoryChange(
   db: D1Database,
   productId: string,
-  newB2CStock: number
+  action: string,
+  source: string,
+  stockChange: number,
+  stockAfter: number,
+  syncedToShopify: boolean,
+  syncError: string | null = null,
+  referenceId: string | null = null,
+  referenceType: string | null = null
 ): Promise<void> {
-  const now = new Date().toISOString();
-
-  // Get current inventory
-  const current = await getInventoryByProductId(db, productId);
-  if (!current) {
-    throw new Error(`Product ${productId} not found in inventory`);
-  }
-
-  // Calculate changes
-  const b2cChange = newB2CStock - current.b2c_stock;
-  const newTotalStock = current.b2b_stock + newB2CStock; // B2B stays same, total = B2B + new B2C
-
-  console.log(`📊 Split mode stock update for ${productId}:`);
-  console.log(`   B2C: ${current.b2c_stock} → ${newB2CStock} (${b2cChange > 0 ? '+' : ''}${b2cChange})`);
-  console.log(`   B2B: ${current.b2b_stock} (unchanged)`);
-  console.log(`   Total: ${current.total_stock} → ${newTotalStock}`);
-
-  // Update inventory - set new totals directly
-  await db
-    .prepare(
-      `UPDATE product_inventory 
-       SET 
-         total_stock = ?,
-         b2c_stock = ?,
-         updated_at = ?
-       WHERE product_id = ?`
-    )
-    .bind(newTotalStock, newB2CStock, now, productId)
+  const client = createDb(db);
+  await client
+    .insert(inventory_sync_log)
+    .values({
+      id: nanoid(),
+      product_id: productId,
+      action,
+      source,
+      stock_change: stockChange,
+      stock_after: stockAfter,
+      synced_to_shopify: syncedToShopify ? 1 : 0,
+      sync_error: syncError,
+      reference_id: referenceId,
+      reference_type: referenceType,
+      created_at: new Date().toISOString(),
+    })
     .run();
 }
 
-/**
- * Update unified stock from Shopify webhook (UNIFIED MODE)
- * Updates total_stock and b2b_stock together (shared pool)
- * b2c_stock stays at 0 in unified mode
- */
+// ============================================================================
+// DEPRECATED FUNCTIONS - Will be removed in next version
+// ============================================================================
+
+/** @deprecated Use updateStockFromShopify instead */
 export async function updateUnifiedStock(
   db: D1Database,
   productId: string,
   newTotalStock: number
 ): Promise<void> {
-  const now = new Date().toISOString();
+  await updateStockFromShopify(db, productId, newTotalStock);
+}
 
-  // Get current inventory
-  const current = await getInventoryByProductId(db, productId);
-  if (!current) {
-    throw new Error(`Product ${productId} not found in inventory`);
-  }
-
-  console.log(`🔗 Unified mode stock update for ${productId}:`);
-  console.log(`   Total: ${current.total_stock} → ${newTotalStock}`);
-  console.log(`   B2B: ${current.b2b_stock} → ${newTotalStock} (synced with total)`);
-  console.log(`   B2C: 0 (always 0 in unified mode)`);
-
-  // Update inventory - both total_stock and b2b_stock change together
-  // b2c_stock stays at 0 in unified mode
-  await db
-    .prepare(
-      `UPDATE product_inventory 
-       SET 
-         total_stock = ?,
-         b2b_stock = ?,
-         b2c_stock = 0,
-         updated_at = ?
-       WHERE product_id = ?`
-    )
-    .bind(newTotalStock, newTotalStock, now, productId)
-    .run();
+/** @deprecated Use updateStockFromShopify instead */
+export async function updateB2CStock(
+  db: D1Database,
+  productId: string,
+  newB2CStock: number
+): Promise<void> {
+  await updateStockFromShopify(db, productId, newB2CStock);
 }

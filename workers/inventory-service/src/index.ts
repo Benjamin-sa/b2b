@@ -1,13 +1,13 @@
 /**
  * Inventory Service - Main Entry Point
- * 
+ *
  * Product management and inventory tracking for B2B platform
- * 
+ *
  * Architecture:
  * - Validates JWT tokens via auth-service
  * - Admin-only operations: CREATE, UPDATE, DELETE
  * - Public operations: GET (with optional auth for personalization)
- * 
+ *
  * Endpoints:
  * - GET    /products                 - List all products with pagination & filters
  * - GET    /products/:id             - Get single product by ID
@@ -41,7 +41,7 @@ app.use('*', createServiceAuthMiddleware());
 // CORS middleware - allow requests from frontend
 app.use('*', async (c, next) => {
   const allowedOrigins = c.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
-  
+
   return cors({
     origin: allowedOrigins,
     credentials: true,
@@ -62,7 +62,6 @@ app.get('/', (c) => {
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
     timestamp: new Date().toISOString(),
-
   });
 });
 

@@ -14,7 +14,7 @@ Provides centralized Telegram notification functionality for the B2B platform, r
 
 **Service Type**: Notification Service (accessed via service bindings)  
 **Framework**: Hono  
-**Platform**: Cloudflare Workers  
+**Platform**: Cloudflare Workers
 
 ## 📋 API Endpoints
 
@@ -28,6 +28,7 @@ GET /health
 ### Invoice Notifications
 
 #### Invoice Created
+
 ```http
 POST /notifications/invoice/created
 Content-Type: application/json
@@ -50,6 +51,7 @@ Content-Type: application/json
 ```
 
 #### Invoice Paid
+
 ```http
 POST /notifications/invoice/paid
 Content-Type: application/json
@@ -71,6 +73,7 @@ Content-Type: application/json
 ### User Notifications
 
 #### New User Registration
+
 ```http
 POST /notifications/user/registered
 Content-Type: application/json
@@ -164,7 +167,7 @@ export interface Env {
 const request = new Request('https://dummy/notifications/invoice/created', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(invoice)
+  body: JSON.stringify(invoice),
 });
 
 const response = await c.env.TELEGRAM_SERVICE.fetch(request);
@@ -182,20 +185,20 @@ if (!response.ok) {
 // workers/stripe-service/src/routes/webhooks.routes.ts
 app.post('/webhook', async (c) => {
   const event = await stripe.webhooks.constructEvent(...);
-  
+
   if (event.type === 'invoice.created') {
     const invoice = event.data.object;
-    
+
     // Send Telegram notification
     const request = new Request('https://dummy/notifications/invoice/created', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(invoice)
     });
-    
+
     await c.env.TELEGRAM_SERVICE.fetch(request);
   }
-  
+
   return c.json({ received: true });
 });
 ```
@@ -206,20 +209,20 @@ app.post('/webhook', async (c) => {
 // workers/auth-service/src/routes/auth.routes.ts
 app.post('/register', async (c) => {
   const userData = await c.req.json();
-  
+
   // Create user in DB
   const userId = nanoid();
   await c.env.DB.prepare('INSERT INTO users ...').run();
-  
+
   // Send Telegram notification
   const request = new Request('https://dummy/notifications/user/registered', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, userData })
+    body: JSON.stringify({ userId, userData }),
   });
-  
+
   await c.env.TELEGRAM_SERVICE.fetch(request);
-  
+
   return c.json({ success: true });
 });
 ```
@@ -243,8 +246,8 @@ const request = new Request('https://dummy/notifications/custom', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     message: alertMessage,
-    parseMode: 'HTML'
-  })
+    parseMode: 'HTML',
+  }),
 });
 
 await c.env.TELEGRAM_SERVICE.fetch(request);
@@ -337,14 +340,17 @@ Telegram supports HTML formatting:
 ## 🐛 Troubleshooting
 
 ### "Chat not found" error
+
 - Ensure bot is added to the group
 - Verify `TELEGRAM_CHAT_ID` is correct (use `/getUpdates` endpoint)
 
 ### "Unauthorized" error
+
 - Check `TELEGRAM_BOT_TOKEN` is valid
 - Ensure token matches the bot added to the group
 
 ### Messages not appearing
+
 - Check bot permissions in group settings
 - Ensure group privacy settings allow bots
 

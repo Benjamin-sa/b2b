@@ -29,10 +29,11 @@ function normalizeProduct(product: any): Product {
     // Map images array to simple URL strings for easier template usage
     images: product.images?.map((img: any) => img.image_url) || [],
     // Map specifications to simpler format
-    specifications: product.specifications?.map((spec: any) => ({
-      key: spec.spec_key,
-      value: spec.spec_value,
-    })) || [],
+    specifications:
+      product.specifications?.map((spec: any) => ({
+        key: spec.spec_key,
+        value: spec.spec_value,
+      })) || [],
   };
 }
 
@@ -49,7 +50,7 @@ export const useProductStore = defineStore('products', () => {
   const products = ref<Product[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  
+
   // For pagination
   const currentPage = ref(1);
   const pageSize = ref(30);
@@ -80,34 +81,35 @@ export const useProductStore = defineStore('products', () => {
       error.value = null;
 
       // Determine which page to fetch
-      const page = loadMore ? currentPage.value + 1 : (filters.page || 1);
+      const page = loadMore ? currentPage.value + 1 : filters.page || 1;
 
       // Build query parameters (using backend field names directly)
       const params = new URLSearchParams();
       params.append('page', page.toString());
       params.append('limit', (filters.limit || pageSize.value).toString());
-      
+
       if (filters.category_id) params.append('categoryId', filters.category_id);
       if (filters.brand) params.append('brand', filters.brand);
       if (filters.in_stock !== undefined) params.append('inStock', filters.in_stock.toString());
-      if (filters.coming_soon !== undefined) params.append('comingSoon', filters.coming_soon.toString());
+      if (filters.coming_soon !== undefined)
+        params.append('comingSoon', filters.coming_soon.toString());
       if (filters.min_price !== undefined) params.append('minPrice', filters.min_price.toString());
       if (filters.max_price !== undefined) params.append('maxPrice', filters.max_price.toString());
       if (filters.search_term) params.append('search', filters.search_term);
-      
+
       // Direct pass-through - no transformation needed
       if (filters.sort_by) params.append('sortBy', filters.sort_by);
       if (filters.sort_order) params.append('sortOrder', filters.sort_order);
 
       // Fetch from API Gateway (which routes to inventory service)
       const response = await fetch(`${PRODUCTS_API_URL}?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
+
       // Normalize products for frontend use (map images to URLs)
       const fetchedProducts = data.items.map(normalizeProduct);
 
@@ -129,7 +131,6 @@ export const useProductStore = defineStore('products', () => {
         title: t('products.fetchErrorTitle') || 'Error',
         message: t('products.fetchError') || error.value || 'Failed to fetch products',
       });
-      console.error('Error fetching products:', err);
     } finally {
       isLoading.value = false;
     }
@@ -140,10 +141,9 @@ export const useProductStore = defineStore('products', () => {
       isLoading.value = true;
       error.value = null;
 
-
       // Fetch from API Gateway
       const response = await fetch(`${PRODUCTS_API_URL}/${id}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return null;
@@ -154,11 +154,9 @@ export const useProductStore = defineStore('products', () => {
       const data = await response.json();
       const product = normalizeProduct(data);
 
-
       return product;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch product';
-      console.error('Error fetching product:', err);
       return null;
     } finally {
       isLoading.value = false;
@@ -182,7 +180,7 @@ export const useProductStore = defineStore('products', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`,
+          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify(payload),
       });
@@ -198,7 +196,6 @@ export const useProductStore = defineStore('products', () => {
       // Add to local state
       products.value.unshift(newProduct);
 
-     
       notificationStore.addNotification({
         type: 'success',
         title: t('products.createSuccessTitle') || 'Success',
@@ -213,7 +210,6 @@ export const useProductStore = defineStore('products', () => {
         title: t('products.createErrorTitle') || 'Error',
         message: t('products.createError') || error.value || 'Failed to create product',
       });
-      console.error('Error creating product:', err);
       throw err;
     } finally {
       isLoading.value = false;
@@ -237,7 +233,7 @@ export const useProductStore = defineStore('products', () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`,
+          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify(payload),
       });
@@ -251,11 +247,10 @@ export const useProductStore = defineStore('products', () => {
       const updatedProduct = normalizeProduct(data);
 
       // Update local state
-      const index = products.value.findIndex(p => p.id === id);
+      const index = products.value.findIndex((p) => p.id === id);
       if (index !== -1) {
         products.value[index] = updatedProduct;
       }
-
 
       notificationStore.addNotification({
         type: 'success',
@@ -271,7 +266,6 @@ export const useProductStore = defineStore('products', () => {
         title: t('products.updateErrorTitle') || 'Error',
         message: t('products.updateError') || error.value || 'Failed to update product',
       });
-      console.error('Error updating product:', err);
       throw err;
     } finally {
       isLoading.value = false;
@@ -291,7 +285,7 @@ export const useProductStore = defineStore('products', () => {
       const response = await fetch(`${PRODUCTS_API_URL}/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authStore.accessToken}`,
+          Authorization: `Bearer ${authStore.accessToken}`,
         },
       });
 
@@ -301,8 +295,7 @@ export const useProductStore = defineStore('products', () => {
       }
 
       // Remove from local state
-      products.value = products.value.filter(p => p.id !== id);
-
+      products.value = products.value.filter((p) => p.id !== id);
 
       notificationStore.addNotification({
         type: 'success',
@@ -316,7 +309,6 @@ export const useProductStore = defineStore('products', () => {
         title: t('products.deleteErrorTitle') || 'Error',
         message: t('products.deleteError') || error.value || 'Failed to delete product',
       });
-      console.error('Error deleting product:', err);
       throw err;
     } finally {
       isLoading.value = false;
@@ -332,7 +324,7 @@ export const useProductStore = defineStore('products', () => {
   const getInventoryInfo = async (shopifyVariantId: string) => {
     try {
       // For now, return mock data or fetch from the product that has this variant ID
-      const product = products.value.find(p => p.shopify_variant_id === shopifyVariantId);
+      const product = products.value.find((p) => p.shopify_variant_id === shopifyVariantId);
       if (product) {
         return {
           shopifyVariantId,
@@ -341,8 +333,7 @@ export const useProductStore = defineStore('products', () => {
         };
       }
       return null;
-    } catch (err: any) {
-      console.error('Error fetching inventory info:', err);
+    } catch {
       return null;
     }
   };
@@ -364,7 +355,7 @@ export const useProductStore = defineStore('products', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`,
+          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify({ stock }),
       });
@@ -378,11 +369,10 @@ export const useProductStore = defineStore('products', () => {
       const updatedProduct = normalizeProduct(data);
 
       // Update local state
-      const index = products.value.findIndex(p => p.id === id);
+      const index = products.value.findIndex((p) => p.id === id);
       if (index !== -1) {
         products.value[index] = updatedProduct;
       }
-
 
       notificationStore.addNotification({
         type: 'success',
@@ -398,7 +388,6 @@ export const useProductStore = defineStore('products', () => {
         title: t('products.stockUpdateErrorTitle') || 'Error',
         message: t('products.stockUpdateError') || error.value || 'Failed to update stock',
       });
-      console.error('Error updating stock:', err);
       throw err;
     } finally {
       isLoading.value = false;
@@ -413,7 +402,7 @@ export const useProductStore = defineStore('products', () => {
       error.value = null;
       // Fetch from API Gateway using category filter
       const response = await fetch(`${PRODUCTS_API_URL}/category/${categoryId}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch products by category: ${response.statusText}`);
       }
@@ -424,7 +413,6 @@ export const useProductStore = defineStore('products', () => {
       return categoryProducts;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch products by category';
-      console.error('Error fetching products by category:', err);
       return [];
     } finally {
       isLoading.value = false;
@@ -433,19 +421,17 @@ export const useProductStore = defineStore('products', () => {
 
   const getCategories = async (): Promise<string[]> => {
     try {
-
-
       // For now, extract unique categories from products
       // TODO: Replace with dedicated categories endpoint when available
       const response = await fetch(`${PRODUCTS_API_URL}?limit=100`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.statusText}`);
       }
 
       const data = await response.json();
       const allProducts = data.items; // No transformation needed
-      
+
       const categories: string[] = Array.from(
         new Set(
           allProducts
@@ -453,11 +439,10 @@ export const useProductStore = defineStore('products', () => {
             .filter((c: string | null | undefined): c is string => !!c)
         )
       );
-      
+
       return categories;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch categories';
-      console.error('Error fetching categories:', err);
       return [];
     }
   };
@@ -465,7 +450,12 @@ export const useProductStore = defineStore('products', () => {
   /**
    * Save current navigation state before navigating to product detail
    */
-  const saveNavigationState = (filters: ProductFilter, viewMode: 'grid' | 'list', priceRange: string, showAdvancedFilters: boolean) => {
+  const saveNavigationState = (
+    filters: ProductFilter,
+    viewMode: 'grid' | 'list',
+    priceRange: string,
+    showAdvancedFilters: boolean
+  ) => {
     savedScrollPosition.value = window.scrollY;
     savedFilters.value = { ...filters };
     savedViewMode.value = viewMode;

@@ -30,7 +30,7 @@ export function validateImageUploadRequest(data: any): data is ImageUploadReques
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml'
+    'image/svg+xml',
   ];
 
   if (!allowedContentTypes.includes(contentType)) {
@@ -59,19 +59,22 @@ export function generateUniqueFilename(originalFilename: string): string {
   const sanitized = sanitizeFilename(originalFilename);
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(7);
-  
+
   const extension = sanitized.split('.').pop() || '';
   const nameWithoutExt = sanitized.replace(`.${extension}`, '');
-  
+
   return `${nameWithoutExt}-${timestamp}-${randomSuffix}.${extension}`;
 }
 
 /**
  * Validate file size (if provided in headers)
  */
-export function validateFileSize(contentLength: string | null, maxSizeBytes: number = 10 * 1024 * 1024): boolean {
+export function validateFileSize(
+  contentLength: string | null,
+  maxSizeBytes: number = 10 * 1024 * 1024
+): boolean {
   if (!contentLength) return true; // Cannot validate, assume ok
-  
+
   const size = parseInt(contentLength, 10);
   return !isNaN(size) && size <= maxSizeBytes;
 }

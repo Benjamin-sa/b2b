@@ -1,18 +1,20 @@
 /**
  * Auth Service
- * 
+ *
  * Core authentication business logic
  */
 
 import { nanoid } from 'nanoid';
-import type {
-  Env,
-  User,
-  UserClaims,
-  AuthResponse,
-  RegisterRequest,
-  LoginRequest,
-} from '../types';
+import { createDb } from '@b2b/db';
+import {
+  createUser as insertUser,
+  deleteUserById,
+  getUserByEmail,
+  getUserById,
+  updateUserStripeCustomerId,
+} from '@b2b/db/operations';
+import type { NewUser } from '@b2b/db/types';
+import type { Env, User, UserClaims, AuthResponse, RegisterRequest, LoginRequest } from '../types';
 import { hashPassword, verifyPassword, validatePassword, validateEmail } from '../utils/password';
 import { createAccessToken, createRefreshToken } from '../utils/jwt';
 import { generateSessionId, storeSession } from '../utils/session';
@@ -28,26 +30,22 @@ export async function registerUser(
   userAgent?: string,
   ipAddress?: string
 ): Promise<AuthResponse> {
+  const db = createDb(env.DB);
+
   // Validate email
   if (!validateEmail(data.email)) {
     throw createAuthError('INVALID_EMAIL');
   }
 
   // Validate password
-  const passwordValidation = validatePassword(
-    data.password,
-    parseInt(env.PASSWORD_MIN_LENGTH)
-  );
+  const passwordValidation = validatePassword(data.password, parseInt(env.PASSWORD_MIN_LENGTH));
   if (!passwordValidation.valid) {
     throw createAuthError('WEAK_PASSWORD', passwordValidation.errors.join(', '));
   }
 
   // Check if email already exists
-  const existingUser = await env.DB.prepare(
-    'SELECT id FROM users WHERE email = ?'
-  )
-    .bind(data.email.toLowerCase())
-    .first<{ id: string }>();
+  const normalizedEmail = data.email.toLowerCase();
+  const existingUser = await getUserByEmail(db, normalizedEmail);
 
   if (existingUser) {
     throw createAuthError('EMAIL_ALREADY_IN_USE');
@@ -61,41 +59,33 @@ export async function registerUser(
 
   // Insert user into database
   const now = new Date().toISOString();
-  
-  await env.DB.prepare(`
-    INSERT INTO users (
-      id, email, password_hash, role, company_name, first_name, last_name,
-      phone, btw_number, address_street, address_house_number, address_postal_code,
-      address_city, address_country, stripe_customer_id, is_active, is_verified, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    userId,
-    data.email.toLowerCase(),
-    passwordHash,
-    'customer', // Default role
-    data.company_name,
-    data.first_name,
-    data.last_name,
-    data.phone || null,
-    data.btw_number || null,
-    data.address?.street || null,
-    data.address?.house_number || null,
-    data.address?.postal_code || null,
-    data.address?.city || null,
-    data.address?.country || null,
-    null, // stripe_customer_id (will be set after creation)
-    1, // is_active
-    0, // is_verified (requires admin approval)
-    now,
-    now
-  ).run();
+
+  const newUser: NewUser = {
+    id: userId,
+    email: normalizedEmail,
+    password_hash: passwordHash,
+    role: 'customer',
+    company_name: data.company_name,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    phone: data.phone || null,
+    btw_number: data.btw_number || null,
+    address_street: data.address?.street || null,
+    address_house_number: data.address?.house_number || null,
+    address_postal_code: data.address?.postal_code || null,
+    address_city: data.address?.city || null,
+    address_country: data.address?.country || null,
+    stripe_customer_id: null,
+    is_active: 1,
+    is_verified: 0,
+    created_at: now,
+    updated_at: now,
+  };
+
+  await insertUser(db, newUser);
 
   // Fetch the created user
-  const user = await env.DB.prepare(
-    'SELECT * FROM users WHERE id = ?'
-  )
-    .bind(userId)
-    .first<User>();
+  const user = (await getUserById(db, userId)) as User | undefined;
 
   if (!user) {
     throw createAuthError('DATABASE_ERROR', 'Failed to create user');
@@ -104,30 +94,24 @@ export async function registerUser(
   // Create Stripe customer - BLOCKING (if Stripe is configured)
   // If Stripe fails, we roll back the user creation
   let stripeCustomerId: string | null = null;
-  
+
   try {
     stripeCustomerId = await createStripeCustomer(env, user, ipAddress);
-    
+
     // Update user with Stripe customer ID if created successfully
     if (stripeCustomerId) {
-      await env.DB.prepare(
-        'UPDATE users SET stripe_customer_id = ?, updated_at = ? WHERE id = ?'
-      )
-        .bind(stripeCustomerId, new Date().toISOString(), userId)
-        .run();
-      
+      await updateUserStripeCustomerId(db, userId, stripeCustomerId);
+
       // Update the user object with Stripe ID for the session
       user.stripe_customer_id = stripeCustomerId;
     }
   } catch (error) {
     // Stripe creation failed - rollback user creation
     console.error('❌ Stripe customer creation failed, rolling back user creation:', error);
-    
+
     // Delete the user we just created
-    await env.DB.prepare('DELETE FROM users WHERE id = ?')
-      .bind(userId)
-      .run();
-    
+    await deleteUserById(db, userId);
+
     // Re-throw the error to fail the registration
     throw createAuthError(
       'INTERNAL_ERROR',
@@ -148,12 +132,10 @@ export async function loginUser(
   userAgent?: string,
   ipAddress?: string
 ): Promise<AuthResponse> {
+  const db = createDb(env.DB);
+
   // Fetch user by email
-  const user = await env.DB.prepare(
-    'SELECT * FROM users WHERE email = ?'
-  )
-    .bind(data.email.toLowerCase())
-    .first<User>();
+  const user = (await getUserByEmail(db, data.email.toLowerCase())) as User | undefined;
 
   if (!user) {
     throw createAuthError('USER_NOT_FOUND');
@@ -230,15 +212,20 @@ async function createUserSession(
   );
 
   // Build address object if any address fields exist
-  const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
-    ? {
-        street: user.address_street || '',
-        houseNumber: user.address_house_number || '',
-        postalCode: user.address_postal_code || '',
-        city: user.address_city || '',
-        country: user.address_country || '',
-      }
-    : undefined;
+  const address =
+    user.address_street ||
+    user.address_house_number ||
+    user.address_postal_code ||
+    user.address_city ||
+    user.address_country
+      ? {
+          street: user.address_street || '',
+          houseNumber: user.address_house_number || '',
+          postalCode: user.address_postal_code || '',
+          city: user.address_city || '',
+          country: user.address_country || '',
+        }
+      : undefined;
 
   return {
     accessToken,

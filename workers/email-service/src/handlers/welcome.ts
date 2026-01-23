@@ -109,7 +109,7 @@ export async function sendWelcomeEmail(
       </body>
       </html>
     `;
-    
+
     const textContent = `
 4Tparts B2B - Welcome!
 
@@ -133,7 +133,7 @@ The 4Tparts Team
 This email was sent to ${to} because you created an account on 4Tparts B2B.
 If you didn't create this account, please contact us immediately.
     `;
-    
+
     // Send email via SendGrid
     const sendGridClient = createSendGridClient(env);
     const result = await sendGridClient.sendEmail(
@@ -144,17 +144,16 @@ If you didn't create this account, please contact us immediately.
       {
         clickTracking: true, // Can track clicks for marketing purposes
         emailType: 'welcome',
-        categories: ['b2b-transactional', 'welcome']
+        categories: ['b2b-transactional', 'welcome'],
       }
     );
-    
+
     return result;
-    
   } catch (error) {
     console.error('Welcome email error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
     };
   }
 }

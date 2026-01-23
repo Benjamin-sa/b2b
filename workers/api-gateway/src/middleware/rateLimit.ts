@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Middleware
- * 
+ *
  * Uses hono-rate-limiter for robust rate limiting based on IP address
  */
 
@@ -10,13 +10,13 @@ import type { Env } from '../types';
 
 /**
  * Rate Limiting Middleware Factory
- * 
+ *
  * Creates rate limiter middleware with the following config:
  * - 100 requests per minute per IP address
  * - Automatic cleanup of expired entries
  * - Returns 429 status with rate limit headers when limit exceeded
- * 
- * Note: We create the limiter lazily (on first request) to avoid 
+ *
+ * Note: We create the limiter lazily (on first request) to avoid
  * global scope issues with Cloudflare Workers
  */
 let limiter: MiddlewareHandler | null = null;
@@ -30,9 +30,7 @@ export async function rateLimitMiddleware(c: Context<{ Bindings: Env }>, next: N
       standardHeaders: 'draft-6', // Return rate limit info in headers (RateLimit-*)
       keyGenerator: (c: Context) => {
         // Use Cloudflare's connecting IP header for accurate client identification
-        return c.req.header('CF-Connecting-IP') || 
-               c.req.header('X-Forwarded-For') || 
-               'unknown';
+        return c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
       },
       handler: (c: Context) => {
         return c.json(
@@ -47,6 +45,6 @@ export async function rateLimitMiddleware(c: Context<{ Bindings: Env }>, next: N
       },
     }) as MiddlewareHandler;
   }
-  
+
   return limiter(c as any, next);
 }

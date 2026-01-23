@@ -10,24 +10,21 @@ export async function sendTelegramMessage(
   message: TelegramMessage
 ): Promise<TelegramResponse> {
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message.message,
-          parse_mode: message.parseMode || 'HTML',
-          disable_web_page_preview: message.disableWebPagePreview ?? true,
-        }),
-      }
-    );
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message.message,
+        parse_mode: message.parseMode || 'HTML',
+        disable_web_page_preview: message.disableWebPagePreview ?? true,
+      }),
+    });
 
     if (!response.ok) {
-      const errorData = await response.json() as TelegramResponse;
+      const errorData = (await response.json()) as TelegramResponse;
       throw new TelegramServiceError(
         'telegram/api-error',
         `Telegram API error: ${errorData.description || response.statusText}`,
@@ -35,14 +32,14 @@ export async function sendTelegramMessage(
       );
     }
 
-    const result = await response.json() as TelegramResponse;
+    const result = (await response.json()) as TelegramResponse;
     console.log('✅ Telegram message sent successfully:', result.result?.message_id);
     return result;
   } catch (error) {
     if (error instanceof TelegramServiceError) {
       throw error;
     }
-    
+
     console.error('❌ Failed to send Telegram message:', error);
     throw new TelegramServiceError(
       'telegram/send-failed',

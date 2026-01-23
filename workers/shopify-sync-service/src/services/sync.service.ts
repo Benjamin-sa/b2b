@@ -1,35 +1,30 @@
 /**
  * Inventory Sync Service
- * 
- * Core business logic for syncing inventory between B2B and Shopify
+ *
+ * SIMPLIFIED: Shopify is the single source of truth.
+ * All stock changes from Shopify are directly applied.
+ * B2B checkout decrements stock and syncs back to Shopify.
  */
 
-import type { Env, ProductInventory } from '../types';
+import type { Env } from '../types';
 import { updateShopifyInventory } from '../utils/shopify';
 import {
   getInventoryByProductId,
   getInventoryByShopifyVariantId,
   updateLastSyncTime,
-  updateB2CStock,
-  updateUnifiedStock,
-  logInventorySync,
+  updateStockFromShopify,
+  logInventoryChange,
 } from '../utils/database';
 
-
 /**
- * Sync B2C stock to Shopify after B2B order
- * Call this after a B2B order to inform Shopify of available B2C stock
- * 
- * Behavior based on stock_mode:
- * - 'split': Syncs b2c_stock to Shopify (separate pool for B2C channel)
- * - 'unified': Syncs total_stock to Shopify (shared pool with B2B)
+ * Sync stock to Shopify after B2B order
+ * Pushes the current stock value to Shopify
  */
 export async function syncToShopify(
   env: Env,
   productId: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Get current inventory
     const inventory = await getInventoryByProductId(env.DB, productId);
 
     if (!inventory) {
@@ -40,60 +35,42 @@ export async function syncToShopify(
       return { success: false, error: 'Product not configured for Shopify sync' };
     }
 
-    // Determine which stock value to sync based on stock_mode
-    const stockMode = inventory.stock_mode || 'split';
-    const stockToSync = stockMode === 'unified' 
-      ? inventory.total_stock  // Unified: sync total_stock (shared pool)
-      : inventory.b2c_stock;   // Split: sync b2c_stock (dedicated B2C pool)
+    // Simple: push current stock to Shopify
+    const stockToSync = inventory.stock;
+    console.log(`🔄 Syncing product ${productId} to Shopify: ${stockToSync} units`);
 
-    console.log(`🔄 Syncing product ${productId} to Shopify (mode=${stockMode}): ${stockToSync} units`);
-
-    // Update Shopify inventory with the appropriate stock level
-    await updateShopifyInventory(
-      env,
-      inventory.shopify_inventory_item_id,
-      stockToSync
-    );
-
-    // Update last sync time
+    await updateShopifyInventory(env, inventory.shopify_inventory_item_id, stockToSync);
     await updateLastSyncTime(env.DB, productId, null);
 
     // Log success
-    await logInventorySync(
+    await logInventoryChange(
       env.DB,
       productId,
       'sync_to_shopify',
       'b2b_checkout',
-      0, // No stock change, just sync
-      0,
-      0,
-      inventory,
+      0, // No change, just sync
+      inventory.stock,
       true,
       null
     );
 
-    console.log(`✅ Successfully synced product ${productId} to Shopify (${stockToSync} units)`);
-
+    console.log(`✅ Synced product ${productId} to Shopify (${stockToSync} units)`);
     return { success: true, error: null };
   } catch (error: any) {
     const errorMessage = error.message || String(error);
     console.error(`❌ Failed to sync product ${productId} to Shopify:`, errorMessage);
 
-    // Update sync error
     await updateLastSyncTime(env.DB, productId, errorMessage);
 
-    // Log failure
     const inventory = await getInventoryByProductId(env.DB, productId);
     if (inventory) {
-      await logInventorySync(
+      await logInventoryChange(
         env.DB,
         productId,
         'sync_to_shopify',
         'b2b_checkout',
         0,
-        0,
-        0,
-        inventory,
+        inventory.stock,
         false,
         errorMessage
       );
@@ -105,11 +82,7 @@ export async function syncToShopify(
 
 /**
  * Process Shopify inventory update webhook
- * Called when inventory changes in Shopify (e.g., B2C order placed)
- * 
- * Behavior based on stock_mode:
- * - 'split': Updates only b2c_stock (B2B stock unchanged)
- * - 'unified': Updates total_stock and b2b_stock (shared pool)
+ * Shopify is the source of truth - update our stock to match
  */
 export async function handleShopifyInventoryUpdate(
   env: Env,
@@ -117,9 +90,8 @@ export async function handleShopifyInventoryUpdate(
   newAvailable: number,
   webhookId: string
 ): Promise<void> {
-  console.log(`📥 Processing Shopify inventory update: variant=${variantId}, available=${newAvailable}`);
+  console.log(`📥 Shopify webhook: variant=${variantId}, available=${newAvailable}`);
 
-  // Find product by Shopify variant ID
   const inventory = await getInventoryByShopifyVariantId(env.DB, variantId);
 
   if (!inventory) {
@@ -132,76 +104,27 @@ export async function handleShopifyInventoryUpdate(
     return;
   }
 
-  const stockMode = inventory.stock_mode || 'split';
-  
-  if (stockMode === 'unified') {
-    // UNIFIED MODE: Update total_stock and b2b_stock (shared pool)
-    const oldTotalStock = inventory.total_stock;
-    const totalChange = newAvailable - oldTotalStock;
-    
-    console.log(`🔗 Unified mode stock update for ${inventory.product_id}:`);
-    console.log(`   Total: ${oldTotalStock} → ${newAvailable} (${totalChange > 0 ? '+' : ''}${totalChange})`);
-    console.log(`   B2B: ${inventory.b2b_stock} → ${newAvailable} (synced with total)`);
+  const previousStock = inventory.stock;
+  const stockChange = newAvailable - previousStock;
 
-    // Update both total_stock and b2b_stock (shared pool)
-    await updateUnifiedStock(env.DB, inventory.product_id, newAvailable);
+  console.log(`📊 Stock update for ${inventory.product_id}: ${previousStock} → ${newAvailable}`);
 
-    // Refresh inventory to get updated values
-    const updatedInventory = await getInventoryByProductId(env.DB, inventory.product_id);
+  // Simple: Shopify is master, just update our stock
+  await updateStockFromShopify(env.DB, inventory.product_id, newAvailable);
 
-    if (updatedInventory) {
-      // Log the change
-      await logInventorySync(
-        env.DB,
-        inventory.product_id,
-        'sync_from_shopify',
-        'shopify_webhook',
-        totalChange,
-        totalChange, // B2B also changes in unified mode
-        0, // b2c_stock stays 0 in unified mode
-        updatedInventory,
-        true,
-        null,
-        webhookId,
-        'webhook'
-      );
-    }
+  // Log the change
+  await logInventoryChange(
+    env.DB,
+    inventory.product_id,
+    'sync_from_shopify',
+    'shopify_webhook',
+    stockChange,
+    newAvailable,
+    true,
+    null,
+    webhookId,
+    'webhook'
+  );
 
-    console.log(`✅ Updated unified stock for product ${inventory.product_id}`);
-  } else {
-    // SPLIT MODE: Update only b2c_stock (original behavior)
-    const oldB2CStock = inventory.b2c_stock;
-    const b2cChange = newAvailable - oldB2CStock;
-    const totalChange = b2cChange;
-
-    console.log(`📊 Split mode stock update for ${inventory.product_id}:`);
-    console.log(`   B2C: ${oldB2CStock} → ${newAvailable} (${b2cChange > 0 ? '+' : ''}${b2cChange})`);
-    console.log(`   B2B: ${inventory.b2b_stock} (unchanged)`);
-
-    // Update B2C stock in database (original behavior)
-    await updateB2CStock(env.DB, inventory.product_id, newAvailable);
-
-    // Refresh inventory to get updated values
-    const updatedInventory = await getInventoryByProductId(env.DB, inventory.product_id);
-
-    if (updatedInventory) {
-      // Log the change
-      await logInventorySync(
-        env.DB,
-        inventory.product_id,
-        'sync_from_shopify',
-        'shopify_webhook',
-        totalChange,
-        0,
-        b2cChange,
-        updatedInventory,
-        true,
-        null,
-        webhookId,
-        'webhook'
-      );
-    }
-
-    console.log(`✅ Updated B2C stock for product ${inventory.product_id}`);
-  }
+  console.log(`✅ Updated stock for product ${inventory.product_id}`);
 }

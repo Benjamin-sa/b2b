@@ -24,66 +24,70 @@ export class SendGridClient {
         personalizations: [
           {
             to: [{ email: to }],
-            subject: subject
-          }
+            subject: subject,
+          },
         ],
         from: {
           email: 'n@4tparts.com',
-          name: '4Tparts B2B'
+          name: '4Tparts B2B',
         },
         // Reply-to for better deliverability and customer support
         reply_to: {
           email: 'support@4tparts.com',
-          name: '4Tparts Support Team'
+          name: '4Tparts Support Team',
         },
         content: [
-          ...(textContent ? [{
-            type: 'text/plain',
-            value: textContent
-          }] : []),
+          ...(textContent
+            ? [
+                {
+                  type: 'text/plain',
+                  value: textContent,
+                },
+              ]
+            : []),
           {
             type: 'text/html',
-            value: htmlContent
-          }
+            value: htmlContent,
+          },
         ],
         // Tracking settings for better analytics
         tracking_settings: {
           click_tracking: {
             enable: options?.clickTracking ?? true,
-            enable_text: false
+            enable_text: false,
           },
           open_tracking: {
             enable: true,
-            substitution_tag: '%open-track%'
+            substitution_tag: '%open-track%',
           },
           subscription_tracking: {
-            enable: false // B2B emails typically don't need this
-          }
+            enable: false, // B2B emails typically don't need this
+          },
         },
         // Mail settings for better deliverability
         mail_settings: {
           sandbox_mode: {
-            enable: false
-          }
+            enable: false,
+          },
         },
         // Categories for analytics and organization
         categories: options?.categories || ['b2b-transactional'],
         // Custom args for internal tracking
         custom_args: {
           email_type: options?.emailType || 'transactional',
-          platform: '4tparts-b2b'
-        }
+          platform: '4tparts-b2b',
+        },
       };
 
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           // User-Agent for better identification
-          'User-Agent': '4Tparts-EmailService/1.0'
+          'User-Agent': '4Tparts-EmailService/1.0',
         },
-        body: JSON.stringify(emailData)
+        body: JSON.stringify(emailData),
       });
 
       if (!response.ok) {
@@ -96,13 +100,13 @@ export class SendGridClient {
 
       return {
         success: true,
-        messageId: messageId || 'unknown'
+        messageId: messageId || 'unknown',
       };
     } catch (error) {
       console.error('SendGrid email error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

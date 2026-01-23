@@ -1,6 +1,6 @@
 /**
  * CORS Middleware
- * 
+ *
  * Handle Cross-Origin Resource Sharing for browser requests
  */
 
@@ -20,14 +20,8 @@ export async function corsMiddleware(c: Context<{ Bindings: Env }>, next: Next) 
   if (isAllowed) {
     c.header('Access-Control-Allow-Origin', origin || '*');
     c.header('Access-Control-Allow-Credentials', 'true');
-    c.header(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-    );
-    c.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With'
-    );
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     c.header('Access-Control-Max-Age', '86400'); // 24 hours
   }
 

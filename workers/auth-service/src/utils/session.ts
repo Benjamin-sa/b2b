@@ -1,6 +1,6 @@
 /**
  * Session Management
- * 
+ *
  * Store and manage user sessions in Cloudflare KV
  */
 
@@ -17,11 +17,7 @@ export function generateSessionId(): string {
 /**
  * Store session in KV
  */
-export async function storeSession(
-  kv: KVNamespace,
-  session: Session,
-  ttl: number
-): Promise<void> {
+export async function storeSession(kv: KVNamespace, session: Session, ttl: number): Promise<void> {
   const key = `session:${session.sessionId}`;
   await kv.put(key, JSON.stringify(session), {
     expirationTtl: ttl,
@@ -31,25 +27,19 @@ export async function storeSession(
 /**
  * Get session from KV
  */
-export async function getSession(
-  kv: KVNamespace,
-  sessionId: string
-): Promise<Session | null> {
+export async function getSession(kv: KVNamespace, sessionId: string): Promise<Session | null> {
   const key = `session:${sessionId}`;
   const data = await kv.get(key);
-  
+
   if (!data) return null;
-  
+
   return JSON.parse(data) as Session;
 }
 
 /**
  * Delete session from KV
  */
-export async function deleteSession(
-  kv: KVNamespace,
-  sessionId: string
-): Promise<void> {
+export async function deleteSession(kv: KVNamespace, sessionId: string): Promise<void> {
   const key = `session:${sessionId}`;
   await kv.delete(key);
 }
@@ -57,13 +47,10 @@ export async function deleteSession(
 /**
  * Delete all sessions for a user
  */
-export async function deleteUserSessions(
-  kv: KVNamespace,
-  userId: string
-): Promise<void> {
+export async function deleteUserSessions(kv: KVNamespace, userId: string): Promise<void> {
   // List all sessions (limited to 1000)
   const list = await kv.list({ prefix: 'session:' });
-  
+
   for (const key of list.keys) {
     const session = await kv.get(key.name);
     if (session) {
@@ -102,10 +89,7 @@ export async function getPasswordResetEmail(
 /**
  * Delete password reset token
  */
-export async function deletePasswordResetToken(
-  kv: KVNamespace,
-  token: string
-): Promise<void> {
+export async function deletePasswordResetToken(kv: KVNamespace, token: string): Promise<void> {
   const key = `reset:${token}`;
   await kv.delete(key);
 }

@@ -1,6 +1,6 @@
 /**
  * Logging Middleware
- * 
+ *
  * Logs requests and responses
  */
 

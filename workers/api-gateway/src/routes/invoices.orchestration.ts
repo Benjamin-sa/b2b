@@ -1,11 +1,11 @@
 /**
  * Invoices Orchestration Route
- * 
+ *
  * Handles invoice creation flow:
  * 1. Validate authentication via AUTH_SERVICE (middleware)
  * 2. Create Stripe invoice via STRIPE_SERVICE
  * 3. Return invoice details to frontend
- * 
+ *
  * This replaces the Firebase Functions createInvoice callable
  */
 
@@ -20,7 +20,7 @@ import {
   storeOrder,
   storeOrderLineItems,
   fetchUserInvoices,
-  type OrderItem
+  type OrderItem,
 } from '../utils/database';
 import { syncProductsToShopify } from '../utils/shopify-sync';
 
@@ -28,7 +28,7 @@ const invoices = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
 /**
  * Create invoice via STRIPE_SERVICE
- * 
+ *
  * Request body matches createInvoice:
  * {
  *   items: Array<{
@@ -69,17 +69,19 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       };
     }>();
 
-    
     // 3. Check stock availability and prepare stock updates
     const now = new Date().toISOString();
     const stockResult = await validateAndPrepareStockUpdates(c.env.DB, body.items, user.userId);
 
     if (!stockResult.success) {
-      return c.json({
-        error: 'insufficient-stock',
-        message: 'Some items do not have enough stock available',
-        details: stockResult.errors
-      }, 400);
+      return c.json(
+        {
+          error: 'insufficient-stock',
+          message: 'Some items do not have enough stock available',
+          details: stockResult.errors,
+        },
+        400
+      );
     }
 
     // Execute stock updates in a single transaction
@@ -87,10 +89,13 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       await executeStockUpdates(c.env.DB, stockResult.updates, stockResult.logs);
     } catch (error: any) {
       console.error('❌ Failed to reduce stock:', error);
-      return c.json({
-        error: 'stock-update-failed',
-        message: 'Failed to update inventory. Please try again.',
-      }, 500);
+      return c.json(
+        {
+          error: 'stock-update-failed',
+          message: 'Failed to update inventory. Please try again.',
+        },
+        500
+      );
     }
 
     // 4. Prepare invoice creation request for STRIPE_SERVICE
@@ -104,14 +109,14 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       body: JSON.stringify({
         customer_id: user.stripeCustomerId,
         user_id: user.userId,
-        items: body.items.map(item => ({
+        items: body.items.map((item) => ({
           stripe_price_id: item.stripePriceId,
           quantity: item.quantity,
           metadata: {
             product_id: item.metadata.productId,
             product_name: item.metadata.productName || '',
             shopify_variant_id: item.metadata.shopifyVariantId || '',
-          }
+          },
         })),
         shipping_cost_cents: body.shippingCost || 0,
         notes: body.metadata?.notes || '',
@@ -124,10 +129,10 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     const invoiceResponse = await c.env.STRIPE_SERVICE.fetch(invoiceRequest);
 
     if (!invoiceResponse.ok) {
-      const errorData = await invoiceResponse.json() as { 
+      const errorData = (await invoiceResponse.json()) as {
         success: false;
-        error?: { 
-          code: string; 
+        error?: {
+          code: string;
           message: string;
         };
       };
@@ -135,14 +140,17 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
 
       // IMPORTANT: Rollback stock changes if Stripe invoice creation fails
       await rollbackStockChanges(c.env.DB, body.items);
-      
-      return c.json({ 
-        error: 'stripe-error',
-        message: errorData.error?.message || 'Failed to create invoice in Stripe' 
-      }, invoiceResponse.status as any);
+
+      return c.json(
+        {
+          error: 'stripe-error',
+          message: errorData.error?.message || 'Failed to create invoice in Stripe',
+        },
+        invoiceResponse.status as any
+      );
     }
 
-    const responseData = await invoiceResponse.json() as {
+    const responseData = (await invoiceResponse.json()) as {
       success: boolean;
       data: {
         invoice_id: string;
@@ -180,28 +188,32 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
       // Store order line items
       const lineItems = responseData.data.product_line_items || [];
       await storeOrderLineItems(c.env.DB, orderInternalId, lineItems);
-
     } catch (dbError) {
       // Log error but don't fail the request - invoice is created in Stripe
       console.error('⚠️  Failed to store order/line items in D1 (non-critical):', dbError);
     }
 
     // 7. Sync inventory to Shopify (blocking to prevent overselling)
-    const productIds = body.items.map(item => item.metadata.productId);
-    console.log(`🔄 [Gateway] Syncing ${productIds.length} products to Shopify after invoice creation`);
-    
+    const productIds = body.items.map((item) => item.metadata.productId);
+    console.log(
+      `🔄 [Gateway] Syncing ${productIds.length} products to Shopify after invoice creation`
+    );
+
     const syncResults = await syncProductsToShopify(c.env, productIds);
-    const failedSyncs = syncResults.filter(r => !r.success);
-    
+    const failedSyncs = syncResults.filter((r) => !r.success);
+
     if (failedSyncs.length > 0) {
-      console.warn(`⚠️  [Gateway] ${failedSyncs.length} products failed to sync to Shopify:`, failedSyncs.map(r => r.productId));
+      console.warn(
+        `⚠️  [Gateway] ${failedSyncs.length} products failed to sync to Shopify:`,
+        failedSyncs.map((r) => r.productId)
+      );
     } else {
       console.log(`✅ [Gateway] All ${productIds.length} products synced to Shopify`);
     }
 
     // 8. Send Telegram notification (NON-BLOCKING)
     console.log('📱 [Gateway] Sending Telegram notification for invoice creation');
-    
+
     try {
       const telegramHeaders = new Headers();
       telegramHeaders.set('Content-Type', 'application/json');
@@ -220,17 +232,17 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
             data: (responseData.data.product_line_items || []).map((item: any) => ({
               amount: item.amount || 0,
               quantity: item.quantity || 1,
-              description: item.description || 'Product'
-            }))
+              description: item.description || 'Product',
+            })),
           },
           metadata: {
             orderMetadata: JSON.stringify({
               userId: user.userId,
               invoiceUrl: responseData.data.hosted_invoice_url,
-              status: responseData.data.status
-            })
-          }
-        })
+              status: responseData.data.status,
+            }),
+          },
+        }),
       });
 
       await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
@@ -241,38 +253,48 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     }
 
     // 9. Return invoice details matching Firebase Functions format (camelCase for frontend)
-    console.log(`✅ Invoice created successfully via gateway: ${responseData.data.invoice_id} for user ${user.userId}`);
-    
-    return c.json({
-      invoiceId: responseData.data.invoice_id,
-      invoiceUrl: responseData.data.hosted_invoice_url,
-      amount: responseData.data.amount_due,
-      currency: responseData.data.currency,
-      status: responseData.data.status,
-    }, 200);
+    console.log(
+      `✅ Invoice created successfully via gateway: ${responseData.data.invoice_id} for user ${user.userId}`
+    );
 
+    return c.json(
+      {
+        invoiceId: responseData.data.invoice_id,
+        invoiceUrl: responseData.data.hosted_invoice_url,
+        amount: responseData.data.amount_due,
+        currency: responseData.data.currency,
+        status: responseData.data.status,
+      },
+      200
+    );
   } catch (error) {
     console.error('Error in invoice orchestration:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('auth') || errorMessage.includes('token')) {
-      return c.json({ 
-        error: 'unauthenticated',
-        message: 'User must be authenticated' 
-      }, 401);
+      return c.json(
+        {
+          error: 'unauthenticated',
+          message: 'User must be authenticated',
+        },
+        401
+      );
     }
 
-    return c.json({ 
-      error: 'internal',
-      message: 'Failed to create invoice' 
-    }, 500);
+    return c.json(
+      {
+        error: 'internal',
+        message: 'Failed to create invoice',
+      },
+      500
+    );
   }
 });
 
 /**
  * Get user's invoices
- * 
+ *
  * Fetches all invoices for the authenticated user from D1 database.
  * Invoices are automatically synced via Stripe webhooks.
  */
@@ -284,28 +306,36 @@ invoices.get('/', requireStripeCustomerMiddleware, async (c) => {
     // Fetch invoices from database using utility function
     const invoices = await fetchUserInvoices(c.env.DB, user.userId);
 
-    return c.json({
-      invoices,
-      total: invoices.length,
-      source: 'cloudflare-d1',
-    }, 200);
-
+    return c.json(
+      {
+        invoices,
+        total: invoices.length,
+        source: 'cloudflare-d1',
+      },
+      200
+    );
   } catch (error) {
     console.error('Error fetching invoices:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     if (errorMessage.includes('auth') || errorMessage.includes('token')) {
-      return c.json({ 
-        error: 'unauthenticated',
-        message: 'User must be authenticated' 
-      }, 401);
+      return c.json(
+        {
+          error: 'unauthenticated',
+          message: 'User must be authenticated',
+        },
+        401
+      );
     }
 
-    return c.json({ 
-      error: 'internal',
-      message: 'Failed to fetch invoices' 
-    }, 500);
+    return c.json(
+      {
+        error: 'internal',
+        message: 'Failed to fetch invoices',
+      },
+      500
+    );
   }
 });
 

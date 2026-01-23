@@ -1,6 +1,6 @@
 /**
  * Error Utilities
- * 
+ *
  * Standardized error handling for the inventory service
  */
 
@@ -26,26 +26,18 @@ export const errors = {
     createError('NOT_FOUND', `${resource} with id '${id}' not found`, 404),
 
   alreadyExists: (resource: string, field: string, value: string) =>
-    createError(
-      'ALREADY_EXISTS',
-      `${resource} with ${field} '${value}' already exists`,
-      409
-    ),
+    createError('ALREADY_EXISTS', `${resource} with ${field} '${value}' already exists`, 409),
 
   validationError: (message: string, details?: any) =>
     createError('VALIDATION_ERROR', message, 400, details),
 
-  unauthorized: (message: string = 'Unauthorized') =>
-    createError('UNAUTHORIZED', message, 401),
+  unauthorized: (message: string = 'Unauthorized') => createError('UNAUTHORIZED', message, 401),
 
-  forbidden: (message: string = 'Forbidden') =>
-    createError('FORBIDDEN', message, 403),
+  forbidden: (message: string = 'Forbidden') => createError('FORBIDDEN', message, 403),
 
-  conflict: (message: string, details?: any) =>
-    createError('CONFLICT', message, 409, details),
+  conflict: (message: string, details?: any) => createError('CONFLICT', message, 409, details),
 
-  badRequest: (message: string, details?: any) =>
-    createError('BAD_REQUEST', message, 400, details),
+  badRequest: (message: string, details?: any) => createError('BAD_REQUEST', message, 400, details),
 
   internalError: (message: string = 'Internal server error', details?: any) =>
     createError('INTERNAL_ERROR', message, 500, details),

@@ -1,6 +1,6 @@
 /**
  * Stripe Service Client for Auth Worker
- * 
+ *
  * Wrapper around the stripe-service worker via service binding
  * Manages Stripe customer lifecycle in sync with user auth operations
  */
@@ -9,7 +9,7 @@ import type { Env, User } from '../types';
 
 /**
  * Create a Stripe customer when user registers
- * 
+ *
  * Calls stripe-service worker via service binding
  */
 export async function createStripeCustomer(
@@ -43,7 +43,7 @@ export async function createStripeCustomer(
       })
     );
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     if (!result.success) {
       throw new Error(result.error?.message || 'Failed to create Stripe customer');
@@ -99,7 +99,7 @@ export async function updateStripeCustomer(
       })
     );
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     if (!result.success) {
       throw new Error(result.error?.message || 'Failed to update Stripe customer');
@@ -114,7 +114,7 @@ export async function updateStripeCustomer(
 
 /**
  * Archive/soft-delete Stripe customer when user is deleted
- * 
+ *
  * We don't actually delete the customer to preserve transaction history
  */
 export async function archiveStripeCustomer(
@@ -142,7 +142,7 @@ export async function archiveStripeCustomer(
       })
     );
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     if (!result.success) {
       throw new Error(result.error?.message || 'Failed to archive Stripe customer');
@@ -190,7 +190,7 @@ export async function getOrCreateStripeCustomer(
       })
     );
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     if (!result.success) {
       throw new Error(result.error?.message || 'Failed to get or create Stripe customer');

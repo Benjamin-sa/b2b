@@ -21,6 +21,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@b2b/db": "workspace:*",
+    "drizzle-orm": "^0.44.3",
     "hono": "^4.11.4",
     "nanoid": "^5.0.0"
   },

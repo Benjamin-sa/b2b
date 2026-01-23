@@ -7,13 +7,9 @@ import type { CorsConfig } from '../types';
 
 // Configuration for allowed origins
 const corsConfig: CorsConfig = {
-  allowedOrigins: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://4tparts.com',
-  ],
+  allowedOrigins: ['http://localhost:5173', 'http://localhost:3000', 'https://4tparts.com'],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 /**
@@ -24,7 +20,7 @@ export function getCorsHeaders(request: Request): HeadersInit {
   const headers: HeadersInit = {
     'Access-Control-Allow-Methods': corsConfig.allowedMethods.join(', '),
     'Access-Control-Allow-Headers': corsConfig.allowedHeaders.join(', '),
-    'Access-Control-Max-Age': '86400' // 24 hours
+    'Access-Control-Max-Age': '86400', // 24 hours
   };
 
   // Only set Access-Control-Allow-Origin if origin is in allowed list
@@ -41,7 +37,7 @@ export function getCorsHeaders(request: Request): HeadersInit {
 export function handleCors(request: Request): Response {
   return new Response(null, {
     status: 204,
-    headers: getCorsHeaders(request)
+    headers: getCorsHeaders(request),
   });
 }
 

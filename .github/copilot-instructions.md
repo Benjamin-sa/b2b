@@ -22,6 +22,7 @@ API Gateway (Orchestrator)
 ```
 
 **Service Boundaries**:
+
 - **API Gateway** (`/workers/api-gateway`): Orchestrates multi-service workflows using **service bindings** (NOT HTTP proxying)
 - **Auth Service** (`/workers/auth-service`): JWT authentication, D1 users table, KV sessions
 - **Inventory Service** (`/workers/inventory-service`): Product/category CRUD, D1 database
@@ -54,9 +55,9 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 // GLOBAL MIDDLEWARE (Always in this order)
 // ============================================================================
-app.use('*', loggingMiddleware);  // Log all requests
-app.use('*', corsMiddleware);     // Handle CORS
-app.use('*', authMiddleware);     // Validate JWT (if protected routes)
+app.use('*', loggingMiddleware); // Log all requests
+app.use('*', corsMiddleware); // Handle CORS
+app.use('*', authMiddleware); // Validate JWT (if protected routes)
 
 // ============================================================================
 // HEALTH CHECK (Always first route)
@@ -78,7 +79,7 @@ app.get('/health', (c) => {
 // ============================================================================
 // ROUTES (Use Hono router)
 // ============================================================================
-app.route('/auth', authRoutes);   // Sub-routers for organization
+app.route('/auth', authRoutes); // Sub-routers for organization
 
 // ============================================================================
 // ERROR HANDLING (Always last)
@@ -103,19 +104,20 @@ export default app;
 // ❌ WRONG: HTTP fetch between workers
 const response = await fetch('https://auth-service.workers.dev/auth/validate', {
   method: 'POST',
-  body: JSON.stringify({ token })
+  body: JSON.stringify({ token }),
 });
 
 // ✅ CORRECT: Service binding (direct worker-to-worker)
 const request = new Request('https://dummy.url/auth/validate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token })
+  body: JSON.stringify({ token }),
 });
 const response = await c.env.AUTH_SERVICE.fetch(request);
 ```
 
 **wrangler.toml configuration:**
+
 ```toml
 [[services]]
 binding = "AUTH_SERVICE"
@@ -128,21 +130,21 @@ service = "b2b-auth-service"
 
 ```typescript
 // ✅ CORRECT: Parameterized query
-const result = await c.env.DB.prepare(
-  'SELECT * FROM users WHERE email = ?'
-).bind(email).first();
+const result = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
 
 // ❌ WRONG: String concatenation
-const result = await c.env.DB.prepare(
-  `SELECT * FROM users WHERE email = '${email}'`
-).first();
+const result = await c.env.DB.prepare(`SELECT * FROM users WHERE email = '${email}'`).first();
 ```
 
 **Transaction pattern for multi-table operations:**
+
 ```typescript
 await c.env.DB.batch([
   c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?)').bind(userId, email),
-  c.env.DB.prepare('INSERT INTO user_profile (user_id, company) VALUES (?, ?)').bind(userId, company)
+  c.env.DB.prepare('INSERT INTO user_profile (user_id, company) VALUES (?, ?)').bind(
+    userId,
+    company
+  ),
 ]);
 ```
 
@@ -157,16 +159,16 @@ import { verifyAccessToken } from '../utils/jwt';
 
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header('Authorization');
-  
+
   if (!authHeader?.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized', code: 'auth/missing-token' }, 401);
   }
-  
+
   const token = authHeader.substring(7);
-  
+
   try {
     const user = await verifyAccessToken(token, c.env.JWT_SECRET);
-    c.set('user', user);  // Attach user to context
+    c.set('user', user); // Attach user to context
     await next();
   } catch (error) {
     return c.json({ error: 'Unauthorized', code: 'auth/invalid-token' }, 401);
@@ -175,9 +177,10 @@ export async function authMiddleware(c: Context, next: Next) {
 ```
 
 **Access user in route handlers:**
+
 ```typescript
 app.get('/profile', authMiddleware, async (c) => {
-  const user = c.get('user');  // Get user from context
+  const user = c.get('user'); // Get user from context
   return c.json({ user });
 });
 ```
@@ -191,7 +194,7 @@ app.get('/profile', authMiddleware, async (c) => {
 const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
   const headers = {
     ...options.headers,
-    'Authorization': `Bearer ${accessToken.value}`
+    Authorization: `Bearer ${accessToken.value}`,
   };
 
   let response = await fetch(url, { ...options, headers });
@@ -228,6 +231,7 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
 ```
 
 **Custom error class pattern:**
+
 ```typescript
 // workers/<service>/src/types/errors.ts
 export class ServiceError extends Error {
@@ -279,6 +283,7 @@ ALLOWED_ORIGINS = "http://localhost:5173"
 ```
 
 **Secrets (never in wrangler.toml):**
+
 ```bash
 # Set secrets per environment
 wrangler secret put JWT_SECRET
@@ -337,9 +342,10 @@ npm run preview
 ```
 
 **Frontend connects to workers via:**
+
 ```typescript
 // src/stores/auth.ts
-const VITE_API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787'
+const VITE_API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787';
 ```
 
 ---
@@ -466,9 +472,9 @@ async function getUserById(
 
 ```typescript
 // Files: kebab-case
-auth.routes.ts
-user.service.ts
-jwt.ts
+auth.routes.ts;
+user.service.ts;
+jwt.ts;
 
 // Variables/Functions: camelCase
 const accessToken = '...';
@@ -484,9 +490,9 @@ const ACCESS_TOKEN_KEY = 'b2b_access_token';
 const DEFAULT_PAGE_SIZE = 20;
 
 // Environment bindings: UPPER_CASE
-c.env.DB
-c.env.JWT_SECRET
-c.env.STRIPE_SERVICE
+c.env.DB;
+c.env.JWT_SECRET;
+c.env.STRIPE_SERVICE;
 ```
 
 ---
@@ -529,20 +535,20 @@ products.shopify_variant_id -- Use product_inventory.shopify_variant_id instead
 
 ```typescript
 // ✅ CORRECT: Query inventory table
-const inventory = await c.env.DB.prepare(
-  'SELECT * FROM product_inventory WHERE product_id = ?'
-).bind(productId).first();
+const inventory = await c.env.DB.prepare('SELECT * FROM product_inventory WHERE product_id = ?')
+  .bind(productId)
+  .first();
 
 // Access stock:
 const totalStock = inventory.total_stock;
 const b2bStock = inventory.b2b_stock;
 const b2cStock = inventory.b2c_stock;
-const isInStock = (inventory.b2b_stock + inventory.b2c_stock) > 0;
+const isInStock = inventory.b2b_stock + inventory.b2c_stock > 0;
 
 // ❌ WRONG: Never query products table for stock
-const product = await c.env.DB.prepare(
-  'SELECT stock FROM products WHERE id = ?'
-).bind(productId).first();
+const product = await c.env.DB.prepare('SELECT stock FROM products WHERE id = ?')
+  .bind(productId)
+  .first();
 ```
 
 ### Product Inventory Table Schema
@@ -550,13 +556,13 @@ const product = await c.env.DB.prepare(
 ```sql
 CREATE TABLE product_inventory (
   product_id TEXT PRIMARY KEY,
-  
+
   -- Stock allocation (B2B/B2C split)
   total_stock INTEGER NOT NULL DEFAULT 0,      -- Total available units
   b2b_stock INTEGER NOT NULL DEFAULT 0,        -- Allocated to B2B platform
   b2c_stock INTEGER NOT NULL DEFAULT 0,        -- Allocated to B2C (Shopify)
   reserved_stock INTEGER NOT NULL DEFAULT 0,   -- In checkout (pending)
-  
+
   -- Shopify synchronization
   shopify_product_id TEXT,
   shopify_variant_id TEXT,
@@ -565,7 +571,7 @@ CREATE TABLE product_inventory (
   sync_enabled INTEGER DEFAULT 0,              -- 1 = auto-sync to Shopify
   last_synced_at TEXT,
   sync_error TEXT,
-  
+
   -- Constraints
   CHECK (b2b_stock >= 0),
   CHECK (b2c_stock >= 0),
@@ -602,20 +608,28 @@ const result = await c.env.DB.prepare(query).bind(productId).first();
 
 ```typescript
 // ✅ CORRECT: Update via product_inventory table
-await c.env.DB.prepare(`
+await c.env.DB.prepare(
+  `
   UPDATE product_inventory 
   SET 
     total_stock = total_stock - ?,
     b2b_stock = b2b_stock - ?,
     updated_at = ?
   WHERE product_id = ? AND b2b_stock >= ?
-`).bind(quantity, quantity, new Date().toISOString(), productId, quantity).run();
+`
+)
+  .bind(quantity, quantity, new Date().toISOString(), productId, quantity)
+  .run();
 
 // Log the change
-await c.env.DB.prepare(`
+await c.env.DB.prepare(
+  `
   INSERT INTO inventory_sync_log (id, product_id, action, source, total_change, b2b_change, created_at)
   VALUES (?, ?, 'b2b_order', 'checkout', ?, ?, ?)
-`).bind(nanoid(), productId, -quantity, -quantity, new Date().toISOString()).run();
+`
+)
+  .bind(nanoid(), productId, -quantity, -quantity, new Date().toISOString())
+  .run();
 ```
 
 ### Audit Trail
@@ -624,44 +638,48 @@ await c.env.DB.prepare(`
 
 ```typescript
 // After any stock change, log it:
-await c.env.DB.prepare(`
+await c.env.DB.prepare(
+  `
   INSERT INTO inventory_sync_log (
     id, product_id, action, source,
     total_change, b2b_change, b2c_change,
     total_stock_after, b2b_stock_after, b2c_stock_after,
     reference_id, reference_type, created_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`).bind(
-  nanoid(),
-  productId,
-  'b2b_order',           // action
-  'checkout',            // source
-  -quantity,             // total_change
-  -quantity,             // b2b_change
-  0,                     // b2c_change
-  newTotalStock,         // snapshot after
-  newB2BStock,
-  b2cStock,
-  orderId,               // reference
-  'order',
-  new Date().toISOString()
-).run();
+`
+)
+  .bind(
+    nanoid(),
+    productId,
+    'b2b_order', // action
+    'checkout', // source
+    -quantity, // total_change
+    -quantity, // b2b_change
+    0, // b2c_change
+    newTotalStock, // snapshot after
+    newB2BStock,
+    b2cStock,
+    orderId, // reference
+    'order',
+    new Date().toISOString()
+  )
+  .run();
 ```
 
 ---
 
 ## �📚 Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| `/workers/api-gateway/src/index.ts` | Service orchestration logic |
-| `/workers/auth-service/src/index.ts` | JWT auth implementation |
-| `/workers/auth-service/src/utils/jwt.ts` | JWT sign/verify functions |
-| `/src/stores/auth.ts` | Frontend auth state + auto-refresh |
-| `/src/router/index.ts` | Route guards (requiresAuth, requiresVerified) |
-| `/migrations/001_initial_schema.sql` | Complete D1 schema (19 tables) |
-| `/migrations/003_product_inventory_system.sql` | **Inventory management system (B2B/B2C)** |
-| `/workers/stripe-service/src/index.ts` | Stripe API wrapper |
+| File                                           | Purpose                                       |
+| ---------------------------------------------- | --------------------------------------------- |
+| `/workers/api-gateway/src/index.ts`            | Service orchestration logic                   |
+| `/workers/auth-service/src/index.ts`           | JWT auth implementation                       |
+| `/workers/auth-service/src/utils/jwt.ts`       | JWT sign/verify functions                     |
+| `/src/stores/auth.ts`                          | Frontend auth state + auto-refresh            |
+| `/src/router/index.ts`                         | Route guards (requiresAuth, requiresVerified) |
+| `/migrations/001_initial_schema.sql`           | Complete D1 schema (19 tables)                |
+| `/migrations/003_product_inventory_system.sql` | **Inventory management system (B2B/B2C)**     |
+| `/workers/stripe-service/src/index.ts`         | Stripe API wrapper                            |
 
 ---
 
@@ -680,16 +698,17 @@ await c.env.DB.prepare(`
 
 **When modifying workers or API endpoints, ALWAYS check the corresponding test files:**
 
-| Worker/Change | Test Location |
-|---------------|---------------|
-| API Gateway routes | `/workers/api-gateway/tests/integration/` |
-| Auth Service | `/workers/api-gateway/tests/integration/auth.test.ts` |
-| Products API | `/workers/api-gateway/tests/integration/products.test.ts` |
-| Invoices API | `/workers/api-gateway/tests/integration/invoices.test.ts` |
-| Categories API | `/workers/api-gateway/tests/integration/categories.test.ts` |
-| Test helpers | `/workers/api-gateway/tests/helpers/` |
+| Worker/Change      | Test Location                                               |
+| ------------------ | ----------------------------------------------------------- |
+| API Gateway routes | `/workers/api-gateway/tests/integration/`                   |
+| Auth Service       | `/workers/api-gateway/tests/integration/auth.test.ts`       |
+| Products API       | `/workers/api-gateway/tests/integration/products.test.ts`   |
+| Invoices API       | `/workers/api-gateway/tests/integration/invoices.test.ts`   |
+| Categories API     | `/workers/api-gateway/tests/integration/categories.test.ts` |
+| Test helpers       | `/workers/api-gateway/tests/helpers/`                       |
 
 **Checklist when changing API behavior:**
+
 - [ ] Update request/response types in test validators (`tests/helpers/validators.ts`)
 - [ ] Update test data generators if schema changed (`tests/helpers/test-data.ts`)
 - [ ] Add new test cases for new endpoints/features
@@ -715,7 +734,5 @@ wrangler tail
 
 **Last Updated**: October 24, 2025  
 **Questions?**: Check worker-specific README.md files in `/workers/<service>/`
-
-
 
 **DO NOT CREATE SUMMARY DOCUMENTATION. ONLY RETURN THE CODE SNIPPET REQUESTED. ONLY DOCUMENTATION WHEN ASKED**

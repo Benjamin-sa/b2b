@@ -1,6 +1,6 @@
 /**
  * Category Routes
- * 
+ *
  * REST API endpoints for category management
  */
 

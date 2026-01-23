@@ -1,6 +1,6 @@
 /**
  * Auth Routes
- * 
+ *
  * HTTP endpoints for authentication
  */
 
@@ -12,15 +12,9 @@ import type {
   RefreshRequest,
   PasswordResetRequest,
   PasswordResetConfirm,
-  User,
 } from '../types';
 import { registerUser, loginUser, userToClaims } from '../services/auth.service';
-import {
-  verifyAccessToken,
-  verifyRefreshToken,
-  createAccessToken,
-
-} from '../utils/jwt';
+import { verifyAccessToken, verifyRefreshToken, createAccessToken } from '../utils/jwt';
 import {
   getSession,
   deleteSession,
@@ -29,8 +23,10 @@ import {
   deletePasswordResetToken,
 } from '../utils/session';
 import { hashPassword, validatePassword } from '../utils/password';
-import { createAuthError, AuthError } from '../utils/errors';
+import { createAuthError, AuthError, getErrorMessage } from '../utils/errors';
 import { nanoid } from 'nanoid';
+import { createDb } from '@b2b/db';
+import * as userOps from '@b2b/db/operations';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -46,7 +42,7 @@ auth.onError((err, c) => {
     {
       error: 'InternalError',
       code: 'auth/internal-error',
-      message: err.message || 'An internal error occurred',
+      message: getErrorMessage(err),
       statusCode: 500,
     },
     500
@@ -62,8 +58,17 @@ auth.post('/register', async (c) => {
     const data = await c.req.json<RegisterRequest>();
 
     // Validate required fields
-    if (!data.email || !data.password || !data.company_name || !data.first_name || !data.last_name) {
-      throw createAuthError('MISSING_FIELDS', 'Email, password, company name, first name, and last name are required');
+    if (
+      !data.email ||
+      !data.password ||
+      !data.company_name ||
+      !data.first_name ||
+      !data.last_name
+    ) {
+      throw createAuthError(
+        'MISSING_FIELDS',
+        'Email, password, company name, first name, and last name are required'
+      );
     }
 
     const userAgent = c.req.header('User-Agent');
@@ -73,7 +78,14 @@ auth.post('/register', async (c) => {
 
     return c.json(response, 201);
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'auth/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -96,7 +108,14 @@ auth.post('/login', async (c) => {
 
     return c.json(response);
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'auth/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -128,9 +147,8 @@ auth.post('/refresh', async (c) => {
     }
 
     // Fetch user
-    const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
-      .bind(payload.uid)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, payload.uid);
 
     if (!user) {
       throw createAuthError('USER_NOT_FOUND');
@@ -144,14 +162,26 @@ auth.post('/refresh', async (c) => {
     // Generate new access token
     const claims = userToClaims(user);
     const accessTokenTtl = parseInt(c.env.ACCESS_TOKEN_TTL);
-    const accessToken = await createAccessToken(claims, payload.sessionId, c.env.JWT_SECRET, accessTokenTtl);
+    const accessToken = await createAccessToken(
+      claims,
+      payload.sessionId,
+      c.env.JWT_SECRET,
+      accessTokenTtl
+    );
 
     return c.json({
       accessToken,
       expiresIn: accessTokenTtl,
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'auth/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -174,26 +204,25 @@ auth.post('/logout', async (c) => {
     await deleteSession(c.env.SESSIONS, payload.sessionId);
 
     return c.json({ message: 'Logged out successfully' });
-  } catch (error) {
+  } catch {
     // Even if token is invalid, return success
     return c.json({ message: 'Logged out successfully' });
   }
-}); 
+});
 
 /**
  * POST /auth/validate
  * Centralized token validation for all services
- * 
+ *
  * Services call this endpoint to validate every request.
  */
 auth.post('/validate', async (c) => {
   try {
-    
     const data = await c.req.json<{ accessToken: string }>();
-    console.log('[Auth Validate] Body received:', { 
+    console.log('[Auth Validate] Body received:', {
       hasAccessToken: !!data.accessToken,
       tokenLength: data.accessToken?.length,
-      tokenPrefix: data.accessToken?.substring(0, 20) + '...' // First 20 chars only for security
+      tokenPrefix: data.accessToken?.substring(0, 20) + '...',
     });
 
     if (!data.accessToken) {
@@ -203,56 +232,41 @@ auth.post('/validate', async (c) => {
 
     // Step 1: Verify JWT signature and decode payload
     const payload = await verifyAccessToken(data.accessToken, c.env.JWT_SECRET);
-   
-
 
     const session = await getSession(c.env.SESSIONS, payload.sessionId);
-    
+
     if (!session) {
       console.log('[Auth Validate] ❌ Session not found or expired:', payload.sessionId);
       throw createAuthError('SESSION_EXPIRED', 'Session has been revoked or expired');
     }
 
-
-    const user = await c.env.DB.prepare(`
-      SELECT 
-        id, email, role, company_name, first_name, last_name, phone, btw_number,
-        address_street, address_house_number, address_postal_code, address_city, address_country,
-        stripe_customer_id, is_verified, is_active, created_at, updated_at
-      FROM users 
-      WHERE id = ?
-    `)
-      .bind(payload.uid)
-      .first<User>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserById(db, payload.uid);
 
     if (!user) {
-      console.log('[Auth Validate] ❌ User not found in database:', payload.uid);
       throw createAuthError('USER_NOT_FOUND', 'User no longer exists');
     }
-    console.log('[Auth Validate] ✅ User found:', {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      isActive: user.is_active,
-      isVerified: user.is_verified
-    });
 
     // Step 4: Check if user is still active
     if (user.is_active === 0) {
-      console.log('[Auth Validate] ❌ User account disabled');
       throw createAuthError('USER_DISABLED', 'User account has been disabled');
     }
-   
+
     // Build address object if any address fields exist
-    const address = (user.address_street || user.address_house_number || user.address_postal_code || user.address_city || user.address_country)
-      ? {
-          street: user.address_street || '',
-          houseNumber: user.address_house_number || '',
-          postalCode: user.address_postal_code || '',
-          city: user.address_city || '',
-          country: user.address_country || '',
-        }
-      : undefined;
+    const address =
+      user.address_street ||
+      user.address_house_number ||
+      user.address_postal_code ||
+      user.address_city ||
+      user.address_country
+        ? {
+            street: user.address_street || '',
+            houseNumber: user.address_house_number || '',
+            postalCode: user.address_postal_code || '',
+            city: user.address_city || '',
+            country: user.address_country || '',
+          }
+        : undefined;
 
     const validationResponse = {
       valid: true,
@@ -278,14 +292,6 @@ auth.post('/validate', async (c) => {
 
     return c.json(validationResponse);
   } catch (error) {
-    // Log the error details
-    console.error('[Auth Validate] ❌ Validation failed');
-    console.error('[Auth Validate] Error type:', error instanceof Error ? error.constructor.name : typeof error);
-    console.error('[Auth Validate] Error message:', error instanceof Error ? error.message : String(error));
-    console.error('[Auth Validate] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.log('[Auth Validate] === REQUEST END (ERROR) ===');
-    
-    // Return proper error responses
     if (error instanceof Error && error.message.includes('expired')) {
       throw createAuthError('TOKEN_EXPIRED', 'Access token has expired');
     }
@@ -309,32 +315,36 @@ auth.post('/password-reset/request', async (c) => {
     }
 
     // Check if user exists
-    const user = await c.env.DB.prepare('SELECT id, email, first_name FROM users WHERE email = ?')
-      .bind(data.email.toLowerCase())
-      .first<{ id: string; email: string; first_name: string | null }>();
+    const db = createDb(c.env.DB);
+    const user = await userOps.getUserByEmail(db, data.email.toLowerCase());
 
     // Always return success even if user doesn't exist (security best practice)
     if (user) {
-      // Generate reset token
       const resetToken = nanoid(32);
 
       // Store in KV with 1 hour TTL
       await storePasswordResetToken(c.env.SESSIONS, user.email, resetToken, 3600);
 
       // Return token and firstName for email service
-      // Note: This endpoint is only called by API Gateway, not directly by frontend
       return c.json({
         message: 'Password reset email will be sent',
-        resetToken, // Always return token for email service
-        firstName: user.first_name, // Include for email personalization
+        resetToken,
+        firstName: user.first_name,
       });
     }
 
-    return c.json({ 
-      message: 'Password reset email will be sent' 
+    return c.json({
+      message: 'Password reset email will be sent',
     });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'auth/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 
@@ -370,16 +380,22 @@ auth.post('/password-reset/confirm', async (c) => {
     const passwordHash = await hashPassword(data.newPassword);
 
     // Update user password
-    await c.env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE email = ?')
-      .bind(passwordHash, new Date().toISOString(), email)
-      .run();
+    const db = createDb(c.env.DB);
+    await userOps.updateUserPasswordByEmail(db, email, passwordHash);
 
     // Delete reset token
     await deletePasswordResetToken(c.env.SESSIONS, data.token);
 
     return c.json({ message: 'Password reset successfully' });
   } catch (error) {
-    throw error;
+    return c.json(
+      {
+        error: 'InternalError',
+        code: 'auth/internal-error',
+        message: getErrorMessage(error),
+      },
+      500
+    );
   }
 });
 

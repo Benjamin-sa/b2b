@@ -1,32 +1,32 @@
 /**
  * Stripe Product Service
- * 
+ *
  * Handles all Stripe product and pricing operations:
  * - Create product with price
  * - Update product details
  * - Replace price (Stripe prices are immutable)
  * - Archive product and price
- * 
+ *
  * Maintains exact compatibility with Firebase Functions implementation
  * including tax codes, metadata structure, and error handling
  */
 
 import type Stripe from 'stripe';
-import type { 
-  Env, 
-  ProductInput, 
-  ProductUpdateInput, 
+import type {
+  Env,
+  ProductInput,
+  ProductUpdateInput,
   PriceUpdateInput,
-  CreateProductResponse 
+  CreateProductResponse,
 } from '../types';
 import { getStripeClient, handleStripeError, validateRequired } from '../utils/stripe.utils';
 
 /**
  * Create Stripe product with initial price
- * 
+ *
  * Tax code: txcd_99999999 (General - Tangible Goods)
  * Tax behavior: exclusive (tax added on top of price)
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Product data
  * @returns Object with stripe_product_id and stripe_price_id
@@ -50,9 +50,10 @@ export async function createProductWithPrice(
     const stripeProduct = await stripe.products.create({
       name: input.name,
       description: input.description || undefined,
-      images: (input.images && input.images.length > 0) 
-        ? [input.images[0]] // Stripe uses first image as primary
-        : undefined,
+      images:
+        input.images && input.images.length > 0
+          ? [input.images[0]] // Stripe uses first image as primary
+          : undefined,
       tax_code: 'txcd_99999999', // General - Tangible Goods
       metadata: {
         firebaseId: input.product_id, // For backward compatibility
@@ -70,7 +71,7 @@ export async function createProductWithPrice(
 
     // Create price (convert euros to cents)
     const priceInCents = Math.round(input.price * 100);
-    
+
     const stripePrice = await stripe.prices.create({
       product: stripeProduct.id,
       unit_amount: priceInCents,
@@ -95,16 +96,13 @@ export async function createProductWithPrice(
 
 /**
  * Update Stripe product details
- * 
+ *
  * Note: Prices are NOT updated here - use replacePrice() for price changes
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Updated product data with stripe_product_id
  */
-export async function updateProduct(
-  env: Env,
-  input: ProductUpdateInput
-): Promise<void> {
+export async function updateProduct(env: Env, input: ProductUpdateInput): Promise<void> {
   try {
     // Validate required fields
     validateRequired(input, ['stripe_product_id', 'name', 'product_id']);
@@ -116,9 +114,7 @@ export async function updateProduct(
     await stripe.products.update(input.stripe_product_id, {
       name: input.name,
       description: input.description || undefined,
-      images: (input.images && input.images.length > 0) 
-        ? [input.images[0]] 
-        : undefined,
+      images: input.images && input.images.length > 0 ? [input.images[0]] : undefined,
       tax_code: 'txcd_99999999',
       metadata: {
         firebaseId: input.product_id,
@@ -140,28 +136,20 @@ export async function updateProduct(
 
 /**
  * Replace Stripe price (prices are immutable in Stripe)
- * 
+ *
  * Process:
  * 1. Deactivate old price
  * 2. Create new price with updated amount
  * 3. Return new price ID
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param input - Price update data
  * @returns New Stripe price ID
  */
-export async function replacePrice(
-  env: Env,
-  input: PriceUpdateInput
-): Promise<string> {
+export async function replacePrice(env: Env, input: PriceUpdateInput): Promise<string> {
   try {
     // Validate required fields
-    validateRequired(input, [
-      'stripe_product_id', 
-      'stripe_price_id', 
-      'new_price', 
-      'product_id'
-    ]);
+    validateRequired(input, ['stripe_product_id', 'stripe_price_id', 'new_price', 'product_id']);
 
     const stripe = getStripeClient(env);
     const newPriceInCents = Math.round(input.new_price * 100);
@@ -201,10 +189,10 @@ export async function replacePrice(
 
 /**
  * Archive Stripe product and price
- * 
+ *
  * Sets both product and price to inactive (soft delete)
  * Preserves data for historical orders
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param stripeProductId - Stripe product ID
  * @param stripePriceId - Stripe price ID (optional)
@@ -245,17 +233,14 @@ export async function archiveProduct(
 
 /**
  * Get Stripe price details
- * 
+ *
  * Used for validation and displaying price information
- * 
+ *
  * @param env - Cloudflare environment with Stripe key
  * @param priceId - Stripe price ID
  * @returns Stripe price object
  */
-export async function getPrice(
-  env: Env,
-  priceId: string
-): Promise<Stripe.Price> {
+export async function getPrice(env: Env, priceId: string): Promise<Stripe.Price> {
   try {
     if (!priceId) {
       throw new Error('price_id is required');
@@ -265,9 +250,7 @@ export async function getPrice(
     const price = await stripe.prices.retrieve(priceId);
 
     if (!price || typeof price.unit_amount !== 'number') {
-      throw new Error(
-        `Stripe price ${priceId} is not configured with a fixed unit amount`
-      );
+      throw new Error(`Stripe price ${priceId} is not configured with a fixed unit amount`);
     }
 
     return price;

@@ -1,6 +1,6 @@
 /**
  * Admin Invoice Routes
- * 
+ *
  * Allows admins to view all invoices/orders from all customers
  * Provides pagination, filtering, and sorting capabilities
  */
@@ -13,7 +13,7 @@ const invoicesRoutes = new Hono<{ Bindings: Env }>();
 /**
  * GET /admin/invoices
  * Fetch all invoices with pagination and filtering
- * 
+ *
  * Query parameters:
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
@@ -75,9 +75,7 @@ invoicesRoutes.get('/', async (c) => {
       params.push(dateTo);
     }
 
-    const whereClause = conditions.length > 0 
-      ? `WHERE ${conditions.join(' AND ')}` 
-      : '';
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Validate sort field
     const allowedSortFields = ['created_at', 'total_amount', 'status', 'invoice_number'];
@@ -192,7 +190,8 @@ invoicesRoutes.get('/:id', async (c) => {
     const invoiceId = c.req.param('id');
 
     // Get invoice with user details
-    const invoice = await c.env.DB.prepare(`
+    const invoice = await c.env.DB.prepare(
+      `
       SELECT 
         o.*,
         u.email as customer_email,
@@ -204,7 +203,8 @@ invoicesRoutes.get('/:id', async (c) => {
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       WHERE o.id = ?
-    `)
+    `
+    )
       .bind(invoiceId)
       .first();
 
@@ -224,7 +224,8 @@ invoicesRoutes.get('/:id', async (c) => {
     // Get order items
     // Note: Uses LEFT JOIN because product_id can be NULL if product was deleted
     // Falls back to denormalized data in order_items (product_name, image_url, etc.)
-    const items = await c.env.DB.prepare(`
+    const items = await c.env.DB.prepare(
+      `
       SELECT 
         oi.*,
         COALESCE(p.name, oi.product_name) as product_name,
@@ -234,7 +235,8 @@ invoicesRoutes.get('/:id', async (c) => {
       LEFT JOIN products p ON oi.product_id = p.id
       WHERE oi.order_id = ?
       ORDER BY oi.created_at ASC
-    `)
+    `
+    )
       .bind(invoiceId)
       .all();
 
@@ -267,7 +269,8 @@ invoicesRoutes.get('/:id', async (c) => {
 invoicesRoutes.get('/stats/summary', async (c) => {
   try {
     // Get overall statistics
-    const stats = await c.env.DB.prepare(`
+    const stats = await c.env.DB.prepare(
+      `
       SELECT 
         COUNT(*) as total_invoices,
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
@@ -279,16 +282,19 @@ invoicesRoutes.get('/stats/summary', async (c) => {
         SUM(total_amount) as total_revenue,
         AVG(total_amount) as average_order_value
       FROM orders
-    `).first();
+    `
+    ).first();
 
     // Get recent invoices count (last 30 days)
-    const recentStats = await c.env.DB.prepare(`
+    const recentStats = await c.env.DB.prepare(
+      `
       SELECT 
         COUNT(*) as recent_count,
         SUM(total_amount) as recent_revenue
       FROM orders
       WHERE created_at >= datetime('now', '-30 days')
-    `).first();
+    `
+    ).first();
 
     return c.json({
       success: true,

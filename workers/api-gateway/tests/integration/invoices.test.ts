@@ -11,7 +11,7 @@
  * Run: npm test integration/invoices
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   createApiClient,
   createAdminClient,
@@ -22,7 +22,7 @@ import {
   expectStatus,
   expectClientError,
   expectFastResponse,
-} from '../helpers'
+} from '../helpers';
 
 /**
  * Find a stable product suitable for invoice testing.
@@ -32,19 +32,19 @@ async function findStableProductForInvoice(
   client: ApiClient,
   options: { verbose?: boolean } = {}
 ): Promise<any | null> {
-  const { verbose = false } = options
+  const { verbose = false } = options;
 
   // Fetch more products to find a stable one
   const response = await client.get('/api/products', {
     params: { limit: '20', sortBy: 'created_at', sortOrder: 'asc' },
-  })
+  });
 
   if (!response.ok || !response.data.items?.length) {
-    if (verbose) console.log('[INVOICE TEST] No products available')
-    return null
+    if (verbose) console.log('[INVOICE TEST] No products available');
+    return null;
   }
 
-  const products = response.data.items
+  const products = response.data.items;
 
   // Filter for products that are likely stable for invoice testing
   const stableProduct = products.find((product: any) => {
@@ -53,10 +53,10 @@ async function findStableProductForInvoice(
       product.stripe_price_id &&
       typeof product.stripe_price_id === 'string' &&
       product.stripe_price_id.startsWith('price_') &&
-      product.stripe_price_id.length > 10
+      product.stripe_price_id.length > 10;
 
     // Must have B2B stock available
-    const hasStock = (product.inventory?.b2b_stock ?? product.b2b_stock ?? 0) > 0
+    const hasStock = (product.inventory?.b2b_stock ?? product.b2b_stock ?? 0) > 0;
 
     // Avoid products created by integration tests (they have "Integration Test" or "Test Product" in name)
     const isTestProduct =
@@ -64,92 +64,92 @@ async function findStableProductForInvoice(
       product.name?.includes('Test Product') ||
       product.name?.includes('Minimal Test') ||
       product.name?.includes('Delete') ||
-      product.name?.includes('Update Test')
+      product.name?.includes('Update Test');
 
     if (verbose && !hasValidStripePriceId) {
-      console.log(`[INVOICE TEST] Skipping "${product.name}": invalid stripe_price_id`)
+      console.log(`[INVOICE TEST] Skipping "${product.name}": invalid stripe_price_id`);
     }
     if (verbose && !hasStock) {
-      console.log(`[INVOICE TEST] Skipping "${product.name}": no B2B stock`)
+      console.log(`[INVOICE TEST] Skipping "${product.name}": no B2B stock`);
     }
     if (verbose && isTestProduct) {
-      console.log(`[INVOICE TEST] Skipping "${product.name}": appears to be a test product`)
+      console.log(`[INVOICE TEST] Skipping "${product.name}": appears to be a test product`);
     }
 
-    return hasValidStripePriceId && hasStock && !isTestProduct
-  })
+    return hasValidStripePriceId && hasStock && !isTestProduct;
+  });
 
   if (stableProduct && verbose) {
     console.log(
       `[INVOICE TEST] Found stable product: "${stableProduct.name}" (${stableProduct.stripe_price_id})`
-    )
+    );
   }
 
-  return stableProduct || null
+  return stableProduct || null;
 }
 
 describe('Integration: Invoices', () => {
-  let publicClient: ApiClient
-  let adminClient: ApiClient
+  let publicClient: ApiClient;
+  let adminClient: ApiClient;
 
   beforeAll(async () => {
-    publicClient = createApiClient({ verbose: true })
+    publicClient = createApiClient({ verbose: true });
 
     try {
-      adminClient = await createAdminClient({ verbose: true })
-      console.log(`[TEST] Admin authenticated as: ${adminClient.user?.email}`)
+      adminClient = await createAdminClient({ verbose: true });
+      console.log(`[TEST] Admin authenticated as: ${adminClient.user?.email}`);
     } catch (error) {
-      console.error('[TEST] Failed to create admin client:', error)
-      throw error
+      console.error('[TEST] Failed to create admin client:', error);
+      throw error;
     }
 
-    console.log(`[TEST] Testing against: ${publicClient.url}`)
-  }, 60000)
+    console.log(`[TEST] Testing against: ${publicClient.url}`);
+  }, 60000);
 
   afterAll(async () => {
     if (adminClient?.isAuthenticated) {
-      await adminClient.logout()
+      await adminClient.logout();
     }
-  })
+  });
 
   describe('GET /api/invoices - List User Invoices (Authenticated)', () => {
     it('should reject request without authentication', async () => {
-      const response = await publicClient.get('/api/invoices')
+      const response = await publicClient.get('/api/invoices');
 
-      expectClientError(response, 401)
-    })
+      expectClientError(response, 401);
+    });
 
     it('should list invoices for authenticated user', async () => {
-      const response = await adminClient.get('/api/invoices', { auth: true })
+      const response = await adminClient.get('/api/invoices', { auth: true });
 
-      expectSuccess(response)
-      expectStatus(response, 200)
-      expectFastResponse(response.timing, 5000)
+      expectSuccess(response);
+      expectStatus(response, 200);
+      expectFastResponse(response.timing, 5000);
 
-      validateInvoiceList(response.data)
+      validateInvoiceList(response.data);
 
-      console.log(`[TEST] Listed ${response.data.invoices.length} invoices for user`)
-    })
+      console.log(`[TEST] Listed ${response.data.invoices.length} invoices for user`);
+    });
 
     it('should return empty array for user with no invoices', async () => {
       // For existing users, we just verify the structure
       // New users would have 0 invoices
-      const response = await adminClient.get('/api/invoices', { auth: true })
+      const response = await adminClient.get('/api/invoices', { auth: true });
 
-      expectSuccess(response)
-      expect(response.data).toHaveProperty('invoices')
-      expect(Array.isArray(response.data.invoices)).toBe(true)
-    })
-  })
+      expectSuccess(response);
+      expect(response.data).toHaveProperty('invoices');
+      expect(Array.isArray(response.data.invoices)).toBe(true);
+    });
+  });
 
   describe('POST /api/invoices - Create Invoice (Authenticated with Stripe)', () => {
     it('should reject creation without authentication', async () => {
       const response = await publicClient.post('/api/invoices', {
         items: [],
-      })
+      });
 
-      expectClientError(response, 401)
-    })
+      expectClientError(response, 401);
+    });
 
     it('should reject creation with empty items', async () => {
       const response = await adminClient.post(
@@ -158,21 +158,23 @@ describe('Integration: Invoices', () => {
           items: [],
         },
         { auth: true }
-      )
+      );
 
       // Should fail - server currently returns 500, could be improved to 400
-      expect(response.ok).toBe(false)
-      expect(response.status).toBeGreaterThanOrEqual(400)
-    })
+      expect(response.ok).toBe(false);
+      expect(response.status).toBeGreaterThanOrEqual(400);
+    });
 
     it('should create invoice with valid items', async () => {
       // Find a stable product that's not a recently created test product
-      const product = await findStableProductForInvoice(publicClient, { verbose: true })
+      const product = await findStableProductForInvoice(publicClient, { verbose: true });
 
       if (!product) {
-        console.log('[SKIP] No stable product with valid Stripe price ID and stock available')
-        console.log('[SKIP] This can happen if only test products exist or all products lack Stripe integration')
-        return
+        console.log('[SKIP] No stable product with valid Stripe price ID and stock available');
+        console.log(
+          '[SKIP] This can happen if only test products exist or all products lack Stripe integration'
+        );
+        return;
       }
 
       // Create invoice request
@@ -198,24 +200,24 @@ describe('Integration: Invoices', () => {
             country: 'NL',
           },
         },
-      }
+      };
 
-      console.log('[TEST] Creating invoice with product:', product.name)
-      console.log('[TEST] Using Stripe price ID:', product.stripe_price_id)
+      console.log('[TEST] Creating invoice with product:', product.name);
+      console.log('[TEST] Using Stripe price ID:', product.stripe_price_id);
 
-      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true })
+      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true });
 
       if (!response.ok) {
-        console.log('[TEST] Invoice creation failed:', response.error)
+        console.log('[TEST] Invoice creation failed:', response.error);
 
         if (response.error?.message?.includes('customer')) {
-          console.log('[SKIP] User does not have Stripe customer ID')
-          return
+          console.log('[SKIP] User does not have Stripe customer ID');
+          return;
         }
 
         if (response.error?.error === 'insufficient-stock') {
-          console.log('[SKIP] Insufficient stock for invoice')
-          return
+          console.log('[SKIP] Insufficient stock for invoice');
+          return;
         }
 
         // Check for Stripe price ID errors (race condition indicator)
@@ -223,36 +225,36 @@ describe('Integration: Invoices', () => {
           response.error?.message?.includes('No such price') ||
           response.error?.message?.includes('price_')
         ) {
-          console.log('[SKIP] Stripe price ID not yet synced - potential race condition')
-          return
+          console.log('[SKIP] Stripe price ID not yet synced - potential race condition');
+          return;
         }
 
         // Unexpected error
-        throw new Error(`Invoice creation failed: ${JSON.stringify(response.error)}`)
+        throw new Error(`Invoice creation failed: ${JSON.stringify(response.error)}`);
       }
 
-      expectSuccess(response)
-      validateInvoiceCreateResponse(response.data)
+      expectSuccess(response);
+      validateInvoiceCreateResponse(response.data);
 
-      expect(response.data.invoiceId).toMatch(/^in_/)
-      expect(response.data.invoiceUrl).toContain('stripe.com')
+      expect(response.data.invoiceId).toMatch(/^in_/);
+      expect(response.data.invoiceUrl).toContain('stripe.com');
 
-      console.log(`[TEST] ✅ Created invoice: ${response.data.invoiceId}`)
-      console.log(`[TEST] Invoice URL: ${response.data.invoiceUrl}`)
-    }, 60000) // Allow more time for Stripe
+      console.log(`[TEST] ✅ Created invoice: ${response.data.invoiceId}`);
+      console.log(`[TEST] Invoice URL: ${response.data.invoiceUrl}`);
+    }, 60000); // Allow more time for Stripe
 
     it('should fail with insufficient stock', async () => {
       // Find a stable product (we need one with valid Stripe integration)
-      const product = await findStableProductForInvoice(publicClient, { verbose: true })
+      const product = await findStableProductForInvoice(publicClient, { verbose: true });
 
       if (!product) {
-        console.log('[SKIP] No stable product available for insufficient stock test')
-        return
+        console.log('[SKIP] No stable product available for insufficient stock test');
+        return;
       }
 
       // Request more than available stock
-      const currentStock = product.inventory?.b2b_stock ?? product.b2b_stock ?? 0
-      const requestQuantity = currentStock + 1000
+      const currentStock = product.inventory?.b2b_stock ?? product.b2b_stock ?? 0;
+      const requestQuantity = currentStock + 1000;
 
       const invoiceRequest = {
         items: [
@@ -265,18 +267,18 @@ describe('Integration: Invoices', () => {
             },
           },
         ],
-      }
+      };
 
-      console.log(`[TEST] Requesting ${requestQuantity} units (available: ${currentStock})`)
+      console.log(`[TEST] Requesting ${requestQuantity} units (available: ${currentStock})`);
 
-      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true })
+      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true });
 
       // Should fail with insufficient stock
-      expectClientError(response, 400)
-      expect(response.error?.error).toBe('insufficient-stock')
+      expectClientError(response, 400);
+      expect(response.error?.error).toBe('insufficient-stock');
 
-      console.log('[TEST] ✅ Correctly rejected insufficient stock request')
-    })
+      console.log('[TEST] ✅ Correctly rejected insufficient stock request');
+    });
 
     it('should fail with invalid stripe price ID', async () => {
       const invoiceRequest = {
@@ -290,34 +292,34 @@ describe('Integration: Invoices', () => {
             },
           },
         ],
-      }
+      };
 
-      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true })
+      const response = await adminClient.post('/api/invoices', invoiceRequest, { auth: true });
 
       // Should fail - either validation or Stripe error
-      expect(response.ok).toBe(false)
-      expect([400, 500]).toContain(response.status)
-    })
-  })
+      expect(response.ok).toBe(false);
+      expect([400, 500]).toContain(response.status);
+    });
+  });
 
   describe('Invoice Response Format', () => {
     it('should match frontend expected format', async () => {
-      const response = await adminClient.get('/api/invoices', { auth: true })
+      const response = await adminClient.get('/api/invoices', { auth: true });
 
-      expectSuccess(response)
+      expectSuccess(response);
 
       // User invoice list uses camelCase format
-      expect(response.data).toHaveProperty('invoices')
-      expect(response.data).toHaveProperty('total')
+      expect(response.data).toHaveProperty('invoices');
+      expect(response.data).toHaveProperty('total');
 
       // Each invoice should have expected fields (camelCase from user endpoint)
       response.data.invoices.forEach((invoice: any) => {
-        expect(invoice).toHaveProperty('id')
+        expect(invoice).toHaveProperty('id');
         // User invoices don't include user_id (it's implicit)
-        expect(invoice).toHaveProperty('totalAmount')
-        expect(invoice).toHaveProperty('status')
-        expect(invoice).toHaveProperty('createdAt')
-      })
-    })
-  })
-})
+        expect(invoice).toHaveProperty('totalAmount');
+        expect(invoice).toHaveProperty('status');
+        expect(invoice).toHaveProperty('createdAt');
+      });
+    });
+  });
+});

@@ -1,19 +1,19 @@
-import type { Env, InvoiceNotification, UserRegistrationNotification, OrderMetadata } from '../types';
+import type {
+  Env,
+  InvoiceNotification,
+  UserRegistrationNotification,
+  OrderMetadata,
+} from '../types';
 import { sendTelegramMessage } from '../utils/telegram';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters';
 
 /**
  * Send invoice created notification to Telegram
  */
-export async function notifyInvoiceCreated(
-  env: Env,
-  invoice: InvoiceNotification
-): Promise<void> {
+export async function notifyInvoiceCreated(env: Env, invoice: InvoiceNotification): Promise<void> {
   try {
     const amount = formatCurrency(invoice.amount_due, invoice.currency);
-    const dueDate = invoice.due_date
-      ? formatDate(invoice.due_date)
-      : 'No due date';
+    const dueDate = invoice.due_date ? formatDate(invoice.due_date) : 'No due date';
 
     let customerInfo = invoice.customer_name || invoice.customer_email || 'Unknown';
     let itemsInfo = '';
@@ -104,10 +104,7 @@ export async function notifyInvoicePaymentSucceeded(
   invoice: InvoiceNotification
 ): Promise<void> {
   try {
-    const amount = formatCurrency(
-      invoice.amount_paid || invoice.amount_due,
-      invoice.currency
-    );
+    const amount = formatCurrency(invoice.amount_paid || invoice.amount_due, invoice.currency);
     const paidAt = invoice.status_transitions?.paid_at
       ? formatDateTime(invoice.status_transitions.paid_at)
       : formatDateTime(Date.now() / 1000);
@@ -185,10 +182,7 @@ Status: <b>✅ PAID</b>
 /**
  * Send invoice voided notification to Telegram
  */
-export async function notifyInvoiceVoided(
-  env: Env,
-  invoice: InvoiceNotification
-): Promise<void> {
+export async function notifyInvoiceVoided(env: Env, invoice: InvoiceNotification): Promise<void> {
   try {
     const amount = formatCurrency(invoice.amount_due, invoice.currency);
 

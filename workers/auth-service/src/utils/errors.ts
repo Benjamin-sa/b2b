@@ -1,6 +1,6 @@
 /**
  * Error Utilities
- * 
+ *
  * Standardized error responses matching Firebase Auth error patterns
  */
 
@@ -37,33 +37,30 @@ export const ErrorCodes = {
   TOO_MANY_REQUESTS: 'auth/too-many-requests',
   USER_DISABLED: 'auth/user-disabled',
   USER_NOT_VERIFIED: 'auth/user-not-verified',
-  
+
   // Token errors
   INVALID_TOKEN: 'auth/invalid-token',
   TOKEN_EXPIRED: 'auth/token-expired',
   INVALID_REFRESH_TOKEN: 'auth/invalid-refresh-token',
   SESSION_EXPIRED: 'auth/session-expired',
-  
+
   // Authorization errors
   UNAUTHORIZED: 'auth/unauthorized',
   FORBIDDEN: 'auth/forbidden',
-  
+
   // Request errors
   MISSING_FIELDS: 'auth/missing-fields',
   INVALID_REQUEST: 'auth/invalid-request',
   CONFIG_ERROR: 'auth/config-error',
-  
+
   // Server errors
   INTERNAL_ERROR: 'auth/internal-error',
   DATABASE_ERROR: 'auth/database-error',
 } as const;
 
-export function createAuthError(
-  code: keyof typeof ErrorCodes,
-  message?: string
-): AuthError {
+export function createAuthError(code: keyof typeof ErrorCodes, message?: string): AuthError {
   const errorCode = ErrorCodes[code];
-  
+
   const defaultMessages: Record<string, string> = {
     [ErrorCodes.INVALID_EMAIL]: 'The email address is invalid',
     [ErrorCodes.USER_NOT_FOUND]: 'No user found with this email',
@@ -113,4 +110,15 @@ export function createAuthError(
     statusCodes[errorCode] || 500,
     message || defaultMessages[errorCode] || 'An error occurred'
   );
+}
+
+export function getErrorMessage(
+  error: unknown,
+  fallback: string = 'An internal error occurred'
+): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
 }

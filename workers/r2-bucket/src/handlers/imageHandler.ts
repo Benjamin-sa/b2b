@@ -4,14 +4,22 @@
  */
 
 import type { Env, ImageUploadRequest, ImageUploadResponse } from '../types';
-import { createSuccessResponse, createErrorResponse, createValidationError } from '../utils/response';
-import { validateImageUploadRequest, generateUniqueFilename, validateFileSize } from '../utils/validation';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  createValidationError,
+} from '../utils/response';
+import {
+  validateImageUploadRequest,
+  generateUniqueFilename,
+  validateFileSize,
+} from '../utils/validation';
 import { isOriginAllowed } from '../utils/cors';
-import { 
-  createS3Client, 
-  generatePresignedUrl, 
-  generatePublicUrl, 
-  generateStorageKey 
+import {
+  createS3Client,
+  generatePresignedUrl,
+  generatePublicUrl,
+  generateStorageKey,
 } from '../services/s3Service';
 
 /**
@@ -31,9 +39,12 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
   try {
     // Parse and validate request body
     const requestData = await request.json();
-    
+
     if (!validateImageUploadRequest(requestData)) {
-      return createValidationError('Invalid request data. Required: filename (string), contentType (string)', request);
+      return createValidationError(
+        'Invalid request data. Required: filename (string), contentType (string)',
+        request
+      );
     }
 
     const { filename, contentType } = requestData as ImageUploadRequest;
@@ -63,14 +74,13 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
     // Prepare response data
     const responseData: ImageUploadResponse = {
       uploadUrl,
-      publicUrl
+      publicUrl,
     };
 
     return createSuccessResponse(responseData, request);
-
   } catch (error) {
     console.error('Image upload error:', error);
-    
+
     // Handle specific errors
     if (error instanceof SyntaxError) {
       return createValidationError('Invalid JSON in request body', request);

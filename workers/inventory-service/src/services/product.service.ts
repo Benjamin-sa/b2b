@@ -1,13 +1,16 @@
 /**
  * Product Service
- * 
+ *
  * Business logic for product management (D1 database operations only)
- * 
+ *
  * NOTE: Stripe operations are handled at the API Gateway orchestration layer.
  * This service only handles D1 database operations.
  */
 
 import { nanoid } from 'nanoid';
+import { createDb, schema } from '@b2b/db';
+import { and, asc, desc, eq, isNotNull, like, or, sql } from 'drizzle-orm';
+import type { D1Database } from '@cloudflare/workers-types';
 import type {
   Product,
   ProductWithRelations,
@@ -21,31 +24,34 @@ import type {
   ProductFilters,
   PaginationParams,
 } from '../types';
-import { getOne, getOneOrNull, getMany, getPaginated, batch } from '../utils/database';
 import { errors } from '../utils/errors';
 import { validateRequired, validatePrice } from '../utils/validation';
-import { buildUpdateQuery, buildFieldUpdates, boolToInt } from '../utils/query-builder';
+
+const {
+  products,
+  product_images,
+  product_specifications,
+  product_tags,
+  product_dimensions,
+  product_inventory,
+} = schema;
 
 /**
  * Generate next B2B SKU
  * Format: TP-00001, TP-00002, etc.
- * 
+ *
  * Finds the highest existing SKU number and increments it.
  * If no SKUs exist, starts at TP-00001.
  */
-async function getNextB2BSku(db: any): Promise<string> {
+async function getNextB2BSku(db: ReturnType<typeof createDb>): Promise<string> {
   try {
-    // Query to find the highest existing B2B SKU
     const result = await db
-      .prepare(
-        `SELECT b2b_sku 
-         FROM products 
-         WHERE b2b_sku IS NOT NULL 
-           AND b2b_sku LIKE 'TP-%'
-         ORDER BY b2b_sku DESC 
-         LIMIT 1`
-      )
-      .first();
+      .select({ b2b_sku: products.b2b_sku })
+      .from(products)
+      .where(and(isNotNull(products.b2b_sku), like(products.b2b_sku, 'TP-%')))
+      .orderBy(desc(products.b2b_sku))
+      .limit(1)
+      .get();
 
     if (!result || !result.b2b_sku) {
       // No existing SKUs, start at TP-00001
@@ -91,25 +97,21 @@ function calculateEAN13CheckDigit(first12Digits: string): string {
  * - First digit: 2 (internal product identifier)
  * - Next 11 digits: zero-padded sequential number
  * - Last digit: EAN-13 check digit
- * 
+ *
  * Example: 2000000000017 (product #1 with check digit 7)
  */
-async function generateBarcode(db: any): Promise<string> {
+async function generateBarcode(db: ReturnType<typeof createDb>): Promise<string> {
   try {
-    // Find highest existing barcode
     const result = await db
-      .prepare(
-        `SELECT barcode 
-         FROM products 
-         WHERE barcode IS NOT NULL 
-           AND barcode LIKE '2%'
-         ORDER BY barcode DESC 
-         LIMIT 1`
-      )
-      .first();
+      .select({ barcode: products.barcode })
+      .from(products)
+      .where(and(isNotNull(products.barcode), like(products.barcode, '2%')))
+      .orderBy(desc(products.barcode))
+      .limit(1)
+      .get();
 
     let sequenceNumber = 1;
-    
+
     if (result && result.barcode) {
       // Extract sequence number (skip first digit '2', take next 11 digits, ignore check digit)
       const existingBarcode = result.barcode as string;
@@ -119,10 +121,10 @@ async function generateBarcode(db: any): Promise<string> {
 
     // Build first 12 digits: '2' + 11-digit sequence number
     const first12 = '2' + sequenceNumber.toString().padStart(11, '0');
-    
+
     // Calculate check digit
     const checkDigit = calculateEAN13CheckDigit(first12);
-    
+
     // Return complete 13-digit barcode
     return first12 + checkDigit;
   } catch (error) {
@@ -139,142 +141,243 @@ async function generateBarcode(db: any): Promise<string> {
  * Get product by ID with all relations
  */
 export async function getProductById(
-  db: any,
+  db: D1Database,
   productId: string
 ): Promise<ProductWithRelations> {
-  // Get product
-  const product = await getOne<Product>(
-    db,
-    'SELECT * FROM products WHERE id = ?',
-    [productId]
-  );
+  const client = createDb(db);
 
-  // Get related data (including inventory from product_inventory table)
+  const product = await client.select().from(products).where(eq(products.id, productId)).get();
+
+  if (!product) {
+    throw errors.notFound('Product', productId);
+  }
+
   const [images, specifications, tags, dimensions, inventory] = await Promise.all([
-    getMany(db, 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [
-      productId,
-    ]),
-    getMany(
-      db,
-      'SELECT * FROM product_specifications WHERE product_id = ? ORDER BY sort_order',
-      [productId]
-    ),
-    getMany(db, 'SELECT tag FROM product_tags WHERE product_id = ?', [productId]),
-    getOneOrNull(db, 'SELECT * FROM product_dimensions WHERE product_id = ?', [productId]),
-    // ✅ CRITICAL: Fetch inventory from product_inventory table (single source of truth)
-    getOneOrNull(db, 'SELECT * FROM product_inventory WHERE product_id = ?', [productId]),
+    client
+      .select()
+      .from(product_images)
+      .where(eq(product_images.product_id, productId))
+      .orderBy(asc(product_images.sort_order)),
+    client
+      .select()
+      .from(product_specifications)
+      .where(eq(product_specifications.product_id, productId))
+      .orderBy(asc(product_specifications.sort_order)),
+    client
+      .select({ tag: product_tags.tag })
+      .from(product_tags)
+      .where(eq(product_tags.product_id, productId)),
+    client
+      .select()
+      .from(product_dimensions)
+      .where(eq(product_dimensions.product_id, productId))
+      .get(),
+    client
+      .select()
+      .from(product_inventory)
+      .where(eq(product_inventory.product_id, productId))
+      .get(),
   ]);
 
+  // Compute in_stock dynamically based on inventory.stock
+  const computedInStock = inventory && inventory.stock > 0 ? 1 : 0;
+
   return {
-    ...product,
+    ...(product as Product),
+    in_stock: computedInStock, // Override with computed value
     images: images as ProductImage[],
     specifications: specifications as ProductSpecification[],
-    tags: tags.map((t: any) => t.tag),
-    dimensions: dimensions as ProductDimension | null,
-    inventory: (inventory as ProductInventory | null) || undefined, // Include inventory data
+    tags: (tags as Array<{ tag: string }>).map((tag) => tag.tag),
+    dimensions: (dimensions as ProductDimension | null) || null,
+    inventory: (inventory as ProductInventory | null) || undefined,
   };
 }
 
 /**
  * Get all products with pagination and filters
+ * SIMPLIFIED: Uses product_inventory.stock for stock filtering
  */
 export async function getProducts(
-  db: any,
+  db: D1Database,
   filters: ProductFilters,
   pagination: PaginationParams
 ): Promise<PaginatedResponse<ProductWithRelations>> {
+  const client = createDb(db);
   const { page, limit, sortBy = 'created_at', sortOrder = 'desc' } = pagination;
 
-  // Build WHERE clause
-  const conditions: string[] = [];
-  const params: any[] = [];
+  const conditions: any[] = [];
 
   if (filters.categoryId) {
-    conditions.push('p.category_id = ?');
-    params.push(filters.categoryId);
+    conditions.push(eq(products.category_id, filters.categoryId));
   }
 
   if (filters.brand) {
-    conditions.push('p.brand = ?');
-    params.push(filters.brand);
+    conditions.push(eq(products.brand, filters.brand));
   }
 
-  if (filters.inStock !== undefined) {
-    conditions.push('p.in_stock = ?');
-    params.push(filters.inStock ? 1 : 0);
-  }
+  // FIXED: inStock filter now uses product_inventory.stock instead of deprecated products.in_stock
+  // This is handled by always joining with product_inventory and filtering there
 
   if (filters.comingSoon !== undefined) {
-    conditions.push('p.coming_soon = ?');
-    params.push(filters.comingSoon ? 1 : 0);
+    conditions.push(eq(products.coming_soon, filters.comingSoon ? 1 : 0));
   }
 
   if (filters.minPrice !== undefined) {
-    conditions.push('p.price >= ?');
-    params.push(filters.minPrice);
+    conditions.push(sql`${products.price} >= ${filters.minPrice}`);
   }
 
   if (filters.maxPrice !== undefined) {
-    conditions.push('p.price <= ?');
-    params.push(filters.maxPrice);
+    conditions.push(sql`${products.price} <= ${filters.maxPrice}`);
   }
 
   if (filters.searchTerm) {
-    conditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.brand LIKE ? OR p.part_number LIKE ? OR p.b2b_sku LIKE ?)');
     const searchPattern = `%${filters.searchTerm}%`;
-    params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+    conditions.push(
+      or(
+        like(products.name, searchPattern),
+        like(products.description, searchPattern),
+        like(products.brand, searchPattern),
+        like(products.part_number, searchPattern),
+        like(products.b2b_sku, searchPattern)
+      )
+    );
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  // Add inventory-based inStock filter
+  if (filters.inStock !== undefined) {
+    if (filters.inStock) {
+      // Only products with stock > 0
+      conditions.push(sql`COALESCE(${product_inventory.stock}, 0) > 0`);
+    } else {
+      // Only products with stock = 0
+      conditions.push(sql`COALESCE(${product_inventory.stock}, 0) = 0`);
+    }
+  }
 
-  // ✅ CRITICAL: When sorting by stock, use product_inventory.b2b_stock (not deprecated products.stock)
-  // Always LEFT JOIN with product_inventory to ensure we can sort by actual inventory
-  let sortField = sortBy;
-  let fromClause = 'FROM products p';
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const sortColumns: Record<string, any> = {
+    name: products.name,
+    price: products.price,
+    created_at: products.created_at,
+    updated_at: products.updated_at,
+  };
+
+  const offset = (page - 1) * limit;
+  let productRows: any[];
+
+  // SIMPLIFIED: Always join with product_inventory for accurate stock data
+  // This fixes the "ghost stock" bug where products.in_stock was stale
+  const stockSort = sql`COALESCE(${product_inventory.stock}, 0)`;
   
   if (sortBy === 'stock') {
-    // Join with product_inventory and sort by b2b_stock
-    fromClause = 'FROM products p LEFT JOIN product_inventory i ON p.id = i.product_id';
-    sortField = 'COALESCE(i.b2b_stock, 0)'; // Use b2b_stock, default to 0 if no inventory record
+    // Sort by stock
+    let query = client
+      .select()
+      .from(products)
+      .leftJoin(product_inventory, eq(products.id, product_inventory.product_id))
+      .$dynamic();
+
+    if (whereClause) {
+      query = query.where(whereClause);
+    }
+
+    query = query.orderBy(sortOrder === 'asc' ? asc(stockSort) : desc(stockSort));
+
+    const rows = await query.limit(limit).offset(offset);
+    productRows = rows.map((row: any) => row.products);
+  } else if (filters.inStock !== undefined) {
+    // Need to join for inStock filter
+    const sortColumn = sortColumns[sortBy] || products.created_at;
+    let query = client
+      .select()
+      .from(products)
+      .leftJoin(product_inventory, eq(products.id, product_inventory.product_id))
+      .$dynamic();
+
+    if (whereClause) {
+      query = query.where(whereClause);
+    }
+
+    query = query.orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn));
+
+    const rows = await query.limit(limit).offset(offset);
+    productRows = rows.map((row: any) => row.products);
   } else {
-    // Prefix sort field with table alias for consistency
-    sortField = `p.${sortBy}`;
+    // Build query without join for regular sorting (no stock filter)
+    const sortColumn = sortColumns[sortBy] || products.created_at;
+    let query = client.select().from(products).$dynamic();
+
+    if (whereClause) {
+      query = query.where(whereClause);
+    }
+
+    query = query.orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn));
+
+    productRows = await query.limit(limit).offset(offset);
   }
 
-  // Build queries
-  const baseQuery = `SELECT p.* ${fromClause} ${whereClause} ORDER BY ${sortField} ${sortOrder}`;
-  const countQuery = `SELECT COUNT(*) as count ${fromClause} ${whereClause}`;
+  // Count query also needs to join if there's an inStock filter
+  let totalItems: number;
+  if (filters.inStock !== undefined) {
+    const countQuery = client
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .leftJoin(product_inventory, eq(products.id, product_inventory.product_id));
+    const countRow = whereClause
+      ? await countQuery.where(whereClause).get()
+      : await countQuery.get();
+    totalItems = countRow?.count ?? 0;
+  } else {
+    const countQuery = client.select({ count: sql<number>`count(*)` }).from(products);
+    const countRow = whereClause
+      ? await countQuery.where(whereClause).get()
+      : await countQuery.get();
+    totalItems = countRow?.count ?? 0;
+  }
+  const totalPages = Math.ceil(totalItems / limit);
 
-  // Get paginated results
-  const result = await getPaginated<Product>(db, baseQuery, countQuery, params, page, limit);
-
-  // Get related data for each product
   const itemsWithRelations = await Promise.all(
-    result.items.map(async (product) => {
+    (productRows as Product[]).map(async (product) => {
       const [images, specifications, tags, dimensions, inventory] = await Promise.all([
-        getMany(db, 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [
-          product.id,
-        ]),
-        getMany(
-          db,
-          'SELECT * FROM product_specifications WHERE product_id = ? ORDER BY sort_order',
-          [product.id]
-        ),
-        getMany(db, 'SELECT tag FROM product_tags WHERE product_id = ?', [product.id]),
-        getOneOrNull(db, 'SELECT * FROM product_dimensions WHERE product_id = ?', [
-          product.id,
-        ]),
-        // ✅ CRITICAL: Fetch inventory from product_inventory table (single source of truth)
-        getOneOrNull(db, 'SELECT * FROM product_inventory WHERE product_id = ?', [product.id]),
+        client
+          .select()
+          .from(product_images)
+          .where(eq(product_images.product_id, product.id))
+          .orderBy(asc(product_images.sort_order)),
+        client
+          .select()
+          .from(product_specifications)
+          .where(eq(product_specifications.product_id, product.id))
+          .orderBy(asc(product_specifications.sort_order)),
+        client
+          .select({ tag: product_tags.tag })
+          .from(product_tags)
+          .where(eq(product_tags.product_id, product.id)),
+        client
+          .select()
+          .from(product_dimensions)
+          .where(eq(product_dimensions.product_id, product.id))
+          .get(),
+        client
+          .select()
+          .from(product_inventory)
+          .where(eq(product_inventory.product_id, product.id))
+          .get(),
       ]);
+
+      // Compute in_stock dynamically based on inventory.stock
+      // This fixes the bug where products.in_stock was stale
+      const computedInStock = inventory && inventory.stock > 0 ? 1 : 0;
 
       return {
         ...product,
+        in_stock: computedInStock, // Override with computed value
         images: images as ProductImage[],
         specifications: specifications as ProductSpecification[],
-        tags: tags.map((t: any) => t.tag),
-        dimensions: dimensions as ProductDimension | null,
-        inventory: (inventory as ProductInventory | null) || undefined, // Include inventory data
+        tags: (tags as Array<{ tag: string }>).map((tag) => tag.tag),
+        dimensions: (dimensions as ProductDimension | null) || null,
+        inventory: (inventory as ProductInventory | null) || undefined,
       };
     })
   );
@@ -282,12 +385,12 @@ export async function getProducts(
   return {
     items: itemsWithRelations,
     pagination: {
-      currentPage: result.currentPage,
+      currentPage: page,
       pageSize: limit,
-      totalItems: result.totalItems,
-      totalPages: result.totalPages,
-      hasNextPage: result.hasNextPage,
-      hasPreviousPage: result.hasPreviousPage,
+      totalItems,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
     },
   };
 }
@@ -296,7 +399,7 @@ export async function getProducts(
  * Get products by category
  */
 export async function getProductsByCategory(
-  db: any,
+  db: D1Database,
   categoryId: string,
   pagination: PaginationParams
 ): Promise<PaginatedResponse<ProductWithRelations>> {
@@ -305,14 +408,16 @@ export async function getProductsByCategory(
 
 /**
  * Create a new product
- * 
+ *
  * NOTE: Stripe product/price creation is handled at the API Gateway orchestration layer.
  * This function expects stripe_product_id and stripe_price_id to be passed in the request.
  */
 export async function createProduct(
-  db: any,
+  db: D1Database,
   data: CreateProductRequest
 ): Promise<ProductWithRelations> {
+  const client = createDb(db);
+
   // Validate required fields
   validateRequired(data, ['name', 'price']);
   validatePrice(data.price);
@@ -331,7 +436,7 @@ export async function createProduct(
     let retries = 3;
     while (retries > 0) {
       try {
-        b2bSku = await getNextB2BSku(db);
+        b2bSku = await getNextB2BSku(client);
         break; // Success, exit retry loop
       } catch (error) {
         retries--;
@@ -340,17 +445,17 @@ export async function createProduct(
           throw errors.internalError('Failed to generate B2B SKU');
         }
         // Wait a bit before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 100 * (4 - retries)));
+        await new Promise((resolve) => setTimeout(resolve, 100 * (4 - retries)));
       }
     }
   }
 
   // ✅ Auto-generate EAN-13 barcode (always generated, never provided by user)
-  let barcode: string;
+  let barcode = '';
   let barcodeRetries = 3;
   while (barcodeRetries > 0) {
     try {
-      barcode = await generateBarcode(db);
+      barcode = await generateBarcode(client);
       break; // Success, exit retry loop
     } catch (error) {
       barcodeRetries--;
@@ -359,162 +464,121 @@ export async function createProduct(
         throw errors.internalError('Failed to generate barcode');
       }
       // Wait a bit before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 100 * (4 - barcodeRetries)));
+      await new Promise((resolve) => setTimeout(resolve, 100 * (4 - barcodeRetries)));
     }
   }
 
-  // Prepare statements
-  const statements: any[] = [];
+  if (!barcode) {
+    throw errors.internalError('Failed to generate barcode');
+  }
 
-  // Insert product (DEPRECATED columns: stock, in_stock, shopify_product_id, shopify_variant_id)
-  // These are kept for backwards compatibility but should NOT be used
-  statements.push(
-    db
-      .prepare(
-        `INSERT INTO products (
-        id, name, description, price, original_price, image_url, category_id,
-        in_stock, coming_soon, stock, brand, part_number, b2b_sku, barcode, unit,
-        min_order_quantity, max_order_quantity, weight,
-        shopify_product_id, shopify_variant_id, stripe_product_id, stripe_price_id,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .bind(
-        productId,
-        data.name,
-        data.description || null,
-        data.price,
-        data.original_price || null,
-        data.image_url || null,
-        data.category_id || null,
-        1, // DEPRECATED: in_stock - always 1, use product_inventory instead
-        data.coming_soon ? 1 : 0,
-        0, // DEPRECATED: stock - always 0, use product_inventory instead
-        data.brand || null,
-        data.part_number || null,
-        b2bSku, // ✅ Auto-generated B2B SKU (format: TP-00001)
-        barcode, // ✅ Auto-generated EAN-13 barcode (13 digits)
-        data.unit || null,
-        data.min_order_quantity || 1,
-        data.max_order_quantity || null,
-        data.weight || null,
-        null, // DEPRECATED: shopify_product_id - use product_inventory instead
-        null, // DEPRECATED: shopify_variant_id - use product_inventory instead
-        stripeProductId,
-        stripePriceId,
-        now,
-        now
-      )
-  );
+  await client
+    .insert(products)
+    .values({
+      id: productId,
+      name: data.name,
+      description: data.description || null,
+      price: data.price,
+      original_price: data.original_price || null,
+      image_url: data.image_url || null,
+      category_id: data.category_id || null,
+      in_stock: 1,
+      coming_soon: data.coming_soon ? 1 : 0,
+      stock: 0,
+      brand: data.brand || null,
+      part_number: data.part_number || null,
+      b2b_sku: b2bSku,
+      barcode,
+      unit: data.unit || null,
+      min_order_quantity: data.min_order_quantity || 1,
+      max_order_quantity: data.max_order_quantity || null,
+      weight: data.weight || null,
+      shopify_product_id: null,
+      shopify_variant_id: null,
+      stripe_product_id: stripeProductId,
+      stripe_price_id: stripePriceId,
+      created_at: now,
+      updated_at: now,
+    })
+    .run();
 
   // ✅ ALWAYS create inventory record with stock allocation
   // sync_enabled = 1 only when Shopify fields are provided
   const hasShopifyIntegration = !!(
-    data.shopify_product_id || 
-    data.shopify_variant_id || 
+    data.shopify_product_id ||
+    data.shopify_variant_id ||
     data.shopify_inventory_item_id
   );
 
-  // Determine stock mode (default to 'split')
-  const stockMode = data.stock_mode || 'split';
+  // SIMPLIFIED: Always unified mode, Shopify is source of truth
+  const stockValue = data.total_stock ?? 0;
 
-  // Extract stock values from request (sent from ProductForm)
-  const totalStock = data.total_stock ?? 0;
-  
-  // In unified mode: b2b_stock = total_stock, b2c_stock = 0 (Shopify syncs total_stock directly)
-  // In split mode: use provided values
-  let b2bStock: number;
-  let b2cStock: number;
-  
-  if (stockMode === 'unified') {
-    b2bStock = totalStock;
-    b2cStock = 0;
-  } else {
-    b2bStock = data.b2b_stock ?? 0;
-    b2cStock = data.b2c_stock ?? 0;
-  }
-
-  statements.push(
-    db
-      .prepare(
-        `INSERT INTO product_inventory (
-        product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
-        total_stock, b2b_stock, b2c_stock, reserved_stock,
-        stock_mode, sync_enabled, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .bind(
-        productId,
-        data.shopify_product_id || null,
-        data.shopify_variant_id || null,
-        data.shopify_inventory_item_id || null,
-        totalStock,
-        b2bStock,
-        b2cStock,
-        0, // reserved_stock starts at 0
-        stockMode,
-        hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
-        now,
-        now
-      )
-  );
+  await client
+    .insert(product_inventory)
+    .values({
+      product_id: productId,
+      shopify_product_id: data.shopify_product_id || null,
+      shopify_variant_id: data.shopify_variant_id || null,
+      shopify_inventory_item_id: data.shopify_inventory_item_id || null,
+      stock: stockValue,
+      sync_enabled: hasShopifyIntegration ? 1 : 0,
+      created_at: now,
+      updated_at: now,
+    })
+    .run();
 
   // Insert images
   if (data.images && data.images.length > 0) {
-    data.images.forEach((imageUrl, index) => {
-      statements.push(
-        db
-          .prepare(
-            'INSERT INTO product_images (id, product_id, image_url, sort_order, created_at) VALUES (?, ?, ?, ?, ?)'
-          )
-          .bind(nanoid(), productId, imageUrl, index, now)
-      );
-    });
+    for (const [index, imageUrl] of data.images.entries()) {
+      await client
+        .insert(product_images)
+        .values({
+          id: nanoid(),
+          product_id: productId,
+          image_url: imageUrl,
+          sort_order: index,
+          created_at: now,
+        })
+        .run();
+    }
   }
 
   // Insert specifications
   if (data.specifications && data.specifications.length > 0) {
-    data.specifications.forEach((spec, index) => {
-      statements.push(
-        db
-          .prepare(
-            'INSERT INTO product_specifications (id, product_id, spec_key, spec_value, sort_order) VALUES (?, ?, ?, ?, ?)'
-          )
-          .bind(nanoid(), productId, spec.key, spec.value, index)
-      );
-    });
+    for (const [index, spec] of data.specifications.entries()) {
+      await client
+        .insert(product_specifications)
+        .values({
+          id: nanoid(),
+          product_id: productId,
+          spec_key: spec.key,
+          spec_value: spec.value,
+          sort_order: index,
+        })
+        .run();
+    }
   }
 
   // Insert tags
   if (data.tags && data.tags.length > 0) {
-    data.tags.forEach((tag) => {
-      statements.push(
-        db
-          .prepare('INSERT INTO product_tags (product_id, tag) VALUES (?, ?)')
-          .bind(productId, tag)
-      );
-    });
+    for (const tag of data.tags) {
+      await client.insert(product_tags).values({ product_id: productId, tag }).run();
+    }
   }
 
   // Insert dimensions
   if (data.dimensions) {
-    statements.push(
-      db
-        .prepare(
-          'INSERT INTO product_dimensions (product_id, length, width, height, unit) VALUES (?, ?, ?, ?, ?)'
-        )
-        .bind(
-          productId,
-          data.dimensions.length,
-          data.dimensions.width,
-          data.dimensions.height,
-          data.dimensions.unit || 'cm'
-        )
-    );
+    await client
+      .insert(product_dimensions)
+      .values({
+        product_id: productId,
+        length: data.dimensions.length,
+        width: data.dimensions.width,
+        height: data.dimensions.height,
+        unit: data.dimensions.unit || 'cm',
+      })
+      .run();
   }
-
-  // Execute batch
-  await batch(db, statements);
 
   // Return created product
   return getProductById(db, productId);
@@ -522,266 +586,203 @@ export async function createProduct(
 
 /**
  * Update a product
- * 
+ *
  * NOTE: Stripe updates are handled at the API Gateway orchestration layer.
  * This function only handles D1 database updates.
  */
 export async function updateProduct(
-  db: any,
+  db: D1Database,
   productId: string,
   data: UpdateProductRequest
 ): Promise<ProductWithRelations> {
-  // Check if product exists and get current data
-  const existing = await getOneOrNull<Product>(
-    db,
-    'SELECT * FROM products WHERE id = ?',
-    [productId]
-  );
+  const client = createDb(db);
+
+  const existing = await client.select().from(products).where(eq(products.id, productId)).get();
 
   if (!existing) {
     throw errors.notFound('Product', productId);
   }
 
-  // Validate data
   if (data.price !== undefined) {
     validatePrice(data.price);
   }
 
   const now = new Date().toISOString();
-  const statements: any[] = [];
 
-  // NOTE: Stripe updates are handled at the API Gateway orchestration layer.
-  // If a new stripe_price_id is passed from orchestration (due to price change),
-  // it will be included in the data and updated below.
-
-  // ============================================================================
-  // UPDATE PRODUCTS TABLE
-  // ============================================================================
-  const productUpdates = buildFieldUpdates({
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    original_price: data.original_price,
-    image_url: data.image_url,
-    category_id: data.category_id,
-    in_stock: boolToInt(data.in_stock),
-    coming_soon: boolToInt(data.coming_soon),
-    brand: data.brand,
-    part_number: data.part_number,
-    b2b_sku: data.b2b_sku, // ✅ Allow manual update of B2B SKU
-    unit: data.unit,
-    min_order_quantity: data.min_order_quantity,
-    max_order_quantity: data.max_order_quantity,
-    weight: data.weight,
-    stripe_product_id: data.stripe_product_id,
-    stripe_price_id: data.stripe_price_id,
-    updated_at: now,
-  });
-
-  // NOTE: shopify_product_id and shopify_variant_id are DEPRECATED in products table
-  // They should NOT be updated here - use product_inventory table instead
+  const productUpdates: Record<string, unknown> = {};
+  if (data.name !== undefined) productUpdates.name = data.name;
+  if (data.description !== undefined) productUpdates.description = data.description;
+  if (data.price !== undefined) productUpdates.price = data.price;
+  if (data.original_price !== undefined) productUpdates.original_price = data.original_price;
+  if (data.image_url !== undefined) productUpdates.image_url = data.image_url;
+  if (data.category_id !== undefined) productUpdates.category_id = data.category_id;
+  if (data.in_stock !== undefined) productUpdates.in_stock = data.in_stock ? 1 : 0;
+  if (data.coming_soon !== undefined) productUpdates.coming_soon = data.coming_soon ? 1 : 0;
+  if (data.brand !== undefined) productUpdates.brand = data.brand;
+  if (data.part_number !== undefined) productUpdates.part_number = data.part_number;
+  if (data.b2b_sku !== undefined) productUpdates.b2b_sku = data.b2b_sku;
+  if (data.unit !== undefined) productUpdates.unit = data.unit;
+  if (data.min_order_quantity !== undefined)
+    productUpdates.min_order_quantity = data.min_order_quantity;
+  if (data.max_order_quantity !== undefined)
+    productUpdates.max_order_quantity = data.max_order_quantity;
+  if (data.weight !== undefined) productUpdates.weight = data.weight;
+  if (data.stripe_product_id !== undefined)
+    productUpdates.stripe_product_id = data.stripe_product_id;
+  if (data.stripe_price_id !== undefined) productUpdates.stripe_price_id = data.stripe_price_id;
 
   if (Object.keys(productUpdates).length > 0) {
-    const { sql, params } = buildUpdateQuery('products', productUpdates, 'id = ?', [productId]);
-    statements.push(db.prepare(sql).bind(...params));
+    productUpdates.updated_at = now;
+    await client.update(products).set(productUpdates).where(eq(products.id, productId)).run();
   }
 
-  // ============================================================================
-  // UPDATE PRODUCT_INVENTORY TABLE (Shopify fields + Stock allocation)
-  // ============================================================================
-  
-  // Determine stock mode - use provided value or keep existing
-  const stockMode = data.stock_mode;
-  
-  // Build inventory updates
-  const inventoryUpdates = buildFieldUpdates({
-    shopify_product_id: data.shopify_product_id,
-    shopify_variant_id: data.shopify_variant_id,
-    shopify_inventory_item_id: data.shopify_inventory_item_id,
-    total_stock: data.total_stock,
-    // In unified mode: b2b_stock = total_stock, b2c_stock = 0
-    // In split mode: use provided values
-    b2b_stock: stockMode === 'unified' && data.total_stock !== undefined 
-      ? data.total_stock 
-      : data.b2b_stock,
-    b2c_stock: stockMode === 'unified' 
-      ? 0 
-      : data.b2c_stock,
-    stock_mode: stockMode,
-    updated_at: now,
-  });
+  // SIMPLIFIED: Stock updates now use single 'stock' column (Shopify is source of truth)
+  const inventoryUpdates: Record<string, unknown> = {};
 
-  // Check if inventory record exists
-  const inventoryExists = await getOneOrNull(
-    db,
-    'SELECT product_id FROM product_inventory WHERE product_id = ?',
-    [productId]
-  );
+  if (data.shopify_product_id !== undefined)
+    inventoryUpdates.shopify_product_id = data.shopify_product_id;
+  if (data.shopify_variant_id !== undefined)
+    inventoryUpdates.shopify_variant_id = data.shopify_variant_id;
+  if (data.shopify_inventory_item_id !== undefined)
+    inventoryUpdates.shopify_inventory_item_id = data.shopify_inventory_item_id;
+  
+  // SIMPLIFIED: Use 'stock' as the only field
+  if (data.total_stock !== undefined) {
+    inventoryUpdates.stock = data.total_stock;
+  }
 
-  // Determine if sync should be enabled (any Shopify field present)
+  const inventoryExists = await client
+    .select({ product_id: product_inventory.product_id })
+    .from(product_inventory)
+    .where(eq(product_inventory.product_id, productId))
+    .get();
+
   const hasShopifyIntegration = !!(
-    data.shopify_product_id || 
-    data.shopify_variant_id || 
+    data.shopify_product_id ||
+    data.shopify_variant_id ||
     data.shopify_inventory_item_id
   );
 
+  const touchedShopifyFields =
+    data.shopify_product_id !== undefined ||
+    data.shopify_variant_id !== undefined ||
+    data.shopify_inventory_item_id !== undefined;
+
   if (inventoryExists) {
-    // Update existing inventory record (Shopify fields + stock + sync_enabled)
-    if (Object.keys(inventoryUpdates).length > 1) { // More than just updated_at
-      inventoryUpdates.sync_enabled = hasShopifyIntegration ? 1 : 0;
-      const { sql, params } = buildUpdateQuery(
-        'product_inventory',
-        inventoryUpdates,
-        'product_id = ?',
-        [productId]
-      );
-      statements.push(db.prepare(sql).bind(...params));
+    if (Object.keys(inventoryUpdates).length > 0 || touchedShopifyFields) {
+      if (touchedShopifyFields) {
+        inventoryUpdates.sync_enabled = hasShopifyIntegration ? 1 : 0;
+      }
+      inventoryUpdates.updated_at = now;
+      await client
+        .update(product_inventory)
+        .set(inventoryUpdates)
+        .where(eq(product_inventory.product_id, productId))
+        .run();
     }
   } else {
-    // ✅ ALWAYS create inventory record if missing with stock allocation
-    // This handles legacy products that don't have inventory records yet
-    const totalStock = data.total_stock ?? 0;
-    const newStockMode = stockMode || 'split';
-    
-    // In unified mode: b2b_stock = total_stock, b2c_stock = 0
-    let b2bStock: number;
-    let b2cStock: number;
-    
-    if (newStockMode === 'unified') {
-      b2bStock = totalStock;
-      b2cStock = 0;
-    } else {
-      b2bStock = data.b2b_stock ?? 0;
-      b2cStock = data.b2c_stock ?? 0;
-    }
-    
-    statements.push(
-      db
-        .prepare(
-          `INSERT INTO product_inventory (
-            product_id, shopify_product_id, shopify_variant_id, shopify_inventory_item_id,
-            total_stock, b2b_stock, b2c_stock, reserved_stock,
-            stock_mode, sync_enabled, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        )
-        .bind(
-          productId,
-          data.shopify_product_id || null,
-          data.shopify_variant_id || null,
-          data.shopify_inventory_item_id || null,
-          totalStock,
-          b2bStock,
-          b2cStock,
-          0, // reserved_stock starts at 0
-          newStockMode,
-          hasShopifyIntegration ? 1 : 0, // Enable sync only when Shopify codes exist
-          now,
-          now
-        )
-    );
+    // SIMPLIFIED: New inventory
+    const stockValue = data.total_stock ?? 0;
+
+    await client
+      .insert(product_inventory)
+      .values({
+        product_id: productId,
+        shopify_product_id: data.shopify_product_id || null,
+        shopify_variant_id: data.shopify_variant_id || null,
+        shopify_inventory_item_id: data.shopify_inventory_item_id || null,
+        stock: stockValue,
+        sync_enabled: hasShopifyIntegration ? 1 : 0,
+        created_at: now,
+        updated_at: now,
+      })
+      .run();
   }
 
-  // ============================================================================
-  // UPDATE RELATED TABLES
-  // ============================================================================
-
-  // Update images (replace all)
   if (data.images !== undefined) {
-    statements.push(db.prepare('DELETE FROM product_images WHERE product_id = ?').bind(productId));
-    data.images.forEach((imageUrl, index) => {
-      statements.push(
-        db
-          .prepare(
-            'INSERT INTO product_images (id, product_id, image_url, sort_order, created_at) VALUES (?, ?, ?, ?, ?)'
-          )
-          .bind(nanoid(), productId, imageUrl, index, now)
-      );
-    });
+    await client.delete(product_images).where(eq(product_images.product_id, productId)).run();
+    for (const [index, imageUrl] of data.images.entries()) {
+      await client
+        .insert(product_images)
+        .values({
+          id: nanoid(),
+          product_id: productId,
+          image_url: imageUrl,
+          sort_order: index,
+          created_at: now,
+        })
+        .run();
+    }
   }
 
-  // Update specifications (replace all)
   if (data.specifications !== undefined) {
-    statements.push(
-      db.prepare('DELETE FROM product_specifications WHERE product_id = ?').bind(productId)
-    );
-    data.specifications.forEach((spec, index) => {
-      statements.push(
-        db
-          .prepare(
-            'INSERT INTO product_specifications (id, product_id, spec_key, spec_value, sort_order) VALUES (?, ?, ?, ?, ?)'
-          )
-          .bind(nanoid(), productId, spec.key, spec.value, index)
-      );
-    });
+    await client
+      .delete(product_specifications)
+      .where(eq(product_specifications.product_id, productId))
+      .run();
+    for (const [index, spec] of data.specifications.entries()) {
+      await client
+        .insert(product_specifications)
+        .values({
+          id: nanoid(),
+          product_id: productId,
+          spec_key: spec.key,
+          spec_value: spec.value,
+          sort_order: index,
+        })
+        .run();
+    }
   }
 
-  // Update tags (replace all)
   if (data.tags !== undefined) {
-    statements.push(db.prepare('DELETE FROM product_tags WHERE product_id = ?').bind(productId));
-    data.tags.forEach((tag) => {
-      statements.push(
-        db.prepare('INSERT INTO product_tags (product_id, tag) VALUES (?, ?)').bind(productId, tag)
-      );
-    });
+    await client.delete(product_tags).where(eq(product_tags.product_id, productId)).run();
+    for (const tag of data.tags) {
+      await client.insert(product_tags).values({ product_id: productId, tag }).run();
+    }
   }
 
-  // Update dimensions
   if (data.dimensions !== undefined) {
-    statements.push(
-      db.prepare('DELETE FROM product_dimensions WHERE product_id = ?').bind(productId)
-    );
-    statements.push(
-      db
-        .prepare(
-          'INSERT INTO product_dimensions (product_id, length, width, height, unit) VALUES (?, ?, ?, ?, ?)'
-        )
-        .bind(
-          productId,
-          data.dimensions.length,
-          data.dimensions.width,
-          data.dimensions.height,
-          data.dimensions.unit || 'cm'
-        )
-    );
+    await client
+      .delete(product_dimensions)
+      .where(eq(product_dimensions.product_id, productId))
+      .run();
+    await client
+      .insert(product_dimensions)
+      .values({
+        product_id: productId,
+        length: data.dimensions.length,
+        width: data.dimensions.width,
+        height: data.dimensions.height,
+        unit: data.dimensions.unit || 'cm',
+      })
+      .run();
   }
 
-  // Execute batch
-  if (statements.length > 0) {
-    await batch(db, statements);
-  }
-
-  // Return updated product
   return getProductById(db, productId);
 }
 
 /**
  * Delete a product
- * 
+ *
  * NOTE: Stripe archival is handled at the API Gateway orchestration layer.
  * This function only handles D1 database deletion.
  */
-export async function deleteProduct(db: any, productId: string): Promise<void> {
-  // Check if product exists
-  const existing = await getOneOrNull<Product>(
-    db,
-    'SELECT * FROM products WHERE id = ?',
-    [productId]
-  );
+export async function deleteProduct(db: D1Database, productId: string): Promise<void> {
+  const client = createDb(db);
+
+  const existing = await client.select().from(products).where(eq(products.id, productId)).get();
 
   if (!existing) {
     throw errors.notFound('Product', productId);
   }
 
-  // Delete product and all related records from D1
-  const statements = [
-    db.prepare('DELETE FROM product_images WHERE product_id = ?').bind(productId),
-    db.prepare('DELETE FROM product_specifications WHERE product_id = ?').bind(productId),
-    db.prepare('DELETE FROM product_tags WHERE product_id = ?').bind(productId),
-    db.prepare('DELETE FROM product_dimensions WHERE product_id = ?').bind(productId),
-    db.prepare('DELETE FROM product_inventory WHERE product_id = ?').bind(productId),
-    db.prepare('DELETE FROM products WHERE id = ?').bind(productId),
-  ];
-
-  await batch(db, statements);
+  await client.delete(product_images).where(eq(product_images.product_id, productId)).run();
+  await client
+    .delete(product_specifications)
+    .where(eq(product_specifications.product_id, productId))
+    .run();
+  await client.delete(product_tags).where(eq(product_tags.product_id, productId)).run();
+  await client.delete(product_dimensions).where(eq(product_dimensions.product_id, productId)).run();
+  await client.delete(product_inventory).where(eq(product_inventory.product_id, productId)).run();
+  await client.delete(products).where(eq(products.id, productId)).run();
 }
-

@@ -1,6 +1,6 @@
 /**
  * Shared Email Queue Message Types
- * 
+ *
  * Used by both API Gateway (producer) and Email Service (consumer)
  * Implements discriminated union pattern for type safety
  */
@@ -54,14 +54,20 @@ export function isWelcomeEmail(message: EmailQueueMessage): message is WelcomeEm
   return message.type === 'welcome';
 }
 
-export function isPasswordResetEmail(message: EmailQueueMessage): message is PasswordResetEmailMessage {
+export function isPasswordResetEmail(
+  message: EmailQueueMessage
+): message is PasswordResetEmailMessage {
   return message.type === 'password-reset';
 }
 
-export function isVerificationEmail(message: EmailQueueMessage): message is VerificationEmailMessage {
+export function isVerificationEmail(
+  message: EmailQueueMessage
+): message is VerificationEmailMessage {
   return message.type === 'verification';
 }
 
-export function isAccountVerifiedEmail(message: EmailQueueMessage): message is AccountVerifiedEmailMessage {
+export function isAccountVerifiedEmail(
+  message: EmailQueueMessage
+): message is AccountVerifiedEmailMessage {
   return message.type === 'account-verified';
 }

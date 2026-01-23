@@ -1,6 +1,6 @@
 /**
  * Auth Middleware
- * 
+ *
  * Validates JWT tokens by calling the auth-service /auth/validate endpoint
  * Attaches user context to Hono context for use in route handlers
  */
@@ -52,11 +52,7 @@ async function validateToken(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw createError(
-      'AUTH_FAILED',
-      error.message || 'Token validation failed',
-      401
-    );
+    throw createError('AUTH_FAILED', error.message || 'Token validation failed', 401);
   }
 
   return response.json();
@@ -64,7 +60,7 @@ async function validateToken(
 
 /**
  * Middleware: Require authentication
- * 
+ *
  * Validates JWT token and attaches user context to request
  */
 export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
@@ -103,7 +99,7 @@ export async function requireAuth(c: Context<{ Bindings: Env }>, next: Next) {
 
 /**
  * Middleware: Require admin role
- * 
+ *
  * Must be used AFTER requireAuth middleware
  * Checks if user has admin role
  */
@@ -115,11 +111,7 @@ export async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
   }
 
   if (user.role !== 'admin') {
-    throw createError(
-      'FORBIDDEN',
-      'Admin access required for this operation',
-      403
-    );
+    throw createError('FORBIDDEN', 'Admin access required for this operation', 403);
   }
 
   await next();
@@ -127,7 +119,7 @@ export async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
 
 /**
  * Middleware: Require specific permission
- * 
+ *
  * Must be used AFTER requireAuth middleware
  * Checks if user has a specific permission
  */
@@ -140,11 +132,7 @@ export function requirePermission(permission: string) {
     }
 
     if (!user.permissions.includes(permission)) {
-      throw createError(
-        'FORBIDDEN',
-        `Permission '${permission}' required for this operation`,
-        403
-      );
+      throw createError('FORBIDDEN', `Permission '${permission}' required for this operation`, 403);
     }
 
     await next();
@@ -153,7 +141,7 @@ export function requirePermission(permission: string) {
 
 /**
  * Middleware: Optional authentication
- * 
+ *
  * Validates token if present, but doesn't fail if missing
  * Useful for endpoints that behave differently for authenticated users
  */

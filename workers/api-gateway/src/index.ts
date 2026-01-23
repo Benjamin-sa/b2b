@@ -1,12 +1,12 @@
 /**
  * API Gateway - Orchestration Layer with Service Bindings
- * 
+ *
  * This gateway orchestrates multi-service workflows using Cloudflare Service Bindings
  * for direct worker-to-worker communication (no HTTP overhead).
- * 
+ *
  * Architecture:
  * Client → API Gateway (orchestrates) → Services (via bindings)
- * 
+ *
  * Responsibilities:
  * ✅ Multi-service orchestration (e.g., register + email)
  * ✅ CORS handling for browser requests
@@ -14,7 +14,7 @@
  * ✅ Rate limiting to prevent abuse
  * ✅ Error handling for service failures
  * ✅ Critical vs. non-critical operation handling
- * 
+ *
  */
 import { Hono } from 'hono';
 import type { Env, ContextVariables } from './types';
@@ -90,22 +90,21 @@ app.route('/api/invoices', invoicesOrchestration);
 // Shopify product search - direct service binding to shopify-sync-service
 app.all('/api/shopify/*', async (c) => {
   const path = c.req.path.replace('/api/shopify', '');
-  
+
   // ✅ CRITICAL: Preserve query parameters when forwarding request
   const url = new URL(c.req.url);
   const queryString = url.search; // Includes the '?' prefix
   const fullPath = `${path || '/'}${queryString}`;
 
+  const headers = new Headers(c.req.raw.headers);
+  headers.set('X-Service-Token', c.env.SERVICE_SECRET);
 
-    const headers = new Headers(c.req.raw.headers);
-    headers.set("X-Service-Token", c.env.SERVICE_SECRET);
-  
   const request = new Request(`https://dummy${fullPath}`, {
     method: c.req.method,
     headers,
     body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
   });
-  
+
   return c.env.SHOPIFY_SYNC_SERVICE.fetch(request);
 });
 
@@ -134,7 +133,7 @@ app.notFound((c) => {
 
 app.onError((err, c) => {
   console.error('[Gateway Error]', err);
-  
+
   return c.json(
     {
       error: 'Internal Server Error',

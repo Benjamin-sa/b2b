@@ -1,6 +1,6 @@
 /**
  * Shopify Product Search Service
- * 
+ *
  * Search Shopify products to link them with B2B products
  */
 
@@ -73,24 +73,27 @@ export async function searchShopifyProducts(
   }
 
   // Execute Shopify GraphQL query
-  const response = await fetch(`https://${env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-10/graphql.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': env.SHOPIFY_ACCESS_TOKEN,
-    },
-    body: JSON.stringify({
-      query: graphqlQuery,
-      variables,
-    }),
-  });
+  const response = await fetch(
+    `https://${env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-10/graphql.json`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': env.SHOPIFY_ACCESS_TOKEN,
+      },
+      body: JSON.stringify({
+        query: graphqlQuery,
+        variables,
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
   }
 
-  const result = await response.json() as {
+  const result = (await response.json()) as {
     data: any;
     errors?: Array<{ message: string }>;
   };
@@ -211,11 +214,7 @@ function buildProductsSearchQuery(): string {
 /**
  * Parse Shopify GraphQL response and flatten to variant list
  */
-function parseShopifyResponse(
-  data: any,
-  variantId?: string,
-  productId?: string
-): ShopifyVariant[] {
+function parseShopifyResponse(data: any, variantId?: string, productId?: string): ShopifyVariant[] {
   const variants: ShopifyVariant[] = [];
 
   if (variantId && data.productVariant) {

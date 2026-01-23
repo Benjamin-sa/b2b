@@ -1,8 +1,10 @@
 /**
  * Auth Service Types
- * 
+ *
  * Type definitions for the authentication service
  */
+
+import type { User as DbUser } from '@b2b/db/types';
 
 export interface Env {
   DB: D1Database;
@@ -18,31 +20,7 @@ export interface Env {
   STRIPE_SERVICE: Fetcher; // Service binding to stripe-service worker
 }
 
-export interface User {
-  id: string;
-  email: string;
-  password_hash: string;
-  role: 'admin' | 'customer';
-  company_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  btw_number: string | null;
-  btw_number_validated: number | null; // SQLite boolean (0 or 1)
-  btw_verified_name: string | null; // Official company name from VIES
-  btw_verified_address: string | null; // Official address from VIES
-  btw_verified_at: string | null; // When BTW was verified
-  address_street: string | null;
-  address_house_number: string | null;
-  address_postal_code: string | null;
-  address_city: string | null;
-  address_country: string | null;
-  stripe_customer_id: string | null; // Stripe customer ID
-  is_active: number; // SQLite boolean (0 or 1)
-  is_verified: number; // SQLite boolean (0 or 1)
-  created_at: string;
-  updated_at: string;
-}
+export type User = DbUser;
 
 export interface UserClaims {
   uid: string; // User ID (matches Firebase Auth naming)

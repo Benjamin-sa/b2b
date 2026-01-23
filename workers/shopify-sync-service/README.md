@@ -5,22 +5,25 @@ Bidirectional inventory synchronization between B2B platform and Shopify B2C sto
 ## 🎯 Purpose
 
 This worker synchronizes stock levels between:
+
 - **B2B Platform**: `product_inventory.b2b_stock` (sold on B2B platform)
 - **Shopify**: `product_inventory.b2c_stock` (sold on Shopify B2C store)
 
 ## 🔄 Sync Flows
 
 ### Outbound (B2B → Shopify)
+
 When a B2B order is placed, this service updates Shopify with the remaining B2C stock.
 
 ```
-B2B Order (5 units) 
+B2B Order (5 units)
   → Inventory Service decreases B2B stock
   → Calls Shopify Sync Service
   → Updates Shopify with current B2C stock
 ```
 
 ### Inbound (Shopify → B2B)
+
 When a B2C order is placed on Shopify, webhooks update our B2C stock.
 
 ```
@@ -32,6 +35,7 @@ Shopify Order (3 units)
 ```
 
 ### Scheduled Reconciliation
+
 Every 5 minutes, a cron job syncs all products to catch any discrepancies.
 
 ## 📡 API Endpoints
@@ -77,6 +81,7 @@ npm install
 ### 2. Configure Shopify
 
 #### Get Admin API Access Token
+
 1. Go to Shopify Admin → Apps → Develop apps
 2. Create custom app with these scopes:
    - `read_inventory`
@@ -86,6 +91,7 @@ npm install
 3. Install app and copy **Admin API access token**
 
 #### Get Location ID
+
 ```bash
 curl -X GET \
   'https://your-store.myshopify.com/admin/api/2024-10/locations.json' \
@@ -93,6 +99,7 @@ curl -X GET \
 ```
 
 #### Create Webhooks
+
 ```bash
 # Inventory updates
 curl -X POST \
@@ -163,10 +170,10 @@ import type { Env } from '../types';
 
 async function createOrder(env: Env, orderData: any) {
   // ... create order ...
-  
+
   // Decrease B2B stock
   await decreaseB2BStock(env.DB, productId, quantity);
-  
+
   // Sync to Shopify (if product is linked)
   const inventory = await getInventoryByProductId(env.DB, productId);
   if (inventory.sync_enabled && inventory.shopify_variant_id) {

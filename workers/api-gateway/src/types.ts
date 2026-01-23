@@ -1,6 +1,6 @@
 /**
  * API Gateway Types
- * 
+ *
  * Orchestration layer using Cloudflare Service Bindings
  * for direct worker-to-worker communication (no HTTP overhead)
  */
@@ -38,7 +38,7 @@ export interface TelegramService extends Fetcher {
 
 export interface Env {
   ENVIRONMENT: 'development' | 'production';
-  
+
   // Service Bindings (direct worker-to-worker calls - FAST!)
   AUTH_SERVICE: AuthService;
   EMAIL_SERVICE: EmailService;
@@ -46,19 +46,19 @@ export interface Env {
   STRIPE_SERVICE: StripeService;
   SHOPIFY_SYNC_SERVICE: ShopifySyncService;
   TELEGRAM_SERVICE: TelegramService;
-  
+
   // Service-to-service authentication secret
   SERVICE_SECRET: string;
-  
+
   // Queue Bindings (for async email processing)
   EMAIL_QUEUE: Queue;
-  
+
   // D1 Database binding (for invoice persistence)
   DB: D1Database;
-  
+
   // Allowed origins for CORS
   ALLOWED_ORIGINS: string;
-  
+
   // Rate limiting (optional KV namespace)
   RATE_LIMIT?: KVNamespace;
 }
@@ -70,7 +70,7 @@ export type ContextVariables = {
     email: string;
     stripeCustomerId: string | null;
   };
-}
+};
 
 export interface ProxyOptions {
   serviceUrl: string;

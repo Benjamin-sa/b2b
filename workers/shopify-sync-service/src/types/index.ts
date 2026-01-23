@@ -22,21 +22,12 @@ export interface Env {
 }
 
 /**
- * Stock mode type
- * - 'split': Separate B2B/B2C allocations (default)
- * - 'unified': Shared stock pool between B2B and Shopify
- */
-export type StockMode = 'split' | 'unified';
-
-/**
  * Product inventory from D1
+ * SIMPLIFIED: Shopify is the source of truth, single 'stock' column
  */
 export interface ProductInventory {
   product_id: string;
-  total_stock: number;
-  b2b_stock: number;
-  b2c_stock: number;
-  reserved_stock: number;
+  stock: number;
   shopify_product_id: string | null;
   shopify_variant_id: string | null;
   shopify_inventory_item_id: string | null;
@@ -44,8 +35,6 @@ export interface ProductInventory {
   sync_enabled: number;
   last_synced_at: string | null;
   sync_error: string | null;
-  // Stock mode: 'split' (default) = separate B2B/B2C allocations, 'unified' = shared stock pool
-  stock_mode: StockMode;
   created_at: string;
   updated_at: string;
 }
@@ -78,7 +67,13 @@ export interface ShopifyVariant {
 export interface SyncLogEntry {
   id: string;
   product_id: string;
-  action: 'sync_to_shopify' | 'sync_from_shopify' | 'b2b_order' | 'b2c_order' | 'restock' | 'rebalance';
+  action:
+    | 'sync_to_shopify'
+    | 'sync_from_shopify'
+    | 'b2b_order'
+    | 'b2c_order'
+    | 'restock'
+    | 'rebalance';
   source: 'b2b_checkout' | 'shopify_webhook' | 'admin_manual' | 'cron_job';
   total_change: number;
   b2b_change: number;
