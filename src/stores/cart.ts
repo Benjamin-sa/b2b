@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
-import type { CartItem, Product } from '../types';
+import type { CartItem, ProductWithRelations } from '../types';
 import { useAuthStore } from './auth';
 
 // LocalStorage key for cart persistence
@@ -23,10 +23,11 @@ const loadCartFromStorage = (): CartItem[] => {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Restore Date objects for addedAt
+      // Restore Date objects for added_at
       return parsed.map((item: any) => ({
         ...item,
-        addedAt: item.addedAt ? new Date(item.addedAt) : new Date(),
+        added_at:
+          item.added_at || item.addedAt ? new Date(item.added_at || item.addedAt) : new Date(),
       }));
     }
   } catch {
@@ -60,11 +61,11 @@ export const useCartStore = defineStore('cart', () => {
   );
 
   const getItemQuantity = (productId: string): number => {
-    const item = items.value.find((i) => i.productId === productId);
+    const item = items.value.find((i) => i.product_id === productId);
     return item?.quantity || 0;
   };
 
-  const calculateLimit = (product: Product): number => {
+  const calculateLimit = (product: ProductWithRelations): number => {
     if (product.coming_soon === 1) {
       return 0;
     }
@@ -78,7 +79,7 @@ export const useCartStore = defineStore('cart', () => {
     return Math.min(stock, maxOrder);
   };
 
-  const getRemainingQuantity = (product: Product): number => {
+  const getRemainingQuantity = (product: ProductWithRelations): number => {
     const limit = calculateLimit(product);
     if (limit === Infinity) return Infinity;
 
@@ -105,31 +106,31 @@ export const useCartStore = defineStore('cart', () => {
     return { existingQuantity: limit, adjusted: true };
   };
 
-  const itemCount = computed(() => {
+  const item_count = computed(() => {
     return items.value.reduce((total, item) => total + item.quantity, 0);
   });
 
-  const totalPrice = computed(() => {
+  const total_price = computed(() => {
     return items.value.reduce((total, item) => total + item.price * item.quantity, 0);
   });
 
-  const totalWeight = computed(() => {
+  const total_weight = computed(() => {
     return items.value.reduce((total, item) => {
       const weight = item.product.weight || 0;
       return total + weight * item.quantity;
     }, 0);
   });
 
-  const shippingCost = computed(() => {
-    if (itemCount.value === 0) return 0;
-    if (totalWeight.value === 0) return 7.0;
+  const shipping_cost = computed(() => {
+    if (item_count.value === 0) return 0;
+    if (total_weight.value === 0) return 7.0;
 
     const shippingRate = 7.0; // 7 euro
     const weightPerRate = 20; // per 20kg
-    return Math.ceil(totalWeight.value / weightPerRate) * shippingRate;
+    return Math.ceil(total_weight.value / weightPerRate) * shippingRate;
   });
 
-  const subtotal = computed(() => totalPrice.value);
+  const subtotal = computed(() => total_price.value);
 
   // VAT/BTW: Only Belgian customers pay 21% VAT
   // Non-Belgian EU B2B customers are VAT exempt (reverse charge mechanism)
@@ -137,13 +138,13 @@ export const useCartStore = defineStore('cart', () => {
     if (!authStore.isBelgianCustomer) {
       return 0;
     }
-    return (totalPrice.value + shippingCost.value) * 0.21; // 21% VAT for Belgian B2B
+    return (total_price.value + shipping_cost.value) * 0.21; // 21% VAT for Belgian B2B
   });
 
   // Computed to check if VAT should be displayed in UI
-  const shouldShowVAT = computed(() => authStore.isBelgianCustomer);
+  const should_show_vat = computed(() => authStore.isBelgianCustomer);
 
-  const grandTotal = computed(() => subtotal.value + shippingCost.value + tax.value);
+  const grand_total = computed(() => subtotal.value + shipping_cost.value + tax.value);
 
   const addItem = async (item: CartItem): Promise<CartMutationResult> => {
     if (!item.product.in_stock || item.product.coming_soon) {
@@ -151,13 +152,13 @@ export const useCartStore = defineStore('cart', () => {
         status: 'unavailable',
         requestedQuantity: item.quantity,
         appliedQuantity: 0,
-        totalQuantity: getItemQuantity(item.productId),
+        totalQuantity: getItemQuantity(item.product_id),
         remainingQuantity: 0,
         limit: 0,
       };
     }
 
-    const existingItem = items.value.find((i) => i.productId === item.productId);
+    const existingItem = items.value.find((i) => i.product_id === item.product_id);
 
     const limit = calculateLimit(item.product);
     const { existingQuantity, adjusted } = enforceLimitOnExisting(existingItem, limit);
@@ -172,7 +173,7 @@ export const useCartStore = defineStore('cart', () => {
       items.value.push({
         ...item,
         quantity: appliedQuantity,
-        addedAt: new Date(),
+        added_at: new Date(),
       });
     }
 
@@ -202,14 +203,14 @@ export const useCartStore = defineStore('cart', () => {
   };
 
   const removeItem = (productId: string) => {
-    const index = items.value.findIndex((item) => item.productId === productId);
+    const index = items.value.findIndex((item) => item.product_id === productId);
     if (index > -1) {
       items.value.splice(index, 1);
     }
   };
 
   const updateQuantity = (productId: string, quantity: number): CartMutationResult => {
-    const item = items.value.find((i) => i.productId === productId);
+    const item = items.value.find((i) => i.product_id === productId);
 
     if (!item) {
       return {
@@ -268,19 +269,19 @@ export const useCartStore = defineStore('cart', () => {
   };
 
   const isInCart = (productId: string): boolean => {
-    return items.value.some((item) => item.productId === productId);
+    return items.value.some((item) => item.product_id === productId);
   };
 
   return {
     items,
-    itemCount,
-    totalPrice,
-    totalWeight,
-    shippingCost,
+    item_count,
+    total_price,
+    total_weight,
+    shipping_cost,
     subtotal,
     tax,
-    shouldShowVAT,
-    grandTotal,
+    should_show_vat,
+    grand_total,
     addItem,
     removeItem,
     updateQuantity,

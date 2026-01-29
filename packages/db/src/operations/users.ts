@@ -1,17 +1,36 @@
 import { eq, like, or, sql, desc } from 'drizzle-orm';
 import { users } from '../schema';
 import type { DbClient } from '../db';
-import type { NewUser, User } from '../types';
+import type { NewUser, User, UserWithPassword } from '../types';
 
-export async function getUserByEmail(db: DbClient, email: string): Promise<User | undefined> {
-  return db.select().from(users).where(eq(users.email, email)).get();
+/**
+ * Get user by email including password hash (for auth)
+ * IMPORTANT: UserWithPassword should never be returned via API
+ */
+export async function getUserByEmail(
+  db: DbClient,
+  email: string
+): Promise<UserWithPassword | undefined> {
+  const result = await db.select().from(users).where(eq(users.email, email)).get();
+  return result as UserWithPassword | undefined;
 }
 
-export async function getUserById(db: DbClient, userId: string): Promise<User | undefined> {
-  return db.select().from(users).where(eq(users.id, userId)).get();
+/**
+ * Get user by ID including password hash (for auth)
+ * IMPORTANT: UserWithPassword should never be returned via API
+ */
+export async function getUserById(
+  db: DbClient,
+  userId: string
+): Promise<UserWithPassword | undefined> {
+  const result = await db.select().from(users).where(eq(users.id, userId)).get();
+  return result as UserWithPassword | undefined;
 }
 
-export async function createUser(db: DbClient, data: NewUser): Promise<User | undefined> {
+export async function createUser(
+  db: DbClient,
+  data: NewUser
+): Promise<UserWithPassword | undefined> {
   await db.insert(users).values(data).run();
   return getUserById(db, data.id);
 }

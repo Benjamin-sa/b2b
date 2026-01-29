@@ -8,10 +8,18 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./types": "./src/types.ts",
-    "./operations": "./src/operations/index.ts"
+    "./operations": "./src/operations/index.ts",
+    "./operations/users": "./src/operations/users.ts",
+    "./operations/products": "./src/operations/products.ts",
+    "./operations/categories": "./src/operations/categories.ts",
+    "./operations/inventory": "./src/operations/inventory.ts",
+    "./operations/orders": "./src/operations/orders.ts",
+    "./operations/sessions": "./src/operations/sessions.ts",
+    "./operations/carts": "./src/operations/carts.ts",
+    "./operations/webhooks": "./src/operations/webhooks.ts"
   },
   "dependencies": {
+    "@b2b/types": "workspace:*",
     "drizzle-orm": "^0.44.3"
   },
   "devDependencies": {

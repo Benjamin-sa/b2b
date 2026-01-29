@@ -1,23 +1,41 @@
 /**
- * Stripe Webhook Routes
+ * Stripe Webhook Routes - REFACTORED
  *
  * Handles Stripe webhook events for invoice lifecycle:
- * - invoice.finalized: When invoice is ready (adds URLs, sets status to 'open')
- * - invoice.paid: When invoice payment succeeds
+ * - invoice.created: When invoice is ready (adds URLs, sets status to 'open')
+ * - invoice.updated: Invoice status/details change
+ * - invoice.paid: When invoice payment succeeds → deducts D1 stock for standalone products
  * - invoice.voided: When invoice is voided/cancelled
  *
- * Uses D1 database to persist invoice state changes.
+ * Uses @b2b/db package for all database operations.
+ *
+ * INVENTORY FLOW:
+ * - Shopify-linked products: Stock updated via Shopify webhook (NOT here)
+ * - Standalone products: Stock deducted here on invoice.paid
+ *
  * Implements idempotency to prevent duplicate event processing.
  */
 
 import { Hono } from 'hono';
 import Stripe from 'stripe';
+import { createDb, eq } from '@b2b/db';
+import * as schema from '@b2b/db/schema';
+import {
+  getWebhookEventByEventId,
+  createWebhookEvent,
+  markWebhookEventProcessed,
+  getOrderByStripeInvoiceId,
+  updateOrder,
+  getOrderItems,
+  createOrderItem,
+  getInventoryByProductId,
+  deductStock,
+} from '@b2b/db/operations';
 import type { Env } from '../types';
 import {
   sendInvoicePaidNotification,
   sendInvoiceVoidedNotification,
 } from '../utils/telegram-messages';
-import { buildInvoiceUpdateQuery, extractShippingCost } from '../utils/invoice-update-builder';
 
 const webhooks = new Hono<{ Bindings: Env }>();
 
@@ -42,7 +60,6 @@ webhooks.post('/', async (c) => {
     });
 
     // Verify webhook signature (prevents fake events from bad actors)
-    // Use async version for Cloudflare Workers (SubtleCrypto context)
     const event = await stripe.webhooks.constructEventAsync(
       rawBody,
       signature,
@@ -51,10 +68,11 @@ webhooks.post('/', async (c) => {
 
     console.log(`[Webhook] ✅ Received verified event: ${event.type} (${event.id})`);
 
+    // Create db client
+    const db = createDb(c.env.DB);
+
     // Check if we've already processed this event (idempotency)
-    const existingEvent = await c.env.DB.prepare('SELECT id FROM webhook_events WHERE event_id = ?')
-      .bind(event.id)
-      .first();
+    const existingEvent = await getWebhookEventByEventId(db, event.id);
 
     if (existingEvent) {
       console.log(`[Webhook] ⏭️  Event ${event.id} already processed, skipping`);
@@ -62,22 +80,14 @@ webhooks.post('/', async (c) => {
     }
 
     // Store event in webhook_events table (for audit trail and idempotency)
-    await c.env.DB.prepare(
-      `
-      INSERT INTO webhook_events (
-        id, event_type, event_id, payload, processed, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?)
-    `
-    )
-      .bind(
-        crypto.randomUUID(),
-        event.type,
-        event.id,
-        JSON.stringify(event.data.object),
-        0, // Not processed yet
-        new Date().toISOString()
-      )
-      .run();
+    const webhookEvent = await createWebhookEvent(db, {
+      id: crypto.randomUUID(),
+      event_type: event.type,
+      event_id: event.id,
+      payload: JSON.stringify(event.data.object),
+      processed: 0,
+      created_at: new Date().toISOString(),
+    });
 
     // Handle different event types
     let success = true;
@@ -116,21 +126,9 @@ webhooks.post('/', async (c) => {
     }
 
     // Update webhook_events table with processing result
-    await c.env.DB.prepare(
-      `
-      UPDATE webhook_events
-      SET processed = ?, success = ?, error_message = ?, processed_at = ?
-      WHERE event_id = ?
-    `
-    )
-      .bind(
-        1, // Processed
-        success ? 1 : 0,
-        errorMessage,
-        new Date().toISOString(),
-        event.id
-      )
-      .run();
+    if (webhookEvent) {
+      await markWebhookEventProcessed(db, webhookEvent.id, success, errorMessage || undefined);
+    }
 
     if (!success) {
       return c.json(
@@ -157,69 +155,39 @@ webhooks.post('/', async (c) => {
  * Updates order stripe_status and adds URLs for customer access.
  * Also fetches and stores line items with full product/pricing details if not already stored.
  *
- * NOTE: Stock reduction happens during invoice creation in API Gateway, not here.
+ * NOTE: Stock changes are handled by Shopify webhooks after sync, not during invoice creation.
  */
 async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
   console.log(`[Webhook] 📄 Processing invoice.created: ${invoice.id}`);
 
-  // Check if order exists in D1 (linked by stripe_invoice_id)
-  const existing = await env.DB.prepare('SELECT id FROM orders WHERE stripe_invoice_id = ?')
-    .bind(invoice.id)
-    .first();
+  const db = createDb(env.DB);
 
-  if (!existing) {
-    console.warn(
-      `[Webhook] ⚠️  Order with invoice ${invoice.id} not found in D1 - skipping update`
-    );
+  // Check if order exists (linked by stripe_invoice_id)
+  const order = await getOrderByStripeInvoiceId(db, invoice.id);
+
+  if (!order) {
+    console.warn(`[Webhook] ⚠️  Order with invoice ${invoice.id} not found - skipping update`);
     return;
   }
 
-  const orderInternalId = (existing as any).id;
-
   // Update order with finalized invoice details
-  await env.DB.prepare(
-    `
-    UPDATE orders
-    SET 
-      stripe_status = ?,
-      invoice_number = ?,
-      invoice_url = ?,
-      invoice_pdf = ?,
-      due_date = ?,
-      updated_at = ?
-    WHERE stripe_invoice_id = ?
-  `
-  )
-    .bind(
-      'open',
-      invoice.number || '',
-      invoice.hosted_invoice_url || '',
-      invoice.invoice_pdf || '',
-      invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
-      new Date().toISOString(),
-      invoice.id
-    )
-    .run();
+  await updateOrder(db, order.id, {
+    stripe_status: 'open',
+    invoice_number: invoice.number || '',
+    invoice_url: invoice.hosted_invoice_url || '',
+    invoice_pdf: invoice.invoice_pdf || '',
+    due_date: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
+  });
 
   console.log(`[Webhook] ✅ Updated order with invoice ${invoice.id} to 'open' status with URLs`);
 
-  // Fetch and store line items if not already stored (webhooks may contain full data)
-  // Check if line items already exist for this order
-  const existingItems = await env.DB.prepare(
-    'SELECT COUNT(*) as count FROM order_items WHERE order_id = ?'
-  )
-    .bind(orderInternalId)
-    .first();
+  // Fetch and store line items if not already stored
+  const existingItems = await getOrderItems(db, order.id);
 
-  const hasItems = existingItems && (existingItems as any).count > 0;
-
-  if (!hasItems && invoice.lines?.data) {
+  if (existingItems.length === 0 && invoice.lines?.data) {
     console.log(
       `[Webhook] 📦 Storing ${invoice.lines.data.length} order items for invoice ${invoice.id}`
     );
-
-    const now = new Date().toISOString();
-    const lineItemInserts = [];
 
     for (const line of invoice.lines.data) {
       // Skip non-product items (e.g., shipping)
@@ -232,7 +200,7 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
       // Extract product details (handle both expanded and non-expanded product)
       let productName = line.description || '';
       let sku = '';
-      let b2bSku = ''; // ✅ B2B SKU
+      let b2bSku = '';
       let brand = '';
       let imageUrl = '';
       let productId = '';
@@ -242,102 +210,94 @@ async function handleInvoiceCreated(env: Env, invoice: Stripe.Invoice) {
         // Product is expanded
         productName = productName || product.name || '';
         sku = product.metadata?.partNumber || '';
-        b2bSku = product.metadata?.b2bSku || ''; // ✅ Extract B2B SKU from product metadata
+        b2bSku = product.metadata?.b2bSku || '';
         brand = product.metadata?.brand || '';
         imageUrl = product.images?.[0] || '';
         productId = product.metadata?.productId || '';
         shopifyVariantId = product.metadata?.shopifyVariantId || '';
       }
 
-      lineItemInserts.push(
-        env.DB.prepare(
-          `
-          INSERT INTO order_items (
-            id, order_id, product_id,
-            product_name, product_sku, b2b_sku, brand, image_url,
-            quantity, unit_price, total_price, tax_cents,
-            shopify_variant_id, stripe_price_id, stripe_invoice_item_id,
-            created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-        ).bind(
-          crypto.randomUUID(),
-          orderInternalId,
-          productId,
-          productName,
-          sku,
-          b2bSku, // ✅ Store B2B SKU in order items
-          brand,
-          imageUrl,
-          line.quantity || 1,
-          (price.unit_amount || 0) / 100, // Convert cents to euros
-          line.amount / 100, // Convert cents to euros
-          taxAmount,
-          shopifyVariantId,
-          price.id,
-          line.id,
-          now
-        )
-      );
+      await createOrderItem(db, {
+        id: crypto.randomUUID(),
+        order_id: order.id,
+        product_id: productId || null,
+        product_name: productName,
+        product_sku: sku,
+        b2b_sku: b2bSku,
+        brand: brand,
+        image_url: imageUrl,
+        quantity: line.quantity || 1,
+        unit_price: (price.unit_amount || 0) / 100, // Convert cents to euros
+        total_price: line.amount / 100, // Convert cents to euros
+        tax_cents: taxAmount,
+        shopify_variant_id: shopifyVariantId || null,
+        stripe_price_id: price.id || null,
+        stripe_invoice_item_id: line.id,
+        created_at: new Date().toISOString(),
+      });
     }
 
-    if (lineItemInserts.length > 0) {
-      await env.DB.batch(lineItemInserts);
-      console.log(
-        `[Webhook] ✅ Stored ${lineItemInserts.length} order items for invoice ${invoice.id}`
-      );
-    }
+    console.log(
+      `[Webhook] ✅ Stored ${invoice.lines.data.length} order items for invoice ${invoice.id}`
+    );
   }
 }
 
 /**
  * Handle invoice.updated event
  *
- * Fired when Stripe updates an invoice (e.g., status change from draft to open,
- * shipping costs added, customer details updated).
- *
- * Updates order with:
- * - Shipping cost from line items (metadata.type = 'shipping')
- * - Customer address/phone details
- * - Invoice URLs (if finalized)
- * - Status changes
+ * Fired when Stripe updates an invoice (e.g., status change, shipping costs added).
+ * Updates order with changed fields.
  */
 async function handleInvoiceUpdated(env: Env, invoice: Stripe.Invoice) {
   console.log(`[Webhook] 🔄 Processing invoice.updated: ${invoice.id} (status: ${invoice.status})`);
 
-  // Check if order exists in D1 (linked by stripe_invoice_id)
-  const existing = await env.DB.prepare(
-    'SELECT id, stripe_status FROM orders WHERE stripe_invoice_id = ?'
-  )
-    .bind(invoice.id)
-    .first();
+  const db = createDb(env.DB);
 
-  if (!existing) {
-    console.warn(
-      `[Webhook] ⚠️  Order with invoice ${invoice.id} not found in D1 - skipping update`
-    );
+  // Check if order exists
+  const order = await getOrderByStripeInvoiceId(db, invoice.id);
+
+  if (!order) {
+    console.warn(`[Webhook] ⚠️  Order with invoice ${invoice.id} not found - skipping update`);
     return;
   }
 
-  const orderInternalId = (existing as any).id;
-  const previousStatus = (existing as any).stripe_status;
+  const previousStatus = order.stripe_status;
 
-  // Extract shipping cost for logging
-  const [shippingCostCents] = extractShippingCost(invoice);
+  // Extract shipping cost from line items
+  const shippingLine = invoice.lines?.data?.find((line) => line.metadata?.type === 'shipping');
+  const shipping_cost_cents = shippingLine?.amount || 0;
 
-  // Build dynamic update query using utility
-  const { query, values } = buildInvoiceUpdateQuery(invoice);
+  // Build update object
+  const updates: any = {
+    stripe_status: invoice.status,
+  };
 
-  // Execute update
-  await env.DB.prepare(query)
-    .bind(...values)
-    .run();
+  if (invoice.number) updates.invoice_number = invoice.number;
+  if (invoice.hosted_invoice_url) updates.invoice_url = invoice.hosted_invoice_url;
+  if (invoice.invoice_pdf) updates.invoice_pdf = invoice.invoice_pdf;
+  if (invoice.due_date) updates.due_date = new Date(invoice.due_date * 1000).toISOString();
+  if (shipping_cost_cents > 0) updates.shipping_cost = shipping_cost_cents / 100; // Convert to euros
+
+  // Update customer details if available
+  const customer = invoice.customer_shipping;
+  if (customer) {
+    if (customer.name) updates.shipping_address_company = customer.name;
+    if (customer.phone) updates.shipping_phone = customer.phone;
+    if (customer.address) {
+      if (customer.address.line1) updates.shipping_address_street = customer.address.line1;
+      if (customer.address.city) updates.shipping_address_city = customer.address.city;
+      if (customer.address.postal_code) updates.shipping_address_zip = customer.address.postal_code;
+      if (customer.address.country) updates.shipping_address_country = customer.address.country;
+    }
+  }
+
+  await updateOrder(db, order.id, updates);
 
   console.log(
-    `[Webhook] ✅ Updated order ${orderInternalId} (invoice ${invoice.id}): ` +
+    `[Webhook] ✅ Updated order ${order.id} (invoice ${invoice.id}): ` +
       `status ${previousStatus} → ${invoice.status}, ` +
-      `shipping €${(shippingCostCents / 100).toFixed(2)}, ` +
-      `${values.length - 1} fields updated` // -1 for WHERE clause param
+      `shipping €${(shipping_cost_cents / 100).toFixed(2)}`
   );
 }
 
@@ -345,55 +305,78 @@ async function handleInvoiceUpdated(env: Env, invoice: Stripe.Invoice) {
  * Handle invoice.paid event
  *
  * Fired when customer successfully pays the invoice.
- * Marks order as paid and records payment timestamp.
- *
- * This is the RECOMMENDED event to listen to (covers both automatic and manual payments).
+ * - Marks order as paid
+ * - Records payment timestamp
+ * - Deducts D1 stock for STANDALONE products only (Shopify-linked handled by Shopify webhook)
  */
 async function handleInvoicePaid(env: Env, invoice: Stripe.Invoice) {
   console.log(`[Webhook] 💰 Processing invoice.paid: ${invoice.id}`);
 
-  // Check if order exists in D1
-  const existing = await env.DB.prepare('SELECT id FROM orders WHERE stripe_invoice_id = ?')
-    .bind(invoice.id)
-    .first();
+  const db = createDb(env.DB);
 
-  if (!existing) {
-    console.warn(
-      `[Webhook] ⚠️  Order with invoice ${invoice.id} not found in D1 - skipping update`
-    );
+  // Check if order exists
+  const order = await getOrderByStripeInvoiceId(db, invoice.id);
+
+  if (!order) {
+    console.warn(`[Webhook] ⚠️  Order with invoice ${invoice.id} not found - skipping update`);
     return;
   }
 
   // Update order with payment details
-  await env.DB.prepare(
-    `
-    UPDATE orders
-    SET 
-      stripe_status = ?,
-      status = ?,
-      paid_at = ?,
-      updated_at = ?
-    WHERE stripe_invoice_id = ?
-  `
-  )
-    .bind(
-      'paid',
-      'confirmed', // Update order status to confirmed when paid
-      invoice.status_transitions?.paid_at
-        ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
-        : new Date().toISOString(),
-      new Date().toISOString(),
-      invoice.id
-    )
-    .run();
+  await updateOrder(db, order.id, {
+    stripe_status: 'paid',
+    status: 'confirmed', // Update order status to confirmed when paid
+    paid_at: invoice.status_transitions?.paid_at
+      ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+      : new Date().toISOString(),
+  });
 
   console.log(
     `[Webhook] ✅ Marked order with invoice ${invoice.id} as PAID (€${(invoice.amount_paid / 100).toFixed(2)})`
   );
 
-  // ============================================================================
-  // SEND TELEGRAM NOTIFICATION
-  // ============================================================================
+  // Deduct stock for STANDALONE products only
+  // Shopify-linked products are already handled by Shopify webhook
+  const orderItems = await getOrderItems(db, order.id);
+
+  for (const item of orderItems) {
+    if (!item.product_id) continue;
+
+    // Get inventory to check if Shopify-linked
+    const inventory = await getInventoryByProductId(db, item.product_id);
+
+    if (!inventory) {
+      console.warn(`[Webhook] ⚠️ No inventory record for product ${item.product_id}`);
+      continue;
+    }
+
+    // Skip Shopify-linked products (their stock is managed by Shopify webhook)
+    const isShopifyLinked = !!(
+      inventory.shopify_inventory_item_id &&
+      inventory.shopify_location_id &&
+      inventory.sync_enabled
+    );
+
+    if (isShopifyLinked) {
+      console.log(
+        `[Webhook] ⏭️ Skipping Shopify-linked product ${item.product_id} - stock managed by Shopify webhook`
+      );
+      continue;
+    }
+
+    // Deduct stock for standalone product
+    const result = await deductStock(db, item.product_id, item.quantity);
+
+    if (result.success) {
+      console.log(
+        `[Webhook] 📦 Deducted ${item.quantity} stock for standalone product ${item.product_id} (new stock: ${result.newStock})`
+      );
+    } else {
+      console.error(`[Webhook] ❌ Failed to deduct stock for ${item.product_id}: ${result.error}`);
+    }
+  }
+
+  // Send Telegram notification
   await sendInvoicePaidNotification(env, invoice);
 }
 
@@ -401,49 +384,35 @@ async function handleInvoicePaid(env: Env, invoice: Stripe.Invoice) {
  * Handle invoice.voided event
  *
  * Fired when invoice is manually voided (cancelled).
- * Updates status and records void timestamp.
+ * Updates status and triggers Shopify sync to restore stock.
  *
- * INVENTORY: Increases B2B stock for each product (order cancelled, stock returned)
+ * INVENTORY: Shopify webhook will update stock after sync completes
  */
 async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
   console.log(`[Webhook] 🚫 Processing invoice.voided: ${invoice.id}`);
 
-  // Check if order exists in D1
-  const existing = await env.DB.prepare('SELECT id FROM orders WHERE stripe_invoice_id = ?')
-    .bind(invoice.id)
-    .first();
+  const db = createDb(env.DB);
 
-  if (!existing) {
-    console.warn(
-      `[Webhook] ⚠️  Order with invoice ${invoice.id} not found in D1 - skipping update`
-    );
+  // Check if order exists
+  const order = await getOrderByStripeInvoiceId(db, invoice.id);
+
+  if (!order) {
+    console.warn(`[Webhook] ⚠️  Order with invoice ${invoice.id} not found - skipping update`);
     return;
   }
 
-  const orderInternalId = (existing as any).id;
-
-  await env.DB.prepare(
-    `
-    UPDATE orders
-    SET 
-      stripe_status = ?,
-      status = ?,
-      updated_at = ?
-    WHERE stripe_invoice_id = ?
-  `
-  )
-    .bind(
-      'void',
-      'cancelled', // Update order status to cancelled when voided
-      new Date().toISOString(),
-      invoice.id
-    )
-    .run();
+  // Update order status
+  await updateOrder(db, order.id, {
+    stripe_status: 'void',
+    status: 'cancelled', // Update order status to cancelled when voided
+  });
 
   console.log(`[Webhook] ✅ Voided order with invoice ${invoice.id}`);
 
-  await increaseB2BStockFromInvoice(env, invoice, orderInternalId);
+  // Return stock to inventory (unified stock system)
+  await returnStockFromInvoice(env, invoice);
 
+  // Send Telegram notification
   await sendInvoiceVoidedNotification(env, invoice);
 }
 
@@ -451,18 +420,11 @@ async function handleInvoiceVoided(env: Env, invoice: Stripe.Invoice) {
  * Handle customer.tax_id.created and customer.tax_id.updated events
  *
  * Fired when Stripe validates a customer's tax ID (BTW/VAT number).
- * Updates the user's btw_number_validated status to 1 when verification succeeds.
+ * Updates the user's btw_number_validated status when verification succeeds.
  *
- * Stores VIES (EU VAT Information Exchange System) verification data:
- * - verified_name: Official company name from government registry
- * - verified_address: Official registered address from government registry
- *
- * These values come from the European Commission's VIES database, NOT from
- * customer-submitted data, and serve as authoritative sources for compliance.
- *
- * Listens to both events because:
- * - customer.tax_id.created: Initial submission (status may be "pending")
- * - customer.tax_id.updated: Status changes to "verified" after validation
+ * Stores VIES verification data:
+ * - btw_verified_name: Official company name from government registry
+ * - btw_verified_address: Official registered address from government registry
  */
 async function handleCustomerTaxIdVerification(env: Env, taxId: Stripe.TaxId) {
   console.log(
@@ -484,26 +446,24 @@ async function handleCustomerTaxIdVerification(env: Env, taxId: Stripe.TaxId) {
     return;
   }
 
+  const db = createDb(env.DB);
+
   // Find user by stripe_customer_id
-  const user = await env.DB.prepare(
-    'SELECT id, email, btw_number_validated FROM users WHERE stripe_customer_id = ?'
-  )
-    .bind(customerId)
-    .first();
+  const user = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.stripe_customer_id, customerId))
+    .get();
 
   if (!user) {
     console.warn(
-      `[Webhook] ⚠️  User with Stripe customer ${customerId} not found in D1 - skipping update`
+      `[Webhook] ⚠️  User with Stripe customer ${customerId} not found - skipping update`
     );
     return;
   }
 
-  const userId = (user as any).id;
-  const userEmail = (user as any).email;
-  const alreadyValidated = (user as any).btw_number_validated === 1;
-
-  if (alreadyValidated) {
-    console.log(`[Webhook] ℹ️  User ${userEmail} already has BTW validated, skipping`);
+  if (user.btw_number_validated === 1) {
+    console.log(`[Webhook] ℹ️  User ${user.email} already has BTW validated, skipping`);
     return;
   }
 
@@ -512,26 +472,21 @@ async function handleCustomerTaxIdVerification(env: Env, taxId: Stripe.TaxId) {
   const verifiedAddress = taxId.verification.verified_address || null;
   const now = new Date().toISOString();
 
-  // ============================================================================
-  // UPDATE USER WITH VIES VERIFICATION DATA
-  // ============================================================================
-  await env.DB.prepare(
-    `
-    UPDATE users
-    SET 
-      btw_number_validated = 1,
-      btw_verified_name = ?,
-      btw_verified_address = ?,
-      btw_verified_at = ?,
-      updated_at = ?
-    WHERE id = ?
-  `
-  )
-    .bind(verifiedName, verifiedAddress, now, now, userId)
+  // Update user with VIES verification data
+  await db
+    .update(schema.users)
+    .set({
+      btw_number_validated: 1,
+      btw_verified_name: verifiedName,
+      btw_verified_address: verifiedAddress,
+      btw_verified_at: now,
+      updated_at: now,
+    })
+    .where(eq(schema.users.id, user.id))
     .run();
 
   console.log(
-    `[Webhook] ✅ Validated BTW for user ${userEmail} (${customerId}):\n` +
+    `[Webhook] ✅ Validated BTW for user ${user.email} (${customerId}):\n` +
       `  Tax ID: ${taxId.type.toUpperCase()} ${taxId.value}\n` +
       `  VIES Name: ${verifiedName || 'N/A'}\n` +
       `  VIES Address: ${verifiedAddress || 'N/A'}\n` +
@@ -540,34 +495,29 @@ async function handleCustomerTaxIdVerification(env: Env, taxId: Stripe.TaxId) {
 }
 
 // ============================================================================
-// INVENTORY STOCK MANAGEMENT HELPERS
+// INVENTORY STOCK MANAGEMENT
 // ============================================================================
 
 /**
- * Increase B2B stock when invoice is voided (order cancelled)
+ * Return stock when invoice is voided
  *
- * Reverses stock reduction by returning products to B2B inventory.
- * Uses productId from metadata (works for both Shopify-linked and standalone products).
- * Logs all changes to inventory_sync_log for audit trail.
+ * - Shopify-linked products: Trigger Shopify sync → Shopify webhook updates D1
+ * - Standalone products: Add stock directly to D1
  */
-async function increaseB2BStockFromInvoice(
-  env: Env,
-  invoice: Stripe.Invoice,
-  orderInternalId: string
-) {
+async function returnStockFromInvoice(env: Env, invoice: Stripe.Invoice) {
   if (!invoice.lines?.data || invoice.lines.data.length === 0) {
-    console.log(`[Webhook] ℹ️  No line items in invoice ${invoice.id}, skipping stock increase`);
+    console.log(`[Webhook] ℹ️  No line items in invoice ${invoice.id}, skipping stock return`);
     return;
   }
 
-  console.log(`[Webhook] 📈 Increasing B2B stock for ${invoice.lines.data.length} line items`);
+  const db = createDb(env.DB);
 
-  const now = new Date().toISOString();
-  const stockUpdates: D1PreparedStatement[] = [];
-  const logEntries: D1PreparedStatement[] = [];
+  // Build list of items to restore (skip shipping items)
+  const shopifyItems: { product_id: string; quantity: number }[] = [];
+  const standaloneItems: { product_id: string; quantity: number }[] = [];
 
   for (const line of invoice.lines.data) {
-    // Skip non-product items (e.g., shipping with metadata.type = 'shipping')
+    // Skip non-product items (e.g., shipping)
     if (line.metadata?.type === 'shipping') {
       continue;
     }
@@ -582,83 +532,83 @@ async function increaseB2BStockFromInvoice(
       continue;
     }
 
-    // Verify product exists in database
-    const product = await env.DB.prepare('SELECT id FROM products WHERE id = ?')
-      .bind(productId)
-      .first();
+    // Check if Shopify-linked
+    const inventory = await getInventoryByProductId(db, productId);
 
-    if (!product) {
-      console.warn(`[Webhook] ⚠️  Product ${productId} not found in database`);
+    if (!inventory) {
+      console.warn(`[Webhook] ⚠️ No inventory record for product ${productId}`);
       continue;
     }
 
-    // Get current inventory
-    const currentInventory = await env.DB.prepare(
-      'SELECT stock FROM product_inventory WHERE product_id = ?'
-    )
-      .bind(productId)
-      .first();
+    const isShopifyLinked = !!(
+      inventory.shopify_inventory_item_id &&
+      inventory.shopify_location_id &&
+      inventory.sync_enabled
+    );
 
-    if (!currentInventory) {
-      console.warn(`[Webhook] ⚠️  No inventory record for product ${productId}`);
-      continue;
+    if (isShopifyLinked) {
+      shopifyItems.push({ product_id: productId, quantity });
+    } else {
+      standaloneItems.push({ product_id: productId, quantity });
     }
+  }
 
-    const currentStock = (currentInventory as any).stock || 0;
-    const newStock = currentStock + quantity;
+  // Handle standalone products - add stock directly to D1
+  for (const item of standaloneItems) {
+    const inventory = await getInventoryByProductId(db, item.product_id);
+    if (inventory) {
+      const newStock = (inventory.stock || 0) + item.quantity;
+      await db
+        .update(schema.product_inventory)
+        .set({ stock: newStock, updated_at: new Date().toISOString() })
+        .where(eq(schema.product_inventory.product_id, item.product_id))
+        .run();
+      console.log(
+        `[Webhook] 📦 Restored ${item.quantity} stock for standalone product ${item.product_id} (new stock: ${newStock})`
+      );
+    }
+  }
 
-    // Prepare stock update
-    stockUpdates.push(
-      env.DB.prepare(
-        `
-        UPDATE product_inventory
-        SET 
-          stock = ?,
-          updated_at = ?
-        WHERE product_id = ?
-      `
-      ).bind(newStock, now, productId)
-    );
-
-    // Prepare audit log entry
-    logEntries.push(
-      env.DB.prepare(
-        `
-        INSERT INTO inventory_sync_log (
-          id, product_id, action, source,
-          stock_change, stock_after,
-          reference_id, reference_type, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
-      ).bind(
-        crypto.randomUUID(),
-        productId,
-        'b2b_order_void',
-        'stripe_webhook',
-        quantity, // stock_change
-        newStock, // stock_after
-        invoice.id,
-        'invoice',
-        now
-      )
-    );
-
+  // Handle Shopify-linked products - trigger restore via sync service
+  if (shopifyItems.length > 0) {
     console.log(
-      `[Webhook] 📈 Product ${productId}: stock ${currentStock} → ${newStock} (+${quantity})`
+      `[Webhook] 📈 Triggering Shopify sync to restore stock for ${shopifyItems.length} Shopify-linked products`
     );
+
+    try {
+      const shopifyHeaders = new Headers();
+      shopifyHeaders.set('Content-Type', 'application/json');
+      shopifyHeaders.set('X-Service-Token', env.SERVICE_SECRET);
+
+      const shopifyRequest = new Request('https://dummy/sync/restore', {
+        method: 'POST',
+        headers: shopifyHeaders,
+        body: JSON.stringify({
+          products: shopifyItems.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity, // Amount to restore
+            reason: 'other',
+            reference_id: invoice.id,
+          })),
+        }),
+      });
+
+      const restoreResponse = await env.SHOPIFY_SYNC_SERVICE.fetch(shopifyRequest);
+      const restoreResult = (await restoreResponse.json()) as { success: boolean };
+
+      if (restoreResult.success) {
+        console.log(`[Webhook] ✅ Shopify stock restored - webhook will update D1`);
+      } else {
+        console.warn(`[Webhook] ⚠️ Some Shopify stock restorations failed`);
+      }
+    } catch (shopifyError) {
+      console.warn(`[Webhook] ⚠️  Failed to trigger Shopify restore:`, shopifyError);
+    }
   }
 
-  if (stockUpdates.length > 0) {
-    try {
-      await env.DB.batch([...stockUpdates, ...logEntries]);
-      console.log(`[Webhook] ✅ Increased B2B stock for ${stockUpdates.length} products`);
-    } catch (error: any) {
-      console.error(`[Webhook] ❌ Failed to increase stock:`, error);
-      throw error;
-    }
-  } else {
-    console.log(`[Webhook] ℹ️  No stock updates needed for invoice ${invoice.id}`);
-  }
+  console.log(
+    `[Webhook] ✅ Stock return complete: ${standaloneItems.length} standalone, ${shopifyItems.length} Shopify-linked`
+  );
 }
 
 export default webhooks;

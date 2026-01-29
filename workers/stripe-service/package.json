@@ -22,6 +22,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@b2b/db": "workspace:*",
+    "drizzle-orm": "^0.38.3",
     "hono": "^4.11.4",
     "stripe": "^17.5.0"
   },

@@ -357,7 +357,7 @@ import { useI18n } from 'vue-i18n';
 import { sanitizeHtml } from '../utils/htmlUtils';
 import ImageGallery from '../components/ImageGallery.vue';
 import ProductInfoCard from '../components/product/ProductInfoCard.vue';
-import type { Product } from '../types/product';
+import type { ProductWithRelations } from '../types/product';
 import type { CartItem } from '../types';
 
 const route = useRoute();
@@ -368,19 +368,13 @@ const cartStore = useCartStore();
 const notificationStore = useNotificationStore();
 const { t } = useI18n();
 
-const product = ref<Product | null>(null);
+const product = ref<ProductWithRelations | null>(null);
 const isLoading = ref(true);
 const isAddingToCart = ref(false);
 const addedToCartRecently = ref(false);
 const quantity = ref(0);
 
 const canOrder = computed(() => {
-  console.log(
-    'Checking order eligibility...',
-    authStore.isAuthenticated,
-    authStore.isVerified,
-    authStore.isAdmin
-  );
   return authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin);
 });
 
@@ -501,11 +495,11 @@ const addToCart = async () => {
 
   try {
     const cartItem: CartItem = {
-      productId: product.value.id,
+      product_id: product.value.id,
       product: product.value,
       quantity: quantity.value,
       price: product.value.price,
-      addedAt: new Date(),
+      added_at: new Date(),
     };
 
     const result = await cartStore.addItem(cartItem);
@@ -526,7 +520,7 @@ const addToCart = async () => {
     } else {
       await notificationStore.success(
         t('productDetail.addedToCart'),
-        t('cart.items', { count: cartStore.itemCount })
+        t('cart.items', { count: cartStore.item_count })
       );
     }
 

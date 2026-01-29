@@ -1,64 +1,76 @@
 /**
  * Auth Middleware
  *
- * Validates user tokens via AUTH_SERVICE and attaches user data to request context
+ * Validates user tokens directly using JWT verification and attaches user data to request context
  */
 
 import type { Context, Next } from 'hono';
 import type { Env } from '../types';
+import { verifyAccessToken, extractBearerToken } from '../utils/jwt';
+import { createDb } from '@b2b/db';
+import { getSessionById, updateSessionActivity } from '@b2b/db/operations/sessions';
+import { getUserById } from '@b2b/db/operations/users';
 
 export interface AuthenticatedUser {
   userId: string;
   email: string;
+  role: 'admin' | 'customer';
   stripeCustomerId: string | null;
+  isVerified: boolean;
+  isActive: boolean;
+  firstName: string | null;
+  lastName: string | null;
+  companyName: string | null;
 }
 
 /**
- * Validate user token via AUTH_SERVICE and get user details
- *
- * Uses Cloudflare Service Bindings for direct worker-to-worker communication
+ * Validate user token via direct JWT verification
  */
-async function validateUserToken(env: Env, authHeader: string | null): Promise<AuthenticatedUser> {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+async function validateUserToken(
+  env: Env,
+  authHeader: string | undefined
+): Promise<AuthenticatedUser> {
+  const token = extractBearerToken(authHeader);
+
+  if (!token) {
     throw new Error('Missing or invalid Authorization header');
   }
 
-  const token = authHeader.substring(7);
+  // Verify JWT token
+  const payload = await verifyAccessToken(token, env.JWT_SECRET);
 
-  // Use service binding for direct worker-to-worker call
-  // Note: Service bindings are much faster than HTTP requests
-  const validateRequest = new Request('http://auth-service/auth/validate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Service-Token': env.SERVICE_SECRET },
-    body: JSON.stringify({ accessToken: token }), // Auth service expects 'accessToken', not 'token'
-  });
+  // Verify session is still valid in database
+  const db = createDb(env.DB);
+  const session = await getSessionById(db, payload.sessionId);
 
-  const validateResponse = await env.AUTH_SERVICE.fetch(validateRequest);
-
-  if (!validateResponse.ok) {
-    const errorText = await validateResponse.text();
-    throw new Error(`Token validation failed: ${errorText}`);
+  if (!session || new Date(session.expires_at) < new Date()) {
+    throw new Error('Session expired or invalid');
   }
 
-  const validationData = (await validateResponse.json()) as {
-    valid: boolean;
-    user: {
-      uid: string;
-      email: string;
-      stripeCustomerId?: string;
-    };
-    sessionId: string;
-    validatedAt: string;
-  };
+  // Get fresh user data from database
+  const user = await getUserById(db, payload.uid);
 
-  if (!validationData.valid || !validationData.user || !validationData.user.uid) {
-    throw new Error('Invalid user data from auth service');
+  if (!user) {
+    throw new Error('User not found');
   }
+
+  if (!user.is_active) {
+    throw new Error('Account is deactivated');
+  }
+
+  // Update session activity
+  await updateSessionActivity(db, session.id);
 
   return {
-    userId: validationData.user.uid,
-    email: validationData.user.email,
-    stripeCustomerId: validationData.user.stripeCustomerId || null,
+    userId: user.id,
+    email: user.email,
+    role: user.role as 'admin' | 'customer',
+    stripeCustomerId: user.stripe_customer_id ?? null,
+    isVerified: user.is_verified === 1,
+    isActive: user.is_active === 1,
+    firstName: user.first_name ?? null,
+    lastName: user.last_name ?? null,
+    companyName: user.company_name ?? null,
   };
 }
 
@@ -77,7 +89,7 @@ export async function authMiddleware(
   next: Next
 ) {
   try {
-    const authHeader = c.req.header('Authorization') || null;
+    const authHeader = c.req.header('Authorization');
     const user = await validateUserToken(c.env, authHeader);
 
     // Attach user to context for use in route handlers
@@ -107,7 +119,7 @@ export async function requireStripeCustomerMiddleware(
   next: Next
 ) {
   try {
-    const authHeader = c.req.header('Authorization') || null;
+    const authHeader = c.req.header('Authorization');
     const user = await validateUserToken(c.env, authHeader);
 
     if (!user.stripeCustomerId) {
@@ -117,6 +129,82 @@ export async function requireStripeCustomerMiddleware(
           message: 'User must have a Stripe customer ID. Please complete your profile first.',
         },
         400
+      );
+    }
+
+    // Attach user to context for use in route handlers
+    c.set('user', user);
+
+    await next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+
+    return c.json(
+      {
+        error: 'unauthenticated',
+        message: errorMessage,
+      },
+      401
+    );
+  }
+}
+
+/**
+ * Admin-only middleware - requires admin role
+ */
+export async function adminMiddleware(
+  c: Context<{ Bindings: Env; Variables: { user: AuthenticatedUser } }>,
+  next: Next
+) {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const user = await validateUserToken(c.env, authHeader);
+
+    if (user.role !== 'admin') {
+      return c.json(
+        {
+          error: 'forbidden',
+          message: 'Admin access required',
+        },
+        403
+      );
+    }
+
+    // Attach user to context for use in route handlers
+    c.set('user', user);
+
+    await next();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+
+    return c.json(
+      {
+        error: 'unauthenticated',
+        message: errorMessage,
+      },
+      401
+    );
+  }
+}
+
+/**
+ * Verified-only middleware - requires verified account
+ */
+export async function verifiedMiddleware(
+  c: Context<{ Bindings: Env; Variables: { user: AuthenticatedUser } }>,
+  next: Next
+) {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const user = await validateUserToken(c.env, authHeader);
+
+    if (!user.isVerified) {
+      return c.json(
+        {
+          error: 'failed-precondition',
+          message: 'Account must be verified to access this resource',
+        },
+        403
       );
     }
 

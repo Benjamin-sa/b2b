@@ -13,13 +13,20 @@ export interface ShopifyProduct {
   variants: ShopifyVariant[];
 }
 
+export interface InventoryLevel {
+  locationId: string; // gid://shopify/Location/123
+  locationName: string;
+  available: number;
+}
+
 export interface ShopifyVariant {
   id: string; // Shopify variant ID (gid://shopify/ProductVariant/456)
   title: string;
   sku: string | null;
   price: string;
   inventoryItemId: string; // CRITICAL: Required for inventory sync
-  inventoryQuantity: number;
+  inventoryQuantity: number; // Total across all locations
+  inventoryLevels: InventoryLevel[]; // Stock per location
   productId: string; // Parent product ID
   productTitle: string; // Parent product title
 }
@@ -137,6 +144,20 @@ function buildVariantByIdQuery(): string {
         price
         inventoryItem {
           id
+          inventoryLevels(first: 10) {
+            edges {
+              node {
+                location {
+                  id
+                  name
+                }
+                quantities(names: ["available"]) {
+                  name
+                  quantity
+                }
+              }
+            }
+          }
         }
         inventoryQuantity
         product {
@@ -168,6 +189,20 @@ function buildProductByIdQuery(): string {
               price
               inventoryItem {
                 id
+                inventoryLevels(first: 10) {
+                  edges {
+                    node {
+                      location {
+                        id
+                        name
+                      }
+                      quantities(names: ["available"]) {
+                        name
+                        quantity
+                      }
+                    }
+                  }
+                }
               }
               inventoryQuantity
             }
@@ -199,6 +234,20 @@ function buildProductsSearchQuery(): string {
                   price
                   inventoryItem {
                     id
+                    inventoryLevels(first: 10) {
+                      edges {
+                        node {
+                          location {
+                            id
+                            name
+                          }
+                          quantities(names: ["available"]) {
+                            name
+                            quantity
+                          }
+                        }
+                      }
+                    }
                   }
                   inventoryQuantity
                 }
@@ -220,6 +269,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
   if (variantId && data.productVariant) {
     // Single variant response
     const v = data.productVariant;
+    const inventoryLevels = parseInventoryLevels(v.inventoryItem);
     variants.push({
       id: v.id,
       title: v.title,
@@ -227,6 +277,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
       price: v.price,
       inventoryItemId: v.inventoryItem?.id || '',
       inventoryQuantity: v.inventoryQuantity || 0,
+      inventoryLevels,
       productId: v.product.id,
       productTitle: v.product.title,
     });
@@ -237,6 +288,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
 
     for (const edge of variantEdges) {
       const v = edge.node;
+      const inventoryLevels = parseInventoryLevels(v.inventoryItem);
       variants.push({
         id: v.id,
         title: `${product.title} - ${v.title}`,
@@ -244,6 +296,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
         price: v.price,
         inventoryItemId: v.inventoryItem?.id || '',
         inventoryQuantity: v.inventoryQuantity || 0,
+        inventoryLevels,
         productId: product.id,
         productTitle: product.title,
       });
@@ -258,6 +311,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
 
       for (const variantEdge of variantEdges) {
         const v = variantEdge.node;
+        const inventoryLevels = parseInventoryLevels(v.inventoryItem);
         variants.push({
           id: v.id,
           title: `${product.title} - ${v.title}`,
@@ -265,6 +319,7 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
           price: v.price,
           inventoryItemId: v.inventoryItem?.id || '',
           inventoryQuantity: v.inventoryQuantity || 0,
+          inventoryLevels,
           productId: product.id,
           productTitle: product.title,
         });
@@ -273,4 +328,28 @@ function parseShopifyResponse(data: any, variantId?: string, productId?: string)
   }
 
   return variants;
+}
+
+/**
+ * Parse inventory levels from Shopify GraphQL response
+ */
+function parseInventoryLevels(inventoryItem: any): InventoryLevel[] {
+  if (!inventoryItem?.inventoryLevels?.edges) {
+    return [];
+  }
+
+  const levels: InventoryLevel[] = [];
+
+  for (const edge of inventoryItem.inventoryLevels.edges) {
+    const node = edge.node;
+    const availableQty = node.quantities?.find((q: any) => q.name === 'available');
+
+    levels.push({
+      locationId: node.location.id,
+      locationName: node.location.name,
+      available: availableQty?.quantity || 0,
+    });
+  }
+
+  return levels;
 }

@@ -45,8 +45,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!accessToken.value && !!userProfile.value);
   const isAdmin = computed(() => userProfile.value?.role === 'admin');
   const isCustomer = computed(() => userProfile.value?.role === 'customer');
-  const isVerified = computed(() => userProfile.value?.isVerified === true);
-  const isActiveUser = computed(() => userProfile.value?.isActive === true);
+  const isVerified = computed(() => userProfile.value?.is_verified === 1);
+  const isActiveUser = computed(() => userProfile.value?.is_active === 1);
 
   // Security check: Only verified and active users can access the app
   const canAccess = computed(
@@ -56,7 +56,8 @@ export const useAuthStore = defineStore('auth', () => {
   // VAT/BTW check: Only Belgian customers pay VAT
   // Based on user's registered country from profile
   const isBelgianCustomer = computed(() => {
-    const country = userProfile.value?.address?.country?.toUpperCase();
+    const country = userProfile.value?.address_country?.toUpperCase();
+
     if (!country) return true; // Default to Belgian (show VAT) if no country set
     // Support multiple formats: 'BE', 'Belgium', 'BELGIUM', 'BEL'
     return country === 'BE' || country === 'BELGIUM' || country === 'BEL';
@@ -70,12 +71,12 @@ export const useAuthStore = defineStore('auth', () => {
    * Save tokens and user profile to localStorage
    */
   const saveAuthData = (tokens: AuthTokens, profile: UserProfile) => {
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
     localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
 
-    accessToken.value = tokens.accessToken;
-    refreshToken.value = tokens.refreshToken;
+    accessToken.value = tokens.access_token;
+    refreshToken.value = tokens.refresh_token;
     userProfile.value = profile;
   };
 
@@ -312,8 +313,8 @@ export const useAuthStore = defineStore('auth', () => {
       // Worker returns { accessToken, refreshToken, expiresIn, user }
       saveAuthData(
         {
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
+          access_token: data.accessToken,
+          refresh_token: data.refreshToken,
         },
         data.user
       );
@@ -364,8 +365,8 @@ export const useAuthStore = defineStore('auth', () => {
       // Worker returns { accessToken, refreshToken, expiresIn, user }
       saveAuthData(
         {
-          accessToken: responseData.accessToken,
-          refreshToken: responseData.refreshToken,
+          access_token: responseData.accessToken,
+          refresh_token: responseData.refreshToken,
         },
         responseData.user
       );
@@ -845,6 +846,7 @@ export const useAuthStore = defineStore('auth', () => {
     validateToken,
     refreshAccessToken,
     authenticatedFetch,
+    isTokenValid,
     clearError,
 
     // Admin methods

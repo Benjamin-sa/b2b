@@ -17,6 +17,10 @@ database_id = "7cc12490-bd4c-42dc-a3eb-1dc290a864a0"
 binding = "TELEGRAM_SERVICE"
 service = "b2b-telegram-service"
 
+[[services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service"
+
 [vars]
 ENVIRONMENT = "production"
 STRIPE_API_VERSION = "2024-06-20"
@@ -45,6 +49,10 @@ database_id = "0420eb79-c871-4fdb-bbf3-6deb62d5c0c3"
 [[env.dev.services]]
 binding = "TELEGRAM_SERVICE"
 service = "b2b-telegram-service-dev"
+
+[[env.dev.services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service-dev"
 
 [env.dev.vars]
 ENVIRONMENT = "development"

@@ -10,8 +10,8 @@
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:dev": "wrangler deploy --config wrangler.toml --env dev",
     "deploy:prod": "wrangler deploy --config wrangler.toml",
-    "tail": "wrangler tail",
-    "tail:dev": "wrangler tail --env dev"
+    "tail": "wrangler tail --config wrangler.toml",
+    "tail:dev": "wrangler tail --config wrangler.toml --env dev"
   },
   "keywords": [
     "cloudflare",

@@ -1,5 +1,5 @@
 import type { Environment } from './types/email';
-import type { EmailQueueMessage } from '../../shared-types/email-queue';
+import type { EmailQueueMessage } from '@b2b/types';
 import { sendWelcomeEmail } from './handlers/welcome';
 import { sendPasswordResetEmail } from './handlers/passwordReset';
 import { sendVerificationEmail } from './handlers/verification';

@@ -97,6 +97,78 @@ export async function updateShopifyInventory(
 }
 
 /**
+ * Adjust inventory by delta (positive = add, negative = subtract)
+ * Used for invoice stock deduction
+ *
+ * Valid Shopify reasons: correction, received, shrinkage, restock, safety_stock,
+ * damaged, promotion, reservation_created, reservation_deleted, reservation_updated, quality_control
+ */
+export async function adjustShopifyInventory(
+  env: Env,
+  inventoryItemId: string,
+  locationId: string,
+  delta: number,
+  reason: string = 'correction'
+): Promise<{ success: boolean; newQuantity: number; error?: string }> {
+  console.log(
+    `📦 Adjusting Shopify inventory: item=${inventoryItemId}, location=${locationId}, delta=${delta}`
+  );
+
+  const mutation = `
+    mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
+      inventoryAdjustQuantities(input: $input) {
+        inventoryAdjustmentGroup {
+          id
+          reason
+          changes {
+            name
+            delta
+            quantityAfterChange
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      reason: reason,
+      name: 'available',
+      changes: [
+        {
+          inventoryItemId: `gid://shopify/InventoryItem/${inventoryItemId}`,
+          locationId: `gid://shopify/Location/${locationId}`,
+          delta: delta,
+        },
+      ],
+    },
+  };
+
+  try {
+    const data = await shopifyGraphQL(env, mutation, variables);
+
+    if (data.inventoryAdjustQuantities.userErrors.length > 0) {
+      const errorMsg = JSON.stringify(data.inventoryAdjustQuantities.userErrors);
+      console.error(`❌ Shopify inventory adjust errors: ${errorMsg}`);
+      return { success: false, newQuantity: 0, error: errorMsg };
+    }
+
+    const changes = data.inventoryAdjustQuantities.inventoryAdjustmentGroup?.changes || [];
+    const newQuantity = changes[0]?.quantityAfterChange || 0;
+
+    console.log(`✅ Shopify inventory adjusted: delta=${delta}, newQuantity=${newQuantity}`);
+    return { success: true, newQuantity };
+  } catch (error: any) {
+    console.error(`❌ Shopify inventory adjust failed:`, error);
+    return { success: false, newQuantity: 0, error: error.message };
+  }
+}
+
+/**
  * Get current inventory level from Shopify
  */
 export async function getShopifyInventory(env: Env, inventoryItemId: string): Promise<number> {

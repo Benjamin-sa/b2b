@@ -11,12 +11,13 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
+import { createServiceAuthMiddleware } from '@b2b/types';
 import type { Env } from './types';
 import { syncToShopify, handleShopifyInventoryUpdate } from './services/sync.service';
 import { searchShopifyProducts } from './services/product-search.service';
 import { verifyShopifyWebhook, isWebhookProcessed, markWebhookProcessed } from './utils/webhooks';
-import { getInventoryByInventoryItemId } from './utils/database';
+import { getInventoryByInventoryItemId, getInventoryByProductId } from './utils/database';
+import { adjustShopifyInventory } from './utils/shopify';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -115,8 +116,333 @@ app.get('/shopify/products', async (c) => {
 });
 
 /**
+ * POST /inventory/check
+ * Check stock availability for multiple products from Shopify directly
+ * Used by API Gateway before invoice creation
+ *
+ * Request Body:
+ * {
+ *   "products": [
+ *     { "product_id": "uuid", "requested_quantity": 5 }
+ *   ]
+ * }
+ *
+ * Response:
+ * {
+ *   "success": true,
+ *   "items": [
+ *     {
+ *       "product_id": "uuid",
+ *       "available": 10,
+ *       "requested": 5,
+ *       "sufficient": true
+ *     }
+ *   ]
+ * }
+ */
+app.post('/inventory/check', async (c) => {
+  try {
+    const body = await c.req.json<{
+      products: Array<{ product_id: string; requested_quantity: number }>;
+    }>();
+
+    if (!body.products || !Array.isArray(body.products)) {
+      return c.json({ error: 'Invalid request: products array required' }, 400);
+    }
+
+    const results = [];
+
+    for (const item of body.products) {
+      const { product_id, requested_quantity } = item;
+
+      // Get inventory info from D1 (to find Shopify variant ID)
+      const inventory = await getInventoryByProductId(c.env.DB, product_id);
+
+      if (!inventory) {
+        results.push({
+          product_id,
+          available: 0,
+          requested: requested_quantity,
+          sufficient: false,
+          error: 'Product not found in inventory',
+        });
+        continue;
+      }
+
+      if (!inventory.shopify_inventory_item_id || !inventory.shopify_location_id) {
+        results.push({
+          product_id,
+          available: 0,
+          requested: requested_quantity,
+          sufficient: false,
+          error: 'Product not linked to Shopify',
+        });
+        continue;
+      }
+
+      // Query Shopify directly for current stock
+      try {
+        const shopifyUrl = `https://${c.env.SHOPIFY_STORE_DOMAIN}/admin/api/${c.env.SHOPIFY_API_VERSION}/inventory_levels.json?inventory_item_ids=${inventory.shopify_inventory_item_id}&location_ids=${inventory.shopify_location_id}`;
+        const shopifyResponse = await fetch(shopifyUrl, {
+          headers: {
+            'X-Shopify-Access-Token': c.env.SHOPIFY_ACCESS_TOKEN,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!shopifyResponse.ok) {
+          results.push({
+            product_id,
+            available: 0,
+            requested: requested_quantity,
+            sufficient: false,
+            error: 'Failed to query Shopify inventory',
+          });
+          continue;
+        }
+
+        const shopifyData = (await shopifyResponse.json()) as {
+          inventory_levels: Array<{ available: number }>;
+        };
+
+        const available = shopifyData.inventory_levels[0]?.available || 0;
+        const sufficient = available >= requested_quantity;
+
+        results.push({
+          product_id,
+          available,
+          requested: requested_quantity,
+          sufficient,
+        });
+      } catch (shopifyError) {
+        console.error(`Error checking Shopify stock for ${product_id}:`, shopifyError);
+        results.push({
+          product_id,
+          available: 0,
+          requested: requested_quantity,
+          sufficient: false,
+          error: 'Shopify query failed',
+        });
+      }
+    }
+
+    return c.json({
+      success: true,
+      items: results,
+    });
+  } catch (error: any) {
+    console.error('Error checking inventory:', error);
+    return c.json(
+      {
+        success: false,
+        error: error.message || 'Internal server error',
+      },
+      500
+    );
+  }
+});
+
+/**
+ * POST /sync/deduct
+ * Deduct stock from Shopify for multiple products (used when creating invoices)
+ * ⚠️ MUST be defined BEFORE /sync/:productId to avoid route conflict
+ *
+ * Request body:
+ * {
+ *   products: [
+ *     { product_id: string, quantity: number, reason?: string, reference_id?: string }
+ *   ]
+ * }
+ *
+ * This triggers Shopify inventory adjustment → Shopify webhook → D1 update
+ */
+app.post('/sync/deduct', async (c) => {
+  try {
+    const body = (await c.req.json()) as {
+      products: Array<{
+        product_id: string;
+        quantity: number;
+        reason?: string;
+        reference_id?: string;
+      }>;
+    };
+
+    if (!body.products || !Array.isArray(body.products) || body.products.length === 0) {
+      return c.json({ success: false, error: 'Products array is required' }, 400);
+    }
+
+    console.log(`📦 [/sync/deduct] Processing ${body.products.length} products`);
+
+    const results: Array<{
+      product_id: string;
+      success: boolean;
+      new_quantity?: number;
+      error?: string;
+    }> = [];
+
+    for (const item of body.products) {
+      const { product_id, quantity, reason, reference_id } = item;
+
+      // Get inventory info
+      const inventory = await getInventoryByProductId(c.env.DB, product_id);
+
+      if (!inventory) {
+        console.warn(`[/sync/deduct] Product ${product_id} not found in inventory`);
+        results.push({
+          product_id,
+          success: false,
+          error: 'Product not found in inventory',
+        });
+        continue;
+      }
+
+      if (!inventory.shopify_inventory_item_id || !inventory.shopify_location_id) {
+        console.warn(`[/sync/deduct] Product ${product_id} missing Shopify linkage`);
+        results.push({
+          product_id,
+          success: false,
+          error: 'Product not linked to Shopify (missing inventory_item_id or location_id)',
+        });
+        continue;
+      }
+
+      // Adjust Shopify inventory (negative delta = deduction)
+      const adjustResult = await adjustShopifyInventory(
+        c.env,
+        inventory.shopify_inventory_item_id,
+        inventory.shopify_location_id,
+        -quantity, // Negative for deduction
+        reason || 'correction' // Valid Shopify reason
+      );
+
+      if (adjustResult.success) {
+        console.log(`✅ Deducted ${quantity} from product ${product_id} (Shopify)`);
+        results.push({
+          product_id,
+          success: true,
+          new_quantity: adjustResult.newQuantity,
+        });
+      } else {
+        console.error(`❌ Failed to deduct stock for ${product_id}: ${adjustResult.error}`);
+        results.push({
+          product_id,
+          success: false,
+          error: adjustResult.error,
+        });
+      }
+    }
+
+    const allSuccess = results.every((r) => r.success);
+
+    return c.json({
+      success: allSuccess,
+      results,
+      message: allSuccess
+        ? `Successfully deducted stock for ${results.length} products`
+        : `Some products failed to deduct`,
+    });
+  } catch (error: any) {
+    console.error('[/sync/deduct] Error:', error.message);
+    return c.json({ success: false, error: error.message || 'Internal server error' }, 500);
+  }
+});
+
+/**
+ * POST /sync/restore
+ * Restore stock to Shopify for multiple products (used when invoice is voided)
+ * ⚠️ MUST be defined BEFORE /sync/:productId to avoid route conflict
+ */
+app.post('/sync/restore', async (c) => {
+  try {
+    const body = (await c.req.json()) as {
+      products: Array<{
+        product_id: string;
+        quantity: number;
+        reason?: string;
+        reference_id?: string;
+      }>;
+    };
+
+    if (!body.products || !Array.isArray(body.products) || body.products.length === 0) {
+      return c.json({ success: false, error: 'Products array is required' }, 400);
+    }
+
+    const results: Array<{
+      product_id: string;
+      success: boolean;
+      new_quantity?: number;
+      error?: string;
+    }> = [];
+
+    for (const item of body.products) {
+      const { product_id, quantity, reason } = item;
+
+      const inventory = await getInventoryByProductId(c.env.DB, product_id);
+
+      if (!inventory) {
+        results.push({
+          product_id,
+          success: false,
+          error: 'Product not found in inventory',
+        });
+        continue;
+      }
+
+      if (!inventory.shopify_inventory_item_id || !inventory.shopify_location_id) {
+        results.push({
+          product_id,
+          success: false,
+          error: 'Product not linked to Shopify',
+        });
+        continue;
+      }
+
+      // Adjust Shopify inventory (positive delta = restore)
+      const adjustResult = await adjustShopifyInventory(
+        c.env,
+        inventory.shopify_inventory_item_id,
+        inventory.shopify_location_id,
+        quantity, // Positive for restoration
+        reason || 'restock' // Valid Shopify reason for restoration
+      );
+
+      if (adjustResult.success) {
+        console.log(
+          `✅ Restored ${quantity} to product ${product_id} (Shopify) - new qty: ${adjustResult.newQuantity}`
+        );
+        results.push({
+          product_id,
+          success: true,
+          new_quantity: adjustResult.newQuantity,
+        });
+      } else {
+        results.push({
+          product_id,
+          success: false,
+          error: adjustResult.error,
+        });
+      }
+    }
+
+    const allSuccess = results.every((r) => r.success);
+
+    return c.json({
+      success: allSuccess,
+      results,
+      message: allSuccess
+        ? `Successfully restored stock for ${results.length} products`
+        : `Some products failed to restore`,
+    });
+  } catch (error: any) {
+    console.error('Error in /sync/restore:', error);
+    return c.json({ success: false, error: error.message || 'Internal server error' }, 500);
+  }
+});
+
+/**
  * POST /sync/:productId
  * Manually sync a single product's B2C stock to Shopify
+ * ⚠️ MUST be defined AFTER /sync/deduct and /sync/restore (dynamic route catches all)
  */
 app.post('/sync/:productId', async (c) => {
   try {
@@ -151,7 +477,6 @@ app.post('/sync/:productId', async (c) => {
     );
   }
 });
-
 // ============================================================================
 // INBOUND WEBHOOKS (Shopify → B2B)
 // ============================================================================
@@ -246,7 +571,6 @@ app.post('/webhooks/inventory-update', async (c) => {
       success: true,
       message: 'Inventory updated',
       productId: inventory.product_id,
-      stockMode: inventory.stock_mode || 'split',
     });
   } catch (error: any) {
     console.error('❌ Error processing inventory webhook:', error);

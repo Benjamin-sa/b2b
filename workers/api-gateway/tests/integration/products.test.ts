@@ -232,11 +232,8 @@ describe('Integration: Products CRUD', () => {
       expect(response.data.price).toBe(productData.price);
 
       // Verify inventory data
-      expect(response.data.inventory).toBeDefined();
-      if (response.data.inventory) {
-        expect(response.data.inventory.total_stock).toBe(productData.total_stock);
-        expect(response.data.inventory.b2b_stock).toBe(productData.b2b_stock);
-      }
+      expect(response.data.stock).toBeDefined();
+      expect(response.data.stock).toBe(productData.stock);
 
       console.log(`[TEST] ✅ Created product: ${response.data.id}`);
     });
@@ -372,17 +369,14 @@ describe('Integration: Products CRUD', () => {
       const response = await adminClient.patch(
         `/api/products/${testProductId}`,
         {
-          total_stock: 200,
-          b2b_stock: 150,
-          b2c_stock: 0,
+          stock: 200,
         },
         { auth: true }
       );
 
       expectSuccess(response);
 
-      expect(response.data.inventory.total_stock).toBe(200);
-      expect(response.data.inventory.b2b_stock).toBe(150);
+      expect(response.data.stock).toBe(200);
 
       console.log('[TEST] ✅ Updated inventory stock levels');
     });

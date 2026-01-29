@@ -1,26 +1,17 @@
-// Category related types
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  parentId?: string; // For nested categories
-  imageUrl?: string;
-  displayOrder: number; // For sorting categories
-  isActive: boolean;
-  productCount?: number; // Calculated field
-  color?: string; // For visual distinction
-  createdAt?: any;
-  updatedAt?: any;
-}
+/**
+ * Category Types - Re-exports from @b2b/types
+ *
+ * DEPRECATED: Import directly from '@b2b/types' or '@b2b/types/category' instead.
+ */
 
-export interface CategoryFilter {
-  parentId?: string | null; // null for root categories, string for children
-  isActive?: boolean;
-  searchTerm?: string;
-  sortBy?: 'name' | 'displayOrder' | 'createdAt' | 'updatedAt';
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface CategoryWithChildren extends Category {
-  children?: CategoryWithChildren[];
-}
+// Re-export all category types from @b2b/types
+export type {
+  Category,
+  CategoryWithChildren,
+  CategoryWithCount,
+  CategoryFilter,
+  CategoryListResponse,
+  CategoryTreeResponse,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from '@b2b/types';

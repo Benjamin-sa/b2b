@@ -1,31 +1,27 @@
 /**
- * API Gateway - Orchestration Layer with Service Bindings
- *
- * This gateway orchestrates multi-service workflows using Cloudflare Service Bindings
- * for direct worker-to-worker communication (no HTTP overhead).
+ * API Gateway - Consolidated Backend
  *
  * Architecture:
- * Client → API Gateway (orchestrates) → Services (via bindings)
+ * - Direct D1 database operations via @b2b/db (products, categories, orders, inventory)
+ * - Service bindings only for external services (Stripe, Shopify, Telegram)
+ * - Email via Queue for reliability
  *
- * Responsibilities:
- * ✅ Multi-service orchestration (e.g., register + email)
- * ✅ CORS handling for browser requests
- * ✅ Request/response logging for monitoring
- * ✅ Rate limiting to prevent abuse
- * ✅ Error handling for service failures
- * ✅ Critical vs. non-critical operation handling
- *
+ * This replaces the microservices proxy pattern with direct database access,
+ * eliminating HTTP overhead and simplifying the codebase.
  */
 import { Hono } from 'hono';
 import type { Env, ContextVariables } from './types';
 import { corsMiddleware } from './middleware/cors';
 import { loggingMiddleware } from './middleware/logging';
 import { rateLimitMiddleware } from './middleware/rateLimit';
-import authOrchestration from './routes/auth.orchestration';
-import productsOrchestration from './routes/products.orchestration';
-import categoriesOrchestration from './routes/categories.orchestration';
-import invoicesOrchestration from './routes/invoices.orchestration';
-import adminOrchestration from './routes/admin.orchestration';
+import { authMiddleware } from './middleware/auth';
+
+// Routes - Direct database operations
+import productsRoutes from './routes/products.routes';
+import categoriesRoutes from './routes/categories.routes';
+import invoicesRoutes from './routes/invoices.routes';
+import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
@@ -44,11 +40,11 @@ app.use('*', rateLimitMiddleware);
 app.get('/', (c) => {
   return c.json({
     service: 'B2B API Gateway',
-    version: '2.0.0',
-    architecture: 'Microservices - Orchestration with Service Bindings',
+    version: '3.0.0',
+    architecture: 'Consolidated - Direct D1 via @b2b/db',
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
-    description: 'Orchestrates multi-service workflows using service bindings',
+    description: 'Unified backend with direct database access',
     timestamp: new Date().toISOString(),
   });
 });
@@ -61,39 +57,36 @@ app.get('/health', (c) => {
 });
 
 // ============================================================================
-// AUTH ROUTES → Orchestration Layer
+// AUTH ROUTES → Direct D1 Database
 // ============================================================================
-// Auth routes with orchestration (register + email, password-reset + email)
-app.route('/auth', authOrchestration);
+app.route('/auth', authRoutes);
 
 // ============================================================================
-// PRODUCTS ROUTES → Inventory Service (via Orchestration)
+// PRODUCTS ROUTES → Direct D1 Database (Authentication Required)
 // ============================================================================
-// Product routes proxied to inventory service via service binding
-app.route('/api/products', productsOrchestration);
+app.use('/api/products/*', authMiddleware);
+app.route('/api/products', productsRoutes);
 
 // ============================================================================
-// CATEGORIES ROUTES → Inventory Service (via Orchestration)
+// CATEGORIES ROUTES → Direct D1 Database (Authentication Required)
 // ============================================================================
-// Category routes proxied to inventory service via service binding
-app.route('/api/categories', categoriesOrchestration);
+app.use('/api/categories/*', authMiddleware);
+app.route('/api/categories', categoriesRoutes);
 
 // ============================================================================
-// INVOICES ROUTES → Stripe Service (via Orchestration)
+// INVOICES ROUTES → Direct D1 + Stripe Service (Authentication Required)
 // ============================================================================
-// Invoice creation routes orchestrated to stripe service via service binding
-app.route('/api/invoices', invoicesOrchestration);
+app.use('/api/invoices/*', authMiddleware);
+app.route('/api/invoices', invoicesRoutes);
 
 // ============================================================================
-// SHOPIFY ROUTES → Shopify Sync Service (via Service Binding)
+// SHOPIFY ROUTES → Shopify Sync Service (external API) (Authentication Required)
 // ============================================================================
-// Shopify product search - direct service binding to shopify-sync-service
+app.use('/api/shopify/*', authMiddleware);
 app.all('/api/shopify/*', async (c) => {
   const path = c.req.path.replace('/api/shopify', '');
-
-  // ✅ CRITICAL: Preserve query parameters when forwarding request
   const url = new URL(c.req.url);
-  const queryString = url.search; // Includes the '?' prefix
+  const queryString = url.search;
   const fullPath = `${path || '/'}${queryString}`;
 
   const headers = new Headers(c.req.raw.headers);
@@ -109,10 +102,10 @@ app.all('/api/shopify/*', async (c) => {
 });
 
 // ============================================================================
-// ADMIN ROUTES → Auth Service (via Orchestration)
+// ADMIN ROUTES → Direct D1 Database (Authentication Required)
 // ============================================================================
-// Admin routes with orchestration (user verification + email)
-app.route('/admin', adminOrchestration);
+app.use('/admin/*', authMiddleware);
+app.route('/admin', adminRoutes);
 
 // ============================================================================
 // ERROR HANDLING

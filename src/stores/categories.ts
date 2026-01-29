@@ -2,27 +2,15 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Category, CategoryFilter, CategoryWithChildren } from '../types/category';
+import { useAuthStore } from './auth';
 
 // Normalize API Gateway URL to ensure it ends with /
 const API_GATEWAY_URL =
   (import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8787').replace(/\/$/, '') + '/';
 
-// Helper to map D1 category to frontend type
-function mapCategory(dbCategory: any): Category {
-  return {
-    id: dbCategory.id,
-    name: dbCategory.name,
-    description: dbCategory.description,
-    parentId: dbCategory.parent_id,
-    imageUrl: dbCategory.image_url,
-    displayOrder: dbCategory.sort_order,
-    isActive: dbCategory.is_active === 1,
-    createdAt: dbCategory.created_at,
-    updatedAt: dbCategory.updated_at,
-  };
-}
-
 export const useCategoryStore = defineStore('categories', () => {
+  const authStore = useAuthStore();
+
   // --- State ---
   const categories = ref<Category[]>([]);
   const isLoading = ref(false);
@@ -33,17 +21,14 @@ export const useCategoryStore = defineStore('categories', () => {
 
   // Get root categories (no parent)
   const rootCategories = computed(() =>
-    categories.value
-      .filter((cat) => !cat.parentId && cat.isActive)
-      .sort((a, b) => a.displayOrder - b.displayOrder)
+    categories.value.filter((cat) => !cat.parent_id && cat.is_active)
   );
 
   // Get categories tree structure
   const categoriesTree = computed(() => {
     const buildTree = (parentId: string | undefined = undefined): CategoryWithChildren[] => {
       return categories.value
-        .filter((cat) => cat.parentId === parentId && cat.isActive)
-        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .filter((cat) => cat.parent_id === parentId && cat.is_active)
         .map((cat) => ({
           ...cat,
           children: buildTree(cat.id),
@@ -60,29 +45,29 @@ export const useCategoryStore = defineStore('categories', () => {
     try {
       const params = new URLSearchParams();
 
-      if (filters.parentId !== undefined) {
-        params.append('parentId', filters.parentId === null ? 'null' : filters.parentId);
+      if (filters.parent_id !== undefined) {
+        params.append('parentId', filters.parent_id === null ? 'null' : filters.parent_id);
       }
 
-      if (filters.isActive !== undefined) {
-        params.append('isActive', filters.isActive ? 'true' : 'false');
+      if (filters.is_active !== undefined) {
+        params.append('isActive', filters.is_active ? 'true' : 'false');
       }
 
-      if (filters.searchTerm) {
-        params.append('search', filters.searchTerm);
+      if (filters.search) {
+        params.append('search', filters.search || '');
       }
 
       // Only add query string if there are parameters
       const queryString = params.toString();
       const url = `${API_GATEWAY_URL}api/categories${queryString ? `?${queryString}` : ''}`;
-      const response = await fetch(url);
+      const response = await authStore.authenticatedFetch(url);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const fetchedCategories = data.categories.map(mapCategory);
+      const fetchedCategories = data.categories;
 
       categories.value = fetchedCategories;
     } catch {
@@ -93,36 +78,28 @@ export const useCategoryStore = defineStore('categories', () => {
   };
 
   const fetchCategoriesTree = async () => {
-    const response = await fetch(`${API_GATEWAY_URL}api/categories/tree`);
+    const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}api/categories/tree`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch category tree: ${response.statusText}`);
     }
 
     const data = await response.json();
-    const tree = data.categories.map((cat: any) => mapCategoryWithChildren(cat));
+    const tree = data.categories;
 
     return tree;
   };
 
-  function mapCategoryWithChildren(dbCategory: any): CategoryWithChildren {
-    return {
-      ...mapCategory(dbCategory),
-      children: dbCategory.children?.map((child: any) => mapCategoryWithChildren(child)) || [],
-    };
-  }
-
   const getCategoryById = async (id: string): Promise<Category | null> => {
     try {
-      const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`);
+      const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}api/categories/${id}`);
 
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`Failed to fetch category: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      const category = mapCategory(data);
+      const category = await response.json();
       return category;
     } catch {
       return null;
@@ -132,7 +109,7 @@ export const useCategoryStore = defineStore('categories', () => {
   const getCategoryByName = async (name: string): Promise<Category | null> => {
     try {
       // Fetch all categories and filter client-side
-      await fetchCategories({ searchTerm: name });
+      await fetchCategories({ search: name });
       return categories.value.find((cat) => cat.name === name) || null;
     } catch {
       return null;
@@ -148,20 +125,19 @@ export const useCategoryStore = defineStore('categories', () => {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
 
-    const response = await fetch(`${API_GATEWAY_URL}api/categories`, {
+    const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}api/categories`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('b2b_access_token')}`,
       },
       body: JSON.stringify({
         name: categoryData.name,
         description: categoryData.description,
         slug,
-        parentId: categoryData.parentId,
-        imageUrl: categoryData.imageUrl,
-        sortOrder: categoryData.displayOrder,
-        isActive: categoryData.isActive,
+        parentId: categoryData.parent_id,
+        imageUrl: categoryData.image_url,
+        sortOrder: categoryData.sort_order,
+        isActive: categoryData.is_active,
       }),
     });
 
@@ -170,8 +146,7 @@ export const useCategoryStore = defineStore('categories', () => {
       throw new Error(errorData.message || 'Failed to create category');
     }
 
-    const data = await response.json();
-    const category = mapCategory(data);
+    const category = await response.json();
 
     // Update local state
     categories.value.push(category);
@@ -187,16 +162,15 @@ export const useCategoryStore = defineStore('categories', () => {
 
     if (updates.name !== undefined) payload.name = updates.name;
     if (updates.description !== undefined) payload.description = updates.description;
-    if (updates.parentId !== undefined) payload.parentId = updates.parentId;
-    if (updates.imageUrl !== undefined) payload.imageUrl = updates.imageUrl;
-    if (updates.displayOrder !== undefined) payload.sortOrder = updates.displayOrder;
-    if (updates.isActive !== undefined) payload.isActive = updates.isActive;
+    if (updates.parent_id !== undefined) payload.parentId = updates.parent_id;
+    if (updates.image_url !== undefined) payload.imageUrl = updates.image_url;
+    if (updates.sort_order !== undefined) payload.sortOrder = updates.sort_order;
+    if (updates.is_active !== undefined) payload.isActive = updates.is_active;
 
-    const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`, {
+    const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}api/categories/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('b2b_access_token')}`,
       },
       body: JSON.stringify(payload),
     });
@@ -206,8 +180,7 @@ export const useCategoryStore = defineStore('categories', () => {
       throw new Error(errorData.message || 'Failed to update category');
     }
 
-    const data = await response.json();
-    const category = mapCategory(data);
+    const category = await response.json();
 
     // Update local state
     const index = categories.value.findIndex((cat) => cat.id === id);
@@ -217,11 +190,8 @@ export const useCategoryStore = defineStore('categories', () => {
   };
 
   const deleteCategory = async (id: string) => {
-    const response = await fetch(`${API_GATEWAY_URL}api/categories/${id}`, {
+    const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}api/categories/${id}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('b2b_access_token')}`,
-      },
     });
 
     if (!response.ok) {
@@ -234,14 +204,16 @@ export const useCategoryStore = defineStore('categories', () => {
   };
 
   const reorderCategories = async (categoryIds: string[]) => {
-    const response = await fetch(`${API_GATEWAY_URL}api/categories/reorder`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('b2b_access_token')}`,
-      },
-      body: JSON.stringify({ categoryIds }),
-    });
+    const response = await authStore.authenticatedFetch(
+      `${API_GATEWAY_URL}api/categories/reorder`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ categoryIds }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -252,7 +224,7 @@ export const useCategoryStore = defineStore('categories', () => {
     categoryIds.forEach((id, index) => {
       const category = categories.value.find((cat) => cat.id === id);
       if (category) {
-        category.displayOrder = index;
+        category.sort_order = index;
       }
     });
   };

@@ -53,17 +53,17 @@ export function addInvoiceBasicFields(builder: UpdateBuilder, invoice: Stripe.In
  * Extract and add shipping cost fields to update builder
  *
  * @param builder - Update builder object
- * @param shippingCostCents - Shipping cost in cents
+ * @param shipping_cost_cents - Shipping cost in cents
  * @param shippingInvoiceItemId - Stripe invoice item ID
  */
 export function addShippingFields(
   builder: UpdateBuilder,
-  shippingCostCents: number,
+  shipping_cost_cents: number,
   shippingInvoiceItemId: string | null
 ): void {
-  if (shippingCostCents > 0) {
-    addField(builder, 'shipping_cost_cents', shippingCostCents);
-    addField(builder, 'shipping', shippingCostCents / 100); // Convert to euros
+  if (shipping_cost_cents > 0) {
+    addField(builder, 'shipping_cost_cents', shipping_cost_cents);
+    addField(builder, 'shipping', shipping_cost_cents / 100); // Convert to euros
   }
 
   if (shippingInvoiceItemId) {
@@ -149,11 +149,11 @@ export function buildInvoiceUpdateQuery(invoice: Stripe.Invoice): {
   };
 
   // Extract shipping cost
-  const [shippingCostCents, shippingInvoiceItemId] = extractShippingCost(invoice);
+  const [shipping_cost_cents, shippingInvoiceItemId] = extractShippingCost(invoice);
 
   // Add all fields
   addInvoiceBasicFields(builder, invoice);
-  addShippingFields(builder, shippingCostCents, shippingInvoiceItemId);
+  addShippingFields(builder, shipping_cost_cents, shippingInvoiceItemId);
   addBillingAddressFields(builder, invoice.customer_address);
   addShippingAddressFields(builder, invoice.customer_shipping);
 

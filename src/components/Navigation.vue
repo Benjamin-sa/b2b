@@ -55,9 +55,9 @@
               @click="toggleCart">
               <img src="../assets/shoppingcart.svg" alt="Shopping Cart" class="w-6 h-6" />
               <Transition name="cart-badge">
-                <div v-if="cartStore.itemCount > 0" class="absolute -top-1 -right-1 cart-count-badge">
+                <div v-if="cartStore.item_count > 0" class="absolute -top-1 -right-1 cart-count-badge">
                   <span class="cart-count-text">
-                    {{ cartStore.itemCount > 99 ? '99+' : cartStore.itemCount }}
+                    {{ cartStore.item_count > 99 ? '99+' : cartStore.item_count }}
                   </span>
                 </div>
               </Transition>
@@ -148,9 +148,9 @@
             @click="toggleCart">
             <img src="../assets/shoppingcart.svg" alt="Shopping Cart" class="w-6 h-6" />
             <Transition name="cart-badge">
-              <div v-if="cartStore.itemCount > 0" class="absolute -top-1 -right-1 cart-count-badge mobile-badge">
+              <div v-if="cartStore.item_count > 0" class="absolute -top-1 -right-1 cart-count-badge mobile-badge">
                 <span class="cart-count-text">
-                  {{ cartStore.itemCount > 99 ? '99+' : cartStore.itemCount }}
+                  {{ cartStore.item_count > 99 ? '99+' : cartStore.item_count }}
                 </span>
               </div>
             </Transition>

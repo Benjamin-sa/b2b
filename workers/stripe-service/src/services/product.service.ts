@@ -117,8 +117,6 @@ export async function updateProduct(env: Env, input: ProductUpdateInput): Promis
       images: input.images && input.images.length > 0 ? [input.images[0]] : undefined,
       tax_code: 'txcd_99999999',
       metadata: {
-        firebaseId: input.product_id,
-        productId: input.product_id,
         category: input.category || '',
         brand: input.brand || '',
         partNumber: input.part_number || '',

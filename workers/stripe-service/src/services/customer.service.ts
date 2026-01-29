@@ -7,7 +7,6 @@
  * - Archive/soft-delete customer
  * - Get or create customer (for migrations)
  *
- * Maintains compatibility with Firebase Functions implementation
  */
 
 import type Stripe from 'stripe';

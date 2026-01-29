@@ -126,13 +126,14 @@ export function validateTokenValidation(data: any): asserts data is ValidateToke
 
 export interface ProductInventory {
   product_id: string;
-  total_stock: number;
-  b2b_stock: number;
-  b2c_stock: number;
-  reserved_stock?: number;
+  stock: number;
   shopify_variant_id?: string;
   shopify_product_id?: string;
-  sync_enabled?: boolean;
+  shopify_inventory_item_id?: string;
+  shopify_location_id?: string;
+  sync_enabled?: number; // SQLite uses 0/1 for boolean
+  last_synced_at?: string;
+  sync_error?: string;
 }
 
 export interface Product {
@@ -155,11 +156,10 @@ export interface Product {
   stripe_price_id?: string;
   created_at?: string;
   updated_at?: string;
-  // Inventory data (joined or nested)
+  // Inventory data (joined or nested) - simplified unified stock
   inventory?: ProductInventory;
-  total_stock?: number;
-  b2b_stock?: number;
-  b2c_stock?: number;
+  stock?: number;
+  in_stock?: number; // 0 or 1
   shopify_variant_id?: string;
 }
 
@@ -203,19 +203,12 @@ export function validateProduct(data: any, strict: boolean = false): asserts dat
 
 export function validateProductInventory(data: any): asserts data is ProductInventory {
   expect(data).toHaveProperty('product_id');
-  expect(data).toHaveProperty('total_stock');
-  expect(data).toHaveProperty('b2b_stock');
-  expect(data).toHaveProperty('b2c_stock');
+  expect(data).toHaveProperty('stock');
   expect(typeof data.product_id).toBe('string');
-  expect(typeof data.total_stock).toBe('number');
-  expect(typeof data.b2b_stock).toBe('number');
-  expect(typeof data.b2c_stock).toBe('number');
+  expect(typeof data.stock).toBe('number');
 
-  // Business rule validation
-  expect(data.total_stock).toBeGreaterThanOrEqual(0);
-  expect(data.b2b_stock).toBeGreaterThanOrEqual(0);
-  expect(data.b2c_stock).toBeGreaterThanOrEqual(0);
-  expect(data.b2b_stock + data.b2c_stock).toBeLessThanOrEqual(data.total_stock);
+  // Business rule validation - stock must be non-negative
+  expect(data.stock).toBeGreaterThanOrEqual(0);
 }
 
 export function validateProductList(data: any): asserts data is ProductListResponse {

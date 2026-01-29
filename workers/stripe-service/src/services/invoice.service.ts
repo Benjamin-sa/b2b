@@ -122,10 +122,10 @@ export async function createInvoiceWithItems(
     const stripe = getStripeClient(env);
 
     console.log(`Creating invoice for customer ${input.customer_id}`, {
-      userId: input.user_id,
-      itemCount: input.items.length,
-      shippingCents: input.shipping_cost_cents || 0,
-      hasShippingAddress: !!input.shipping_address,
+      user_id: input.user_id,
+      item_count: input.items.length,
+      shipping_cents: input.shipping_cost_cents || 0,
+      has_shipping_address: !!input.shipping_address,
     });
 
     // Step 0: Set customer shipping address for this order

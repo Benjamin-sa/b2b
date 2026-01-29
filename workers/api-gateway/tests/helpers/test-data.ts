@@ -42,9 +42,7 @@ export interface TestProductData {
   category_id?: string;
   image_url?: string;
   images?: string[];
-  total_stock?: number;
-  b2b_stock?: number;
-  b2c_stock?: number;
+  stock?: number;
   min_order_quantity?: number;
   max_order_quantity?: number;
   specifications?: Array<{ key: string; value: string }>;
@@ -70,9 +68,7 @@ export function generateProduct(overrides: Partial<TestProductData> = {}): TestP
       'https://via.placeholder.com/400x400.png?text=Test+1',
       'https://via.placeholder.com/400x400.png?text=Test+2',
     ],
-    total_stock: 100,
-    b2b_stock: 60,
-    b2c_stock: 0,
+    stock: 100,
     min_order_quantity: 1,
     max_order_quantity: 50,
     specifications: [
@@ -91,9 +87,7 @@ export function generateMinimalProduct(overrides: Partial<TestProductData> = {})
   return {
     name: `Minimal Test Product ${Date.now()}`,
     price: 19.99,
-    total_stock: 10,
-    b2b_stock: 10,
-    b2c_stock: 0,
+    stock: 10,
     ...overrides,
   };
 }
@@ -174,22 +168,22 @@ export function generateUser(overrides: Partial<TestUserData> = {}): TestUserDat
 // ============================================================================
 
 export interface TestInvoiceItem {
-  stripePriceId: string;
+  stripe_price_id: string;
   quantity: number;
   metadata: {
-    productId: string;
-    productName: string;
-    shopifyVariantId?: string;
+    product_id: string;
+    product_name: string;
+    shopify_variant_id?: string;
   };
 }
 
 export interface TestInvoiceData {
   items: TestInvoiceItem[];
-  shippingCost?: number;
+  shipping_cost?: number;
   metadata?: {
     notes?: string;
-    shippingAddress?: any;
-    billingAddress?: any;
+    shipping_address?: any;
+    billing_address?: any;
   };
 }
 
@@ -203,10 +197,10 @@ export function generateInvoice(
 ): TestInvoiceData {
   return {
     items,
-    shippingCost: 0,
+    shipping_cost: 0,
     metadata: {
       notes: 'Integration test invoice',
-      shippingAddress: {
+      shipping_address: {
         line1: '123 Test Street',
         city: 'Amsterdam',
         postal_code: '1234 AB',

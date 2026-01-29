@@ -1,77 +1,31 @@
 /**
  * API Gateway Types
  *
- * Orchestration layer using Cloudflare Service Bindings
- * for direct worker-to-worker communication (no HTTP overhead)
+ * Re-exports from @b2b/types with gateway-specific additions.
+ * New code should import types from '@b2b/types' where possible.
  */
 
-// Service binding types (Cloudflare Workers RPC)
-export interface AuthService extends Fetcher {
-  // Auth service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
+// Re-export API types from @b2b/types
+export type {
+  ServiceBinding,
+  ApiGatewayEnv,
+  ContextVariables,
+  EmailQueueMessage,
+  WelcomeEmailMessage,
+  PasswordResetEmailMessage,
+  VerificationEmailMessage,
+  AccountVerifiedEmailMessage,
+} from '@b2b/types';
 
-export interface EmailService extends Fetcher {
-  // Email service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
+// Service binding type aliases for compatibility
+export type StripeService = import('@b2b/types').ServiceBinding;
+export type ShopifySyncService = import('@b2b/types').ServiceBinding;
+export type TelegramService = import('@b2b/types').ServiceBinding;
 
-export interface InventoryService extends Fetcher {
-  // Inventory service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
+// Re-export Env as ApiGatewayEnv for backward compatibility
+export type { ApiGatewayEnv as Env } from '@b2b/types';
 
-export interface StripeService extends Fetcher {
-  // Stripe service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
-
-export interface ShopifySyncService extends Fetcher {
-  // Shopify Sync service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
-
-export interface TelegramService extends Fetcher {
-  // Telegram notification service is callable via service binding
-  fetch: (request: Request) => Promise<Response>;
-}
-
-export interface Env {
-  ENVIRONMENT: 'development' | 'production';
-
-  // Service Bindings (direct worker-to-worker calls - FAST!)
-  AUTH_SERVICE: AuthService;
-  EMAIL_SERVICE: EmailService;
-  INVENTORY_SERVICE: InventoryService;
-  STRIPE_SERVICE: StripeService;
-  SHOPIFY_SYNC_SERVICE: ShopifySyncService;
-  TELEGRAM_SERVICE: TelegramService;
-
-  // Service-to-service authentication secret
-  SERVICE_SECRET: string;
-
-  // Queue Bindings (for async email processing)
-  EMAIL_QUEUE: Queue;
-
-  // D1 Database binding (for invoice persistence)
-  DB: D1Database;
-
-  // Allowed origins for CORS
-  ALLOWED_ORIGINS: string;
-
-  // Rate limiting (optional KV namespace)
-  RATE_LIMIT?: KVNamespace;
-}
-
-// Context variables that can be set in middleware
-export type ContextVariables = {
-  user: {
-    userId: string;
-    email: string;
-    stripeCustomerId: string | null;
-  };
-};
-
+// Proxy options (gateway-specific)
 export interface ProxyOptions {
   serviceUrl: string;
   stripPrefix?: string;

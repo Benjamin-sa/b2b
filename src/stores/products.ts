@@ -1,7 +1,7 @@
 // src/stores/productStore.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Product, ProductFilter } from '../types/product';
+import type { ProductWithRelations, ProductFilter } from '../types/product';
 import { useAuthStore } from './auth';
 import { useNotificationStore } from './notifications';
 import { useI18n } from 'vue-i18n';
@@ -23,7 +23,7 @@ const PRODUCTS_API_URL = `${API_GATEWAY_URL}/api/products`;
  * - Converts images array from objects to URLs for easier template usage
  * - Converts specifications array from objects to simple key-value pairs
  */
-function normalizeProduct(product: any): Product {
+function normalizeProduct(product: any): ProductWithRelations {
   return {
     ...product,
     // Map images array to simple URL strings for easier template usage
@@ -47,7 +47,7 @@ export const useProductStore = defineStore('products', () => {
   const { t } = useI18n();
 
   // --- State ---
-  const products = ref<Product[]>([]);
+  const products = ref<ProductWithRelations[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -82,27 +82,29 @@ export const useProductStore = defineStore('products', () => {
 
       // Determine which page to fetch
       const page = loadMore ? currentPage.value + 1 : filters.page || 1;
+      const limit = filters.limit || pageSize.value;
+      const offset = (page - 1) * limit;
 
-      // Build query parameters (using backend field names directly)
+      // Build query parameters (using backend field names - snake_case)
       const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('limit', (filters.limit || pageSize.value).toString());
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
 
-      if (filters.category_id) params.append('categoryId', filters.category_id);
+      if (filters.category_id) params.append('category_id', filters.category_id);
       if (filters.brand) params.append('brand', filters.brand);
-      if (filters.in_stock !== undefined) params.append('inStock', filters.in_stock.toString());
-      if (filters.coming_soon !== undefined)
-        params.append('comingSoon', filters.coming_soon.toString());
-      if (filters.min_price !== undefined) params.append('minPrice', filters.min_price.toString());
-      if (filters.max_price !== undefined) params.append('maxPrice', filters.max_price.toString());
-      if (filters.search_term) params.append('search', filters.search_term);
+      if (filters.in_stock !== undefined) params.append('in_stock', filters.in_stock.toString());
+      if (filters.min_price !== undefined) params.append('min_price', filters.min_price.toString());
+      if (filters.max_price !== undefined) params.append('max_price', filters.max_price.toString());
+      if (filters.search) params.append('search', filters.search);
 
-      // Direct pass-through - no transformation needed
-      if (filters.sort_by) params.append('sortBy', filters.sort_by);
-      if (filters.sort_order) params.append('sortOrder', filters.sort_order);
+      // Sorting - not yet implemented in backend, but prepare for future
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_order) params.append('sort_order', filters.sort_order);
 
-      // Fetch from API Gateway (which routes to inventory service)
-      const response = await fetch(`${PRODUCTS_API_URL}?${params.toString()}`);
+      // Fetch from API Gateway with auth token
+      const response = await authStore.authenticatedFetch(
+        `${PRODUCTS_API_URL}?${params.toString()}`
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.statusText}`);
@@ -110,8 +112,9 @@ export const useProductStore = defineStore('products', () => {
 
       const data = await response.json();
 
+      // Backend returns: { products, total, limit, offset }
       // Normalize products for frontend use (map images to URLs)
-      const fetchedProducts = data.items.map(normalizeProduct);
+      const fetchedProducts = data.products.map(normalizeProduct);
 
       // Update state
       if (loadMore) {
@@ -120,10 +123,13 @@ export const useProductStore = defineStore('products', () => {
         products.value = fetchedProducts;
       }
 
-      currentPage.value = data.pagination.currentPage;
-      totalItems.value = data.pagination.totalItems;
-      totalPages.value = data.pagination.totalPages;
-      hasMoreProducts.value = data.pagination.hasNextPage;
+      // Calculate pagination values from backend response
+      const responseLimit = data.limit || pageSize.value;
+      const responseOffset = data.offset || 0;
+      currentPage.value = Math.floor(responseOffset / responseLimit) + 1;
+      totalItems.value = data.total || 0;
+      totalPages.value = Math.ceil(totalItems.value / responseLimit);
+      hasMoreProducts.value = responseOffset + fetchedProducts.length < totalItems.value;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch products';
       notificationStore.addNotification({
@@ -136,13 +142,13 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
-  const getProductById = async (id: string): Promise<Product | null> => {
+  const getProductById = async (id: string): Promise<ProductWithRelations | null> => {
     try {
       isLoading.value = true;
       error.value = null;
 
-      // Fetch from API Gateway
-      const response = await fetch(`${PRODUCTS_API_URL}/${id}`);
+      // Fetch from API Gateway with auth
+      const response = await authStore.authenticatedFetch(`${PRODUCTS_API_URL}/${id}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -163,7 +169,7 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
-  const addProduct = async (productData: Omit<Product, 'id'>) => {
+  const addProduct = async (productData: Omit<ProductWithRelations, 'id'>) => {
     try {
       isLoading.value = true;
       error.value = null;
@@ -176,11 +182,10 @@ export const useProductStore = defineStore('products', () => {
       // No transformation needed - send data as-is
       const payload = productData;
 
-      const response = await fetch(PRODUCTS_API_URL, {
+      const response = await authStore.authenticatedFetch(PRODUCTS_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify(payload),
       });
@@ -216,7 +221,7 @@ export const useProductStore = defineStore('products', () => {
     }
   };
 
-  const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id'>>) => {
+  const updateProduct = async (id: string, updates: Partial<Omit<ProductWithRelations, 'id'>>) => {
     try {
       isLoading.value = true;
       error.value = null;
@@ -229,11 +234,10 @@ export const useProductStore = defineStore('products', () => {
       // No transformation needed - send data as-is
       const payload = updates;
 
-      const response = await fetch(`${PRODUCTS_API_URL}/${id}`, {
+      const response = await authStore.authenticatedFetch(`${PRODUCTS_API_URL}/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify(payload),
       });
@@ -282,11 +286,8 @@ export const useProductStore = defineStore('products', () => {
         throw new Error('Admin authentication required');
       }
 
-      const response = await fetch(`${PRODUCTS_API_URL}/${id}`, {
+      const response = await authStore.authenticatedFetch(`${PRODUCTS_API_URL}/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${authStore.accessToken}`,
-        },
       });
 
       if (!response.ok) {
@@ -351,11 +352,10 @@ export const useProductStore = defineStore('products', () => {
         throw new Error('Admin authentication required');
       }
 
-      const response = await fetch(`${PRODUCTS_API_URL}/${id}/stock`, {
+      const response = await authStore.authenticatedFetch(`${PRODUCTS_API_URL}/${id}/stock`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify({ stock }),
       });
@@ -396,19 +396,22 @@ export const useProductStore = defineStore('products', () => {
 
   // --- Utility Actions ---
 
-  const getProductsByCategory = async (categoryId: string): Promise<Product[]> => {
+  const getProductsByCategory = async (categoryId: string): Promise<ProductWithRelations[]> => {
     try {
       isLoading.value = true;
       error.value = null;
-      // Fetch from API Gateway using category filter
-      const response = await fetch(`${PRODUCTS_API_URL}/category/${categoryId}`);
+      // Fetch from API Gateway using category filter with auth
+      const response = await authStore.authenticatedFetch(
+        `${PRODUCTS_API_URL}/category/${categoryId}`
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products by category: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const categoryProducts = data.items.map(normalizeProduct);
+      // Backend returns: { products, category_id }
+      const categoryProducts = data.products.map(normalizeProduct);
 
       return categoryProducts;
     } catch (err: any) {
@@ -423,19 +426,20 @@ export const useProductStore = defineStore('products', () => {
     try {
       // For now, extract unique categories from products
       // TODO: Replace with dedicated categories endpoint when available
-      const response = await fetch(`${PRODUCTS_API_URL}?limit=100`);
+      const response = await authStore.authenticatedFetch(`${PRODUCTS_API_URL}?limit=100`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const allProducts = data.items; // No transformation needed
+      // Backend returns: { products, total, limit, offset }
+      const allProducts = data.products; // No transformation needed
 
       const categories: string[] = Array.from(
         new Set(
           allProducts
-            .map((p: Product) => p.category_id)
+            .map((p: ProductWithRelations) => p.category_id)
             .filter((c: string | null | undefined): c is string => !!c)
         )
       );

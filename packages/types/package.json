@@ -1,0 +1,25 @@
+{
+  "name": "@b2b/types",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./product": "./src/product.ts",
+    "./order": "./src/order.ts",
+    "./user": "./src/user.ts",
+    "./category": "./src/category.ts",
+    "./cart": "./src/cart.ts",
+    "./inventory": "./src/inventory.ts",
+    "./api": "./src/api.ts",
+    "./common": "./src/common.ts",
+    "./service-auth": "./src/service-auth.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "hono": "^4.0.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -13,7 +13,6 @@ import {
   getInventoryByShopifyVariantId,
   updateLastSyncTime,
   updateStockFromShopify,
-  logInventoryChange,
 } from '../utils/database';
 
 /**
@@ -42,18 +41,6 @@ export async function syncToShopify(
     await updateShopifyInventory(env, inventory.shopify_inventory_item_id, stockToSync);
     await updateLastSyncTime(env.DB, productId, null);
 
-    // Log success
-    await logInventoryChange(
-      env.DB,
-      productId,
-      'sync_to_shopify',
-      'b2b_checkout',
-      0, // No change, just sync
-      inventory.stock,
-      true,
-      null
-    );
-
     console.log(`✅ Synced product ${productId} to Shopify (${stockToSync} units)`);
     return { success: true, error: null };
   } catch (error: any) {
@@ -61,20 +48,6 @@ export async function syncToShopify(
     console.error(`❌ Failed to sync product ${productId} to Shopify:`, errorMessage);
 
     await updateLastSyncTime(env.DB, productId, errorMessage);
-
-    const inventory = await getInventoryByProductId(env.DB, productId);
-    if (inventory) {
-      await logInventoryChange(
-        env.DB,
-        productId,
-        'sync_to_shopify',
-        'b2b_checkout',
-        0,
-        inventory.stock,
-        false,
-        errorMessage
-      );
-    }
 
     return { success: false, error: errorMessage };
   }
@@ -105,26 +78,11 @@ export async function handleShopifyInventoryUpdate(
   }
 
   const previousStock = inventory.stock;
-  const stockChange = newAvailable - previousStock;
 
   console.log(`📊 Stock update for ${inventory.product_id}: ${previousStock} → ${newAvailable}`);
 
   // Simple: Shopify is master, just update our stock
   await updateStockFromShopify(env.DB, inventory.product_id, newAvailable);
-
-  // Log the change
-  await logInventoryChange(
-    env.DB,
-    inventory.product_id,
-    'sync_from_shopify',
-    'shopify_webhook',
-    stockChange,
-    newAvailable,
-    true,
-    null,
-    webhookId,
-    'webhook'
-  );
 
   console.log(`✅ Updated stock for product ${inventory.product_id}`);
 }

@@ -1,23 +1,15 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
-    <div
-      class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
-    >
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
       <!-- Background overlay -->
-      <div
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-        @click="$emit('close')"
-      ></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="$emit('close')"></div>
 
       <!-- This invisible element is to trick the browser into centering the modal contents. -->
-      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"
-        >&#8203;</span
-      >
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
       <!-- Modal panel -->
       <div
-        class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50"
-      >
+        class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50">
         <form @submit.prevent="handleSubmit">
           <!-- Header -->
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -31,13 +23,9 @@
                   <!-- Name -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
-                    <input
-                      v-model="form.name"
-                      type="text"
-                      required
+                    <input v-model="form.name" type="text" required
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Enter category name"
-                    />
+                      placeholder="Enter category name" />
                   </div>
 
                   <!-- Description -->
@@ -45,12 +33,9 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                       Description
                     </label>
-                    <textarea
-                      v-model="form.description"
-                      rows="3"
+                    <textarea v-model="form.description" rows="3"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Enter category description"
-                    ></textarea>
+                      placeholder="Enter category description"></textarea>
                   </div>
 
                   <!-- Parent Category -->
@@ -58,48 +43,13 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                       Parent Category
                     </label>
-                    <select
-                      v-model="form.parentId"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    >
+                    <select v-model="form.parent_id"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                       <option value="">No Parent</option>
                       <option v-for="cat in availableParents" :key="cat.id" :value="cat.id">
                         {{ cat.name }}
                       </option>
                     </select>
-                  </div>
-
-                  <!-- Display Order -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Display Order
-                    </label>
-                    <input
-                      v-model.number="form.displayOrder"
-                      type="number"
-                      min="0"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="0"
-                    />
-                    <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
-                  </div>
-
-                  <!-- Color -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"> Color </label>
-                    <div class="flex items-center space-x-2">
-                      <input
-                        v-model="form.color"
-                        type="color"
-                        class="h-10 w-16 border border-gray-300 rounded cursor-pointer"
-                      />
-                      <input
-                        v-model="form.color"
-                        type="text"
-                        placeholder="#000000"
-                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </div>
                   </div>
 
                   <!-- Image Upload -->
@@ -111,12 +61,8 @@
 
                   <!-- Active Status -->
                   <div class="flex items-center">
-                    <input
-                      id="isActive"
-                      v-model="form.isActive"
-                      type="checkbox"
-                      class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
+                    <input id="isActive" v-model="form.is_active" type="checkbox"
+                      class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
                     <label for="isActive" class="ml-2 block text-sm text-gray-700"> Active </label>
                   </div>
                 </div>
@@ -126,39 +72,20 @@
 
           <!-- Footer -->
           <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button
-              type="submit"
-              :disabled="isSubmitting"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-            >
-              <svg
-                v-if="isSubmitting"
-                class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+            <button type="submit" :disabled="isSubmitting"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+              <svg v-if="isSubmitting" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
               </svg>
               {{ isSubmitting ? 'Saving...' : isEditing ? 'Update' : 'Create' }}
             </button>
-            <button
-              type="button"
+            <button type="button"
               class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-              @click="$emit('close')"
-            >
+              @click="$emit('close')">
               > Cancel
             </button>
           </div>
@@ -196,11 +123,9 @@ const categoryStore = useCategoryStore();
 const form = ref({
   name: '',
   description: '',
-  parentId: '',
-  displayOrder: 0,
-  color: '#6366f1',
-  imageUrl: '',
-  isActive: true,
+  parent_id: '',
+  image_url: '',
+  is_active: true,
 });
 
 const categoryImages = ref<string[]>([]);
@@ -212,11 +137,11 @@ const isEditing = computed(() => !!props.category);
 const availableParents = computed(() => {
   // Exclude current category and its descendants to prevent circular references
   if (!isEditing.value) {
-    return props.categories.filter((cat) => cat.isActive);
+    return props.categories.filter((cat) => cat.is_active);
   }
 
   return props.categories.filter(
-    (cat) => cat.isActive && cat.id !== props.category?.id && cat.parentId !== props.category?.id
+    (cat) => cat.is_active && cat.id !== props.category?.id && cat.parent_id !== props.category?.id
   );
 });
 
@@ -225,11 +150,9 @@ const resetForm = () => {
   form.value = {
     name: '',
     description: '',
-    parentId: '',
-    displayOrder: 0,
-    color: '#6366f1',
-    imageUrl: '',
-    isActive: true,
+    parent_id: '',
+    image_url: '',
+    is_active: true,
   };
   categoryImages.value = [];
 };
@@ -241,13 +164,13 @@ const handleSubmit = async () => {
   // This provides better UX by preventing failed requests or unexpected redirects
   // while the "Saving..." state is active.
   if (!authStore.isTokenValid(authStore.accessToken)) {
-    console.log('[CategoryModal] Token expired or about to expire, refreshing...');
     const refreshed = await authStore.refreshAccessToken();
     if (!refreshed) {
-      console.error('[CategoryModal] Session expired, could not refresh');
+      alert('Your session has expired. Please log in again.');
+      isSubmitting.value = false;
+      emit('close');
       return;
     }
-    console.log('[CategoryModal] Token refreshed successfully');
   }
 
   isSubmitting.value = true;
@@ -256,9 +179,7 @@ const handleSubmit = async () => {
     // Build category data object, only including fields with actual values
     const categoryData: any = {
       name: form.value.name.trim(),
-      displayOrder: form.value.displayOrder || 0,
-      color: form.value.color,
-      isActive: form.value.isActive,
+      is_active: form.value.is_active,
     };
 
     // Only add optional fields if they have values
@@ -266,15 +187,15 @@ const handleSubmit = async () => {
       categoryData.description = form.value.description.trim();
     }
 
-    if (form.value.parentId && form.value.parentId.trim()) {
-      categoryData.parentId = form.value.parentId.trim();
+    if (form.value.parent_id && form.value.parent_id.trim()) {
+      categoryData.parent_id = form.value.parent_id.trim();
     }
 
     // Use uploaded image if available, otherwise fall back to imageUrl field (backward compatibility)
     if (categoryImages.value.length > 0) {
-      categoryData.imageUrl = categoryImages.value[0];
-    } else if (form.value.imageUrl && form.value.imageUrl.trim()) {
-      categoryData.imageUrl = form.value.imageUrl.trim();
+      categoryData.image_url = categoryImages.value[0];
+    } else if (form.value.image_url && form.value.image_url.trim()) {
+      categoryData.image_url = form.value.image_url.trim();
     }
 
     if (isEditing.value && props.category) {
@@ -297,14 +218,12 @@ watch(
       form.value = {
         name: newCategory.name,
         description: newCategory.description || '',
-        parentId: newCategory.parentId || '',
-        displayOrder: newCategory.displayOrder,
-        color: newCategory.color || '#6366f1',
-        imageUrl: newCategory.imageUrl || '',
-        isActive: newCategory.isActive,
+        parent_id: newCategory.parent_id || '',
+        image_url: newCategory.image_url || '',
+        is_active: newCategory.is_active,
       };
       // Set category images array if there's an existing image
-      categoryImages.value = newCategory.imageUrl ? [newCategory.imageUrl] : [];
+      categoryImages.value = newCategory.image_url ? [newCategory.image_url] : [];
     } else {
       resetForm();
     }

@@ -6,12 +6,11 @@
  */
 
 import type { ProductInventory } from '../types';
-import { nanoid } from 'nanoid';
 import { createDb, schema } from '@b2b/db';
 import { eq } from 'drizzle-orm';
 import type { D1Database } from '@cloudflare/workers-types';
 
-const { product_inventory, inventory_sync_log } = schema;
+const { product_inventory } = schema;
 
 /**
  * Get product inventory by product ID
@@ -115,40 +114,6 @@ export async function updateLastSyncTime(
     .update(product_inventory)
     .set({ last_synced_at: now, sync_error: error, updated_at: now })
     .where(eq(product_inventory.product_id, productId))
-    .run();
-}
-
-/**
- * Log inventory change to audit trail
- */
-export async function logInventoryChange(
-  db: D1Database,
-  productId: string,
-  action: string,
-  source: string,
-  stockChange: number,
-  stockAfter: number,
-  syncedToShopify: boolean,
-  syncError: string | null = null,
-  referenceId: string | null = null,
-  referenceType: string | null = null
-): Promise<void> {
-  const client = createDb(db);
-  await client
-    .insert(inventory_sync_log)
-    .values({
-      id: nanoid(),
-      product_id: productId,
-      action,
-      source,
-      stock_change: stockChange,
-      stock_after: stockAfter,
-      synced_to_shopify: syncedToShopify ? 1 : 0,
-      sync_error: syncError,
-      reference_id: referenceId,
-      reference_type: referenceType,
-      created_at: new Date().toISOString(),
-    })
     .run();
 }
 

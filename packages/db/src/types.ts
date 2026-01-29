@@ -1,79 +1,72 @@
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import type {
-  cart_items,
-  carts,
-  categories,
-  email_verification_tokens,
-  inventory_sync_log,
-  order_item_tax_amounts,
-  order_items,
-  orders,
-  password_reset_tokens,
-  product_dimensions,
-  product_images,
-  product_inventory,
-  product_specifications,
-  product_tags,
-  products,
-  sessions,
-  stock_history,
-  users,
-  webhook_events,
-} from './schema';
+/**
+ * @b2b/db Types
+ *
+ * Re-exports types from @b2b/types for backward compatibility.
+ * Also provides Drizzle-inferred types for internal database operations.
+ *
+ * For new code, import directly from '@b2b/types' instead.
+ */
 
-export type User = InferSelectModel<typeof users>;
-export type NewUser = InferInsertModel<typeof users>;
+// Re-export all types from the unified types package
+export type {
+  // User types
+  User,
+  UserProfile,
+  UserWithPassword,
+  UserRole,
+  CreateUserInput as NewUser,
+  UpdateUserInput,
+  Session,
+  CreateSessionInput as NewSession,
+  PasswordResetToken,
+  CreatePasswordResetTokenInput as NewPasswordResetToken,
+  EmailVerificationToken,
+  CreateEmailVerificationTokenInput as NewEmailVerificationToken,
 
-export type Category = InferSelectModel<typeof categories>;
-export type NewCategory = InferInsertModel<typeof categories>;
+  // Product types
+  Product,
+  ProductWithRelations,
+  CreateProductInput as NewProduct,
+  UpdateProductInput,
+  ProductImage,
+  CreateProductImageInput as NewProductImage,
+  ProductSpecification,
+  CreateProductSpecificationInput as NewProductSpecification,
+  ProductTag,
+  ProductDimension,
+  SetProductDimensionsInput as NewProductDimension,
 
-export type Product = InferSelectModel<typeof products>;
-export type NewProduct = InferInsertModel<typeof products>;
+  // Category types
+  Category,
+  CategoryWithChildren,
+  CreateCategoryInput as NewCategory,
+  UpdateCategoryInput,
 
-export type ProductImage = InferSelectModel<typeof product_images>;
-export type NewProductImage = InferInsertModel<typeof product_images>;
+  // Order types
+  Order,
+  OrderWithItems,
+  OrderItem,
+  CreateOrderInput as NewOrder,
+  CreateOrderItemInput as NewOrderItem,
+  OrderItemTaxAmount,
+  CreateOrderItemTaxAmountInput as NewOrderItemTaxAmount,
+  ShippingAddress,
+  OrderStatus,
 
-export type ProductSpecification = InferSelectModel<typeof product_specifications>;
-export type NewProductSpecification = InferInsertModel<typeof product_specifications>;
+  // Cart types
+  Cart,
+  CreateCartInput as NewCart,
+  CartItemRecord as CartItem,
+  CreateCartItemInput as NewCartItem,
 
-export type ProductTag = InferSelectModel<typeof product_tags>;
-export type NewProductTag = InferInsertModel<typeof product_tags>;
+  // Inventory types
+  ProductInventory,
+  UpsertInventoryInput as NewProductInventory,
+  InventorySyncLog,
+  StockHistory,
+  CreateStockHistoryInput as NewStockHistory,
 
-export type ProductDimension = InferSelectModel<typeof product_dimensions>;
-export type NewProductDimension = InferInsertModel<typeof product_dimensions>;
-
-export type Order = InferSelectModel<typeof orders>;
-export type NewOrder = InferInsertModel<typeof orders>;
-
-export type OrderItem = InferSelectModel<typeof order_items>;
-export type NewOrderItem = InferInsertModel<typeof order_items>;
-
-export type OrderItemTaxAmount = InferSelectModel<typeof order_item_tax_amounts>;
-export type NewOrderItemTaxAmount = InferInsertModel<typeof order_item_tax_amounts>;
-
-export type Session = InferSelectModel<typeof sessions>;
-export type NewSession = InferInsertModel<typeof sessions>;
-
-export type WebhookEvent = InferSelectModel<typeof webhook_events>;
-export type NewWebhookEvent = InferInsertModel<typeof webhook_events>;
-
-export type StockHistory = InferSelectModel<typeof stock_history>;
-export type NewStockHistory = InferInsertModel<typeof stock_history>;
-
-export type PasswordResetToken = InferSelectModel<typeof password_reset_tokens>;
-export type NewPasswordResetToken = InferInsertModel<typeof password_reset_tokens>;
-
-export type EmailVerificationToken = InferSelectModel<typeof email_verification_tokens>;
-export type NewEmailVerificationToken = InferInsertModel<typeof email_verification_tokens>;
-
-export type Cart = InferSelectModel<typeof carts>;
-export type NewCart = InferInsertModel<typeof carts>;
-
-export type CartItem = InferSelectModel<typeof cart_items>;
-export type NewCartItem = InferInsertModel<typeof cart_items>;
-
-export type ProductInventory = InferSelectModel<typeof product_inventory>;
-export type NewProductInventory = InferInsertModel<typeof product_inventory>;
-
-export type InventorySyncLog = InferSelectModel<typeof inventory_sync_log>;
-export type NewInventorySyncLog = InferInsertModel<typeof inventory_sync_log>;
+  // API types
+  WebhookEvent,
+  CreateWebhookEventInput as NewWebhookEvent,
+} from '@b2b/types';

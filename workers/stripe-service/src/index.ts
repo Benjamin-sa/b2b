@@ -12,7 +12,7 @@
 
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
+import { createServiceAuthMiddleware } from '@b2b/types';
 import type { Env, StripeServiceResponse } from './types';
 import { StripeServiceError } from './types';
 
@@ -221,21 +221,6 @@ app.post('/invoices', async (c) => {
     return c.json<StripeServiceResponse>({
       success: true,
       data: invoice,
-    });
-  } catch (error) {
-    return handleError(c, error);
-  }
-});
-
-// Void invoice
-app.post('/invoices/:id/void', async (c) => {
-  try {
-    const invoiceId = c.req.param('id');
-    await InvoiceService.voidInvoice(c.env, invoiceId);
-
-    return c.json<StripeServiceResponse>({
-      success: true,
-      data: { message: 'Invoice voided successfully' },
     });
   } catch (error) {
     return handleError(c, error);

@@ -110,8 +110,7 @@
             <!-- Search Results -->
             <div v-if="shopifySearchResults.length > 0" class="max-h-60 overflow-y-auto space-y-2">
               <div v-for="variant in shopifySearchResults" :key="variant.id"
-                class="p-3 bg-white border border-blue-200 rounded cursor-pointer hover:bg-blue-100 transition"
-                @click="selectShopifyVariant(variant)">
+                class="p-3 bg-white border border-blue-200 rounded hover:bg-blue-50 transition">
                 <div class="font-semibold text-sm text-gray-900">{{ variant.title }}</div>
                 <div class="text-xs text-gray-600 mt-1">
                   <span class="font-mono">Variant ID:</span> {{ extractShopifyId(variant.id) }}
@@ -122,7 +121,31 @@
                 </div>
                 <div class="text-xs text-gray-600">
                   <span class="font-mono">SKU:</span> {{ variant.sku || 'N/A' }} |
-                  <span class="font-mono">Stock:</span> {{ variant.inventoryQuantity }}
+                  <span class="font-mono">Total Stock:</span> {{ variant.inventoryQuantity }}
+                </div>
+
+                <!-- Multiple Locations Display -->
+                <div v-if="variant.inventoryLevels && variant.inventoryLevels.length > 0" class="mt-2 space-y-1">
+                  <div class="text-xs font-semibold text-gray-700">Available Locations:</div>
+                  <button v-for="location in variant.inventoryLevels" :key="location.locationId" type="button"
+                    class="w-full text-left px-2 py-1.5 bg-blue-50 border border-blue-300 rounded text-xs hover:bg-blue-100 transition"
+                    @click="selectShopifyVariantWithLocation(variant, location)">
+                    <div class="flex justify-between items-center">
+                      <span class="font-medium">{{ location.locationName }}</span>
+                      <span class="text-blue-700 font-semibold">{{ location.available }} units</span>
+                    </div>
+                    <div class="text-gray-500 text-[10px] font-mono">ID: {{ extractShopifyId(location.locationId) }}
+                    </div>
+                  </button>
+                </div>
+
+                <!-- Fallback if no locations -->
+                <div v-else class="mt-2">
+                  <button type="button"
+                    class="w-full px-2 py-1.5 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800"
+                    @click="selectShopifyVariant(variant)">
+                    ⚠️ No locations found - Link anyway (manual location setup required)
+                  </button>
                 </div>
               </div>
             </div>
@@ -140,21 +163,29 @@
                 Variant ID: {{ form.shopify_variant_id }}
               </div>
               <div v-if="form.shopify_inventory_item_id" class="text-xs text-green-700">
-                Inventory ID: {{ form.shopify_inventory_item_id }}
+                Inventory Item ID: {{ form.shopify_inventory_item_id }}
+              </div>
+              <div v-if="form.shopify_location_id" class="text-xs text-green-700">
+                Location ID: {{ form.shopify_location_id }}
+              </div>
+              <div v-if="!form.shopify_location_id" class="text-xs text-yellow-700 mt-1 font-semibold">
+                ⚠️ Missing Location ID - Please select a location from search results
               </div>
             </div>
 
-            <!-- SIMPLIFIED Stock Display (Read-Only) -->
+            <!-- Shopify Stock Display (Read-Only) -->
             <div v-if="form.shopify_variant_id" class="mt-3 p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
               <h5 class="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
-                📊 Shopify Stock (Read-Only)
+                📊 Shopify Inventory (Source of Truth)
               </h5>
 
               <div class="mb-4 p-3 bg-white border border-purple-200 rounded">
-                <div class="text-xs font-semibold text-gray-700 mb-1">Current Stock</div>
+                <div class="text-xs font-semibold text-gray-700 mb-1">Current Stock in Shopify</div>
                 <div class="text-2xl font-bold text-purple-900">{{ shopifyTotalStock }}</div>
-                <div class="text-xs text-gray-500 mt-1">
-                  Shopify is the source of truth. Manage stock in the Stock Management page.
+                <div class="text-xs text-gray-500 mt-2">
+                  <strong>⚠️ Stock is managed by Shopify.</strong><br>
+                  To change stock, update it in your Shopify admin.<br>
+                  Stock will sync automatically via webhook.
                 </div>
               </div>
             </div>
@@ -166,14 +197,15 @@
             </div>
           </div>
 
-          <!-- SIMPLIFIED Standalone Stock Management (No Shopify Link) -->
+          <!-- Standalone Stock Management (No Shopify Link) -->
           <div v-if="!form.shopify_variant_id"
             class="md:col-span-2 border-2 border-green-200 bg-green-50 rounded-lg p-4">
             <h4 class="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
               📦 Standalone Stock Management
             </h4>
             <p class="text-xs text-gray-600 mb-4">
-              This product is not linked to Shopify. Set initial stock for B2B platform.
+              This product is <strong>not linked to Shopify</strong>. Stock is managed locally in the B2B database.
+              When customers place orders, stock will be deducted after payment is confirmed.
             </p>
 
             <!-- Single Stock Input -->
@@ -184,8 +216,14 @@
               <input id="standaloneTotal" v-model.number="standaloneStock.total_stock" type="number" min="0"
                 class="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-center font-semibold" />
               <div class="text-xs text-gray-600 mt-1 text-center">
-                Total units available for sale
+                Total units available for B2B orders
               </div>
+            </div>
+
+            <!-- Info about linking to Shopify -->
+            <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+              💡 <strong>Tip:</strong> To sync stock with Shopify, use the search above to link this product to a
+              Shopify variant.
             </div>
           </div>
 
@@ -367,7 +405,7 @@
           @click="$emit('cancel')">
           > Cancel
         </button>
-        <button type="submit" :disabled="loading || !!stockAllocationError || !!standaloneStockError"
+        <button type="submit" :disabled="loading || !!standaloneStockError"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
           {{ loading ? 'Saving...' : isEditing ? 'Update Product' : 'Add Product' }}
         </button>
@@ -380,12 +418,11 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useProductStore } from '../../stores/products';
 import { useCategoryStore } from '../../stores/categories';
-import type { Product } from '../../types';
 import ImageUpload from './ImageUpload.vue';
-import { nanoid } from 'nanoid';
+import type { ProductWithDetails } from '@b2b/db';
 
 interface Props {
-  product?: Product | null;
+  product?: ProductWithDetails | null;
 }
 
 const props = defineProps<Props>();
@@ -401,8 +438,7 @@ const loading = ref(false);
 // Get available categories sorted by display order
 const availableCategories = computed(() => {
   return categoryStore.categories
-    .filter((cat) => cat.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+    .filter((cat) => cat.is_active)
 });
 
 // Helper to show indented category names for nested structure
@@ -411,7 +447,7 @@ const getIndentedCategoryName = (category: any) => {
   return `└ ${category.name}`;
 };
 
-// Inventory linking variables
+// Inventory linking variablTes
 const enableInventoryLinking = ref(false);
 const selectedInventoryProduct = ref<any>(null);
 
@@ -421,40 +457,19 @@ const shopifySearchResults = ref<any[]>([]);
 const shopifySearchLoading = ref(false);
 const shopifySearchError = ref('');
 
-// Stock allocation variables
+// Stock display for Shopify-linked products (read-only)
 const shopifyTotalStock = ref(0); // Total stock from Shopify (read-only)
-const stockAllocation = reactive({
-  b2b_stock: 0,
-  b2c_stock: 0,
-});
 
 // Standalone stock management (for products without Shopify link)
 const standaloneStock = reactive({
   total_stock: 0,
-  b2b_stock: 0,
-});
-
-// Computed validation for stock allocation
-const stockAllocationError = computed(() => {
-  if (!form.shopify_variant_id) return '';
-  if (stockAllocation.b2b_stock < 0 || stockAllocation.b2c_stock < 0) {
-    return 'Stock values cannot be negative';
-  }
-  const total = stockAllocation.b2b_stock + stockAllocation.b2c_stock;
-  if (total > shopifyTotalStock.value) {
-    return `Total allocation (${total}) exceeds available stock (${shopifyTotalStock.value})`;
-  }
-  return '';
 });
 
 // Computed validation for standalone stock
 const standaloneStockError = computed(() => {
   if (form.shopify_variant_id) return ''; // Only validate when no Shopify link
-  if (standaloneStock.total_stock < 0 || standaloneStock.b2b_stock < 0) {
-    return 'Stock values cannot be negative';
-  }
-  if (standaloneStock.b2b_stock > standaloneStock.total_stock) {
-    return `B2B stock (${standaloneStock.b2b_stock}) cannot exceed total stock (${standaloneStock.total_stock})`;
+  if (standaloneStock.total_stock < 0) {
+    return 'Stock value cannot be negative';
   }
   return '';
 });
@@ -485,10 +500,11 @@ const form = reactive({
     height: 0,
     unit: 'cm',
   },
-  // Shopify inventory linking fields - DEPRECATED, stored in product_inventory table
+  // Shopify inventory linking fields - stored in product_inventory table
   shopify_product_id: '',
   shopify_variant_id: '',
-  shopify_inventory_item_id: '', // ✅ CRITICAL: Required for inventory sync
+  shopify_inventory_item_id: '', // Required for inventory sync
+  shopify_location_id: '', // Required for inventory sync
 });
 
 const isEditing = computed(() => !!props.product);
@@ -523,6 +539,7 @@ onMounted(async () => {
       shopify_product_id: props.product.inventory?.shopify_product_id || '',
       shopify_variant_id: props.product.inventory?.shopify_variant_id || '',
       shopify_inventory_item_id: props.product.inventory?.shopify_inventory_item_id || '',
+      shopify_location_id: props.product.inventory?.shopify_location_id || '',
     });
 
     // Enable inventory linking if product has inventory data
@@ -609,20 +626,6 @@ const onDescriptionChange = () => {
   }
 };
 
-// Generate a short product SKU in format: 4T-XXXX (guaranteed unique)
-const generateRandomSKU = () => {
-  // Use nanoid with custom alphabet (uppercase + numbers) and length 4
-  const id = nanoid(4); // Generates 4-character unique ID
-
-  // Convert to uppercase to ensure consistency
-  const uniqueCode = id.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  // Fallback: if somehow non-alphanumeric chars remain, pad with random chars
-  const paddedCode = (uniqueCode + nanoid(4).toUpperCase()).substring(0, 4);
-
-  return `4T-${paddedCode}`;
-};
-
 const loadInventoryInfo = async (shopifyVariantId: string) => {
   try {
     const inventoryInfo = await productStore.getInventoryInfo(shopifyVariantId);
@@ -694,6 +697,29 @@ const searchShopifyProducts = async () => {
 };
 
 /**
+ * Select a Shopify variant with a specific location
+ */
+const selectShopifyVariantWithLocation = (variant: any, location: any) => {
+  // Extract numeric IDs from Shopify GID format
+  form.shopify_product_id = extractShopifyId(variant.productId);
+  form.shopify_variant_id = extractShopifyId(variant.id);
+  form.shopify_inventory_item_id = extractShopifyId(variant.inventoryItemId);
+  form.shopify_location_id = extractShopifyId(location.locationId);
+
+  // Capture stock from selected location (read-only display)
+  shopifyTotalStock.value = location.available || 0;
+
+  // Enable inventory linking when Shopify product is linked
+  enableInventoryLinking.value = true;
+
+  // Clear search results
+  shopifySearchResults.value = [];
+  shopifySearchQuery.value = '';
+
+  console.log(`✅ Linked variant to location: ${location.locationName} (${location.available} units)`);
+};
+
+/**
  * Select a Shopify variant and populate form fields
  * Extracts numeric IDs from Shopify GID format
  */
@@ -702,12 +728,11 @@ const selectShopifyVariant = (variant: any) => {
   form.shopify_product_id = extractShopifyId(variant.productId);
   form.shopify_variant_id = extractShopifyId(variant.id);
   form.shopify_inventory_item_id = extractShopifyId(variant.inventoryItemId);
+  form.shopify_location_id = variant.locationId ? extractShopifyId(variant.locationId) : '';
 
-  // Capture total stock from Shopify
+  // Capture total stock from Shopify (read-only display)
   shopifyTotalStock.value = variant.inventoryQuantity || 0;
 
-  // Initialize stock allocation
-  // If editing existing product with inventory, preserve existing allocation
   // Enable inventory linking when Shopify product is linked
   enableInventoryLinking.value = true;
 
@@ -737,15 +762,13 @@ const delinkShopifyProduct = () => {
   form.shopify_product_id = '';
   form.shopify_variant_id = '';
   form.shopify_inventory_item_id = '';
+  form.shopify_location_id = '';
 
-  // Transfer current allocation to standalone stock
+  // Transfer current Shopify stock as initial standalone stock
   standaloneStock.total_stock = shopifyTotalStock.value || 0;
-  standaloneStock.b2b_stock = stockAllocation.b2b_stock || 0;
 
-  // Reset Shopify stock allocation
+  // Reset Shopify stock display
   shopifyTotalStock.value = 0;
-  stockAllocation.b2b_stock = 0;
-  stockAllocation.b2c_stock = 0;
 
   // Disable inventory linking when Shopify product is delinked
   enableInventoryLinking.value = false;
@@ -772,35 +795,24 @@ const submitForm = async () => {
       coming_soon: form.coming_soon,
     };
 
-    // Stock is now managed via product_inventory table in Stock Management page
-    // Shopify fields are stored in product_inventory table
-    if (enableInventoryLinking.value) {
+    // INVENTORY LOGIC:
+    // - Shopify-linked: Stock comes from Shopify search, stored initially, then webhook updates
+    // - Standalone: Stock is managed locally in D1
+
+    if (enableInventoryLinking.value && form.shopify_variant_id) {
+      // Shopify-linked product: Send Shopify IDs AND initial stock from search
+      // Backend accepts stock on first linkage, then Shopify webhook handles updates
       productData.shopify_product_id = form.shopify_product_id;
       productData.shopify_variant_id = form.shopify_variant_id;
       productData.shopify_inventory_item_id = form.shopify_inventory_item_id;
-
-      // SIMPLIFIED: Stock comes from Shopify, all columns get same value
+      productData.shopify_location_id = form.shopify_location_id;
+      // Send the stock we fetched from Shopify search (displayed to user)
       productData.stock = shopifyTotalStock.value;
-      productData.total_stock = shopifyTotalStock.value;
-      productData.b2b_stock = shopifyTotalStock.value;
-      productData.b2c_stock = 0;
     } else {
-      // For standalone products (no Shopify link), generate random IDs
-      if (!props.product) {
-        // Only generate for new products
-        productData.shopify_variant_id = generateRandomSKU();
-        productData.shopify_product_id = generateRandomSKU();
-      } else {
-        // Keep existing IDs when editing
-        productData.shopify_variant_id = form.shopify_variant_id || generateRandomSKU();
-        productData.shopify_product_id = form.shopify_product_id || generateRandomSKU();
-      }
-
-      // SIMPLIFIED: Single stock value for standalone products
+      // Standalone product: Send stock, but NO Shopify IDs
+      // Stock is managed locally in D1
       productData.stock = standaloneStock.total_stock;
-      productData.total_stock = standaloneStock.total_stock;
-      productData.b2b_stock = standaloneStock.total_stock;
-      productData.b2c_stock = 0;
+      // DO NOT send fake Shopify IDs - this is a standalone product
     }
 
     // Only add optional fields if they have meaningful values

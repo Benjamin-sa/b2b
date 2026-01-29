@@ -20,37 +20,37 @@ export async function notifyInvoiceCreated(env: Env, invoice: InvoiceNotificatio
     let orderDetailsInfo = '';
 
     // Parse order metadata if available
-    if (invoice.metadata?.orderMetadata) {
+    if (invoice.metadata?.order_metadata) {
       try {
-        const orderMetadata: OrderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+        const order_metadata: OrderMetadata = JSON.parse(invoice.metadata.order_metadata);
 
         // Use customer info from order metadata
-        if (orderMetadata.userInfo) {
-          const { companyName, contactPerson, email } = orderMetadata.userInfo;
-          customerInfo = contactPerson || companyName || email || 'Unknown';
-          if (companyName && contactPerson) {
-            customerInfo = `${contactPerson} (${companyName})`;
+        if (order_metadata.user_info) {
+          const { company_name, contact_person, email } = order_metadata.user_info;
+          customerInfo = contact_person || company_name || email || 'Unknown';
+          if (company_name && contact_person) {
+            customerInfo = `${contact_person} (${company_name})`;
           }
         }
 
         // Format order items
-        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
-          const items = orderMetadata.orderItems
+        if (order_metadata.order_items && order_metadata.order_items.length > 0) {
+          const items = order_metadata.order_items
             .slice(0, 3)
-            .map((item) => `• ${item.productName} (${item.quantity}x) - €${item.unitPrice}`)
+            .map((item) => `• ${item.product_name} (${item.quantity}x) - €${item.unit_price}`)
             .join('\n');
 
           itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
 
-          if (orderMetadata.orderItems.length > 3) {
-            itemsInfo += `\n... and ${orderMetadata.orderItems.length - 3} more items`;
+          if (order_metadata.order_items.length > 3) {
+            itemsInfo += `\n... and ${order_metadata.order_items.length - 3} more items`;
           }
         }
 
         // Add shipping info if available
-        if (orderMetadata.shippingAddress) {
-          const addr = orderMetadata.shippingAddress;
-          orderDetailsInfo = `\n\n🚚 <b>Shipping:</b>\n${addr.company || addr.contactPerson}\n${addr.street}, ${addr.zipCode} ${addr.city}`;
+        if (order_metadata.shipping_address) {
+          const addr = order_metadata.shipping_address;
+          orderDetailsInfo = `\n\n🚚 <b>Shipping:</b>\n${addr.company || addr.contact_person}\n${addr.street}, ${addr.zip_code} ${addr.city}`;
         }
       } catch (parseError) {
         console.warn('Failed to parse order metadata for notification:', parseError);
@@ -113,30 +113,30 @@ export async function notifyInvoicePaymentSucceeded(
     let itemsInfo = '';
 
     // Parse order metadata if available
-    if (invoice.metadata?.orderMetadata) {
+    if (invoice.metadata?.order_metadata) {
       try {
-        const orderMetadata: OrderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+        const order_metadata: OrderMetadata = JSON.parse(invoice.metadata.order_metadata);
 
         // Use customer info from order metadata
-        if (orderMetadata.userInfo) {
-          const { companyName, contactPerson, email } = orderMetadata.userInfo;
-          customerInfo = contactPerson || companyName || email || 'Unknown';
-          if (companyName && contactPerson) {
-            customerInfo = `${contactPerson} (${companyName})`;
+        if (order_metadata.user_info) {
+          const { company_name, contact_person, email } = order_metadata.user_info;
+          customerInfo = contact_person || company_name || email || 'Unknown';
+          if (company_name && contact_person) {
+            customerInfo = `${contact_person} (${company_name})`;
           }
         }
 
         // Format order items (show fewer items for payment notifications)
-        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
-          const items = orderMetadata.orderItems
+        if (order_metadata.order_items && order_metadata.order_items.length > 0) {
+          const items = order_metadata.order_items
             .slice(0, 2)
-            .map((item) => `• ${item.productName} (${item.quantity}x)`)
+            .map((item) => `• ${item.product_name} (${item.quantity}x)`)
             .join('\n');
 
           itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
 
-          if (orderMetadata.orderItems.length > 2) {
-            itemsInfo += `\n... and ${orderMetadata.orderItems.length - 2} more items`;
+          if (order_metadata.order_items.length > 2) {
+            itemsInfo += `\n... and ${order_metadata.order_items.length - 2} more items`;
           }
         }
       } catch (parseError) {
@@ -190,13 +190,17 @@ export async function notifyInvoiceVoided(env: Env, invoice: InvoiceNotification
     let itemsInfo = '';
 
     // Parse order metadata if available
-    if (invoice.metadata?.orderMetadata) {
+    if (invoice.metadata?.order_metadata) {
       try {
-        const orderMetadata: OrderMetadata = JSON.parse(invoice.metadata.orderMetadata);
+        const orderMetadata: OrderMetadata = JSON.parse(invoice.metadata.order_metadata);
 
         // Use customer info from order metadata
-        if (orderMetadata.userInfo) {
-          const { companyName, contactPerson, email } = orderMetadata.userInfo;
+        if (orderMetadata.user_info) {
+          const {
+            company_name: companyName,
+            contact_person: contactPerson,
+            email,
+          } = orderMetadata.user_info;
           customerInfo = contactPerson || companyName || email || 'Unknown';
           if (companyName && contactPerson) {
             customerInfo = `${contactPerson} (${companyName})`;
@@ -204,16 +208,16 @@ export async function notifyInvoiceVoided(env: Env, invoice: InvoiceNotification
         }
 
         // Format order items (show fewer items for voided notifications)
-        if (orderMetadata.orderItems && orderMetadata.orderItems.length > 0) {
-          const items = orderMetadata.orderItems
+        if (orderMetadata.order_items && orderMetadata.order_items.length > 0) {
+          const items = orderMetadata.order_items
             .slice(0, 2)
-            .map((item) => `• ${item.productName} (${item.quantity}x)`)
+            .map((item) => `• ${item.product_name} (${item.quantity}x)`)
             .join('\n');
 
           itemsInfo = `\n\n📦 <b>Items:</b>\n${items}`;
 
-          if (orderMetadata.orderItems.length > 2) {
-            itemsInfo += `\n... and ${orderMetadata.orderItems.length - 2} more items`;
+          if (orderMetadata.order_items.length > 2) {
+            itemsInfo += `\n... and ${orderMetadata.order_items.length - 2} more items`;
           }
         }
       } catch (parseError) {
@@ -268,20 +272,26 @@ export async function notifyNewUserRegistration(
 ): Promise<void> {
   try {
     const userName =
-      userData.firstName && userData.lastName
-        ? `${userData.firstName} ${userData.lastName}`
-        : userData.companyName || 'Unknown User';
+      userData.first_name && userData.last_name
+        ? `${userData.first_name} ${userData.last_name}`
+        : userData.company_name || 'Unknown User';
 
-    const companyName = userData.companyName || 'N/A';
+    const companyName = userData.company_name || 'N/A';
     const email = userData.email || 'N/A';
     const phone = userData.phone || 'N/A';
-    const btwNumber = userData.btwNumber || 'N/A';
+    const btwNumber = userData.btw_number || 'N/A';
     const registrationTime = formatDateTime(Date.now() / 1000);
 
     // Format address if available
     let addressInfo = 'N/A';
     if (userData.address) {
-      const { street, houseNumber, postalCode, city, country } = userData.address;
+      const {
+        street,
+        house_number: houseNumber,
+        postal_code: postalCode,
+        city,
+        country,
+      } = userData.address;
       addressInfo = `${street} ${houseNumber}, ${postalCode} ${city}, ${country}`;
     }
 

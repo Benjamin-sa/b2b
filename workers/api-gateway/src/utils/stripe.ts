@@ -56,6 +56,36 @@ export interface ReplaceStripePriceInput {
   new_price: number;
 }
 
+export interface CreateInvoiceInput {
+  customer_id: string;
+  user_id: string;
+  items: Array<{
+    stripe_price_id: string;
+    quantity: number;
+    metadata: {
+      product_id: string;
+      product_name?: string;
+      shopify_variant_id?: string;
+    };
+  }>;
+  shipping_cost_cents?: number;
+  notes?: string;
+  shipping_address?: any;
+  locale?: string;
+}
+
+export interface CreateInvoiceResponse {
+  invoice_id: string;
+  invoice_number: string;
+  invoice_pdf: string;
+  hosted_invoice_url: string;
+  status: string;
+  amount_due: number;
+  currency: string;
+  product_line_items: any[];
+  shipping_line_item?: any;
+}
+
 // ============================================================================
 // STRIPE SERVICE HELPERS
 // ============================================================================
@@ -224,5 +254,41 @@ export async function archiveStripeProduct(
   } catch (error: any) {
     console.error('[Stripe] ❌ Failed to archive product:', error);
     return false;
+  }
+}
+
+/**
+ * Create Stripe invoice via stripe-service
+ */
+export async function createInvoice(
+  env: Env,
+  invoiceData: CreateInvoiceInput
+): Promise<CreateInvoiceResponse | null> {
+  try {
+    console.log(`[Stripe] Creating invoice for customer: ${invoiceData.customer_id}`);
+
+    const response = await env.STRIPE_SERVICE.fetch(
+      new Request('http://stripe-service/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Token': env.SERVICE_SECRET,
+        },
+        body: JSON.stringify(invoiceData),
+      })
+    );
+
+    const result = (await response.json()) as StripeServiceResponse<CreateInvoiceResponse>;
+
+    if (!result.success || !result.data) {
+      console.error('[Stripe] Invoice creation failed:', result.error);
+      return null;
+    }
+
+    console.log(`[Stripe] ✅ Invoice created: ${result.data.invoice_id}`);
+    return result.data;
+  } catch (error: any) {
+    console.error('[Stripe] ❌ Failed to create invoice:', error);
+    return null;
   }
 }

@@ -37,25 +37,25 @@ export function createTestInvoiceData() {
   return {
     items: [
       {
-        stripePriceId: 'price_test_123', // Test Stripe price ID
+        stripe_price_id: 'price_test_123', // Test Stripe price ID
         quantity: 2,
         metadata: {
-          productId: 'test_product_1',
-          productName: 'Test Product',
-          shopifyVariantId: 'gid://shopify/ProductVariant/123',
+          product_id: 'test_product_1',
+          product_name: 'Test Product',
+          shopify_variant_id: 'gid://shopify/ProductVariant/123',
         },
       },
     ],
-    shippingCost: 500, // €5.00 in cents
-    taxAmount: 420, // €4.20 in cents
+    shipping_cost: 500, // €5.00 in cents
+    tax_amount: 420, // €4.20 in cents
     metadata: {
       notes: 'Test order from automated tests',
-      shippingAddress: {
+      shipping_address: {
         company: 'Test Company',
-        contactPerson: 'Test User',
+        contact_person: 'Test User',
         street: 'Test Street 1',
         city: 'Amsterdam',
-        zipCode: '1234AB',
+        zip_code: '1234AB',
         country: 'NL',
         phone: '+31612345678',
       },

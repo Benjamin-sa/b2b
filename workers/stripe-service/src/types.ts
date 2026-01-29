@@ -16,6 +16,7 @@ export interface Env {
   SERVICE_SECRET: string; // Service-to-service authentication
   DB: D1Database; // D1 database binding for invoice persistence
   TELEGRAM_SERVICE: Fetcher; // Service binding to telegram-service
+  SHOPIFY_SYNC_SERVICE: Fetcher; // Service binding for inventory sync
 }
 
 // ============================================================================

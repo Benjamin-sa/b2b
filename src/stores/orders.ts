@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from './auth';
-import type { Order, OrderItem, ShippingAddress, CartItem } from '../types';
+import type { Order, OrderWithItems, OrderItem, ShippingAddress, CartItem } from '../types';
 
 // ============================================================================
 // CONFIGURATION
@@ -14,7 +14,7 @@ const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhos
 // ============================================================================
 
 export const useOrderStore = defineStore('orders', () => {
-  const orders = ref<Order[]>([]);
+  const orders = ref<OrderWithItems[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -34,11 +34,8 @@ export const useOrderStore = defineStore('orders', () => {
         throw new Error('User must be authenticated to fetch orders');
       }
 
-      const response = await fetch(`${API_GATEWAY_URL}/api/invoices`, {
+      const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}/api/invoices`, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.accessToken}`,
-        },
       });
 
       if (!response.ok) {
@@ -53,46 +50,58 @@ export const useOrderStore = defineStore('orders', () => {
         // Map line items with historical pricing/product details
         const items: OrderItem[] = (invoice.items || []).map((item: any) => ({
           id: item.id,
-          stripeLineItemId: item.stripeLineItemId,
-          productId: item.metadata?.productId || item.metadata?.product_id || '',
-          productName: item.productName,
-          productSku: item.sku,
+          stripe_line_item_id: item.stripe_line_item_id,
+          product_id: item.product_id || '',
+          product_name: item.product_name,
+          product_sku: item.product_sku,
           brand: item.brand,
           quantity: item.quantity,
-          unitPrice: item.unitPrice, // Already in euros from API
-          totalPrice: item.totalPrice, // Already in euros from API
-          tax: item.tax, // Already in euros from API
-          imageUrl: item.imageUrl,
+          unit_price: item.unit_price, // Already in euros from API
+          total_price: item.total_price, // Already in euros from API
+          tax_cents: item.tax, // Already in euros from API
+          image_url: item.image_url,
           currency: item.currency || 'eur',
           metadata: item.metadata || {},
         }));
 
         // Calculate totals from line items if available
-        const subtotal = items.reduce((sum: number, item: OrderItem) => sum + item.totalPrice, 0);
-        const totalTax = items.reduce((sum: number, item: OrderItem) => sum + (item.tax || 0), 0);
+        const subtotal = items.reduce((sum: number, item: OrderItem) => sum + item.total_price, 0);
+        const totalTax = items.reduce(
+          (sum: number, item: OrderItem) => sum + (item.tax_cents || 0),
+          0
+        );
 
         return {
-          id: invoice.id,
-          stripeInvoiceId: invoice.stripeInvoiceId,
-          invoiceNumber: invoice.invoiceNumber,
-          status: invoice.status, // draft, open, paid, void
-          stripeStatus: invoice.status,
-          totalAmount: invoice.totalAmount || invoice.amount / 100, // Use totalAmount from DB or convert cents
-          subtotal: invoice.subtotal || subtotal || invoice.amount / 100, // Use DB subtotal or calculated
-          tax: invoice.tax || totalTax || 0, // Use DB tax or calculated
-          shipping: invoice.shipping || 0, // Use DB shipping value
+          id: invoice.order_id || invoice.id,
+          stripe_invoice_id: invoice.id,
+          invoice_number: invoice.invoice_number,
+          status: invoice.order_status,
+          stripe_status: invoice.status, // draft, open, paid, void
+          total_amount: invoice.total_amount,
+          subtotal: invoice.subtotal || subtotal,
+          tax: invoice.tax || totalTax || 0,
+          shipping: invoice.shipping || 0,
           currency: invoice.currency || 'EUR',
-          invoiceUrl: invoice.hostedInvoiceUrl,
-          invoicePdf: invoice.invoicePdf,
-          dueDate: invoice.dueDate,
-          paidAt: invoice.paidAt,
-          orderDate: invoice.createdAt,
-          updatedAt: invoice.updatedAt,
-          items, // ⭐ Now includes full historical line items data
-          shippingAddress: null, // Not stored in D1
-          notes: null, // Not stored in D1
-          userId: '', // Not needed for display
-          createdAt: invoice.createdAt,
+          invoice_url: invoice.invoice_url,
+          invoice_pdf: invoice.invoice_pdf,
+          due_date: invoice.due_date,
+          paid_at: invoice.paid_at,
+          order_date: invoice.created_at,
+          updated_at: invoice.updated_at,
+          items,
+          shipping_address: invoice.shipping_address
+            ? {
+                street: invoice.shipping_address.street,
+                city: invoice.shipping_address.city,
+                zip_code: invoice.shipping_address.zip_code,
+                country: invoice.shipping_address.country,
+                company: invoice.shipping_address.company,
+                contact_person: invoice.shipping_address.contact_person,
+              }
+            : null,
+          notes: invoice.notes || null,
+          user_id: '', // Not needed for display
+          created_at: invoice.created_at,
         };
       });
 
@@ -143,7 +152,7 @@ export const useOrderStore = defineStore('orders', () => {
     shippingAddress: ShippingAddress,
     _subtotal: number, // Not used - Stripe calculates total from line items
     tax: number,
-    shippingCost: number,
+    shipping_cost: number,
     notes?: string,
     locale?: string // Invoice language (e.g., 'nl', 'fr', 'en', 'de')
   ): Promise<{ success: boolean; invoiceUrl?: string; orderId?: string; error?: string }> => {
@@ -169,49 +178,48 @@ export const useOrderStore = defineStore('orders', () => {
       // Prepare items with individual metadata for each item
       // This matches the format expected by the API Gateway
       const itemsWithMetadata = cartItems.map((item) => ({
-        stripePriceId: item.product.stripe_price_id!,
+        stripe_price_id: item.product.stripe_price_id!,
         quantity: item.quantity,
         metadata: {
-          productId: item.productId,
-          productName: item.product.name,
-          shopifyVariantId: item.product.inventory?.shopify_variant_id || '',
+          product_id: item.product_id,
+          product_name: item.product.name,
+          shopify_variant_id: item.product.inventory?.shopify_variant_id || '',
         },
       }));
 
       // Prepare general order metadata for the invoice level
       const generalMetadata = {
         notes: notes || '',
-        shippingAddress,
-        billingAddress: shippingAddress, // Use same address for billing
-        userInfo: authStore.userProfile
+        shipping_address: shippingAddress,
+        billing_address: shippingAddress, // Use same address for billing
+        user_info: authStore.userProfile
           ? {
-              companyName: authStore.userProfile.companyName,
-              contactPerson: `${authStore.userProfile.firstName} ${authStore.userProfile.lastName}`,
+              company_name: authStore.userProfile.company_name,
+              contact_person: `${authStore.userProfile.first_name} ${authStore.userProfile.last_name}`,
               email: authStore.userProfile.email,
-              btwNumber: authStore.userProfile.btwNumber,
+              btw_number: authStore.userProfile.btw_number,
             }
           : {},
       };
 
       // Convert amounts to cents (Stripe expects amounts in cents)
-      const shippingCostCents = Math.round(shippingCost * 100);
-      const taxAmountCents = Math.round(tax * 100);
+      const shipping_cost_cents = Math.round(shipping_cost * 100);
+      const tax_amount_cents = Math.round(tax * 100);
 
       // Use provided locale or fall back to localStorage
       const invoiceLocale = locale || localStorage.getItem('language') || 'nl';
       console.log(`📍 Creating invoice with locale: ${invoiceLocale}`);
 
       // Call Cloudflare API Gateway to create invoice
-      const response = await fetch(`${API_GATEWAY_URL}/api/invoices`, {
+      const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}/api/invoices`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authStore.accessToken}`,
         },
         body: JSON.stringify({
           items: itemsWithMetadata,
-          shippingCost: shippingCostCents,
-          taxAmount: taxAmountCents,
+          shipping_cost: shipping_cost_cents,
+          tax_amount: tax_amount_cents,
           metadata: generalMetadata,
           locale: invoiceLocale, // User's selected language for invoice localization
         }),
@@ -239,12 +247,12 @@ export const useOrderStore = defineStore('orders', () => {
 
       const invoiceData = await response.json();
 
-      console.log('✅ Invoice created successfully:', invoiceData.invoiceId);
+      console.log('✅ Invoice created successfully:', invoiceData.invoice_id);
 
       return {
         success: true,
-        invoiceUrl: invoiceData.invoiceUrl,
-        orderId: invoiceData.invoiceId,
+        invoiceUrl: invoiceData.invoice_url,
+        orderId: invoiceData.invoice_id,
       };
     } catch (err: any) {
       console.error('Error creating order:', err);
@@ -268,17 +276,17 @@ export const useOrderStore = defineStore('orders', () => {
     return orders.value.find(
       (order) =>
         order.id === invoiceId ||
-        order.stripeInvoiceId === invoiceId ||
-        order.invoiceNumber === invoiceId
+        order.stripe_invoice_id === invoiceId ||
+        order.invoice_number === invoiceId
     );
   };
 
   const getPaidInvoices = (): Order[] => {
-    return orders.value.filter((order) => order.status === 'confirmed' || order.paidAt);
+    return orders.value.filter((order) => order.status === 'confirmed' || order.paid_at);
   };
 
   const getPendingInvoices = (): Order[] => {
-    return orders.value.filter((order) => order.status === 'pending' && !order.paidAt);
+    return orders.value.filter((order) => order.status === 'pending' && !order.paid_at);
   };
 
   const clearError = () => {

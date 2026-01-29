@@ -1,92 +1,24 @@
-// Cart and Order related types
-import type { Product } from './product';
+/**
+ * Order Types - Re-exports from @b2b/types
+ *
+ * DEPRECATED: Import directly from '@b2b/types' or '@b2b/types/order' instead.
+ */
 
-export interface CartItem {
-  productId: string;
-  product: Product;
-  quantity: number;
-  price: number;
-  addedAt?: Date;
-}
+// Re-export all order types from @b2b/types
+export type {
+  Order,
+  OrderWithItems,
+  OrderItem,
+  OrderStatus,
+  OrderFilter,
+  ShippingAddress,
+  CreateOrderInput,
+  UpdateOrderInput,
+  CreateOrderItemInput,
+  InvoiceItem,
+  CreateInvoiceRequest,
+  CreateInvoiceResponse,
+} from '@b2b/types';
 
-export interface ShippingAddress {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  company?: string;
-  contactPerson?: string;
-  phone?: string;
-}
-
-export interface Order {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  totalAmount: number;
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  status: OrderStatus;
-  orderDate: Date;
-  estimatedDelivery?: Date;
-  shippingAddress: ShippingAddress;
-  billingAddress?: ShippingAddress;
-  paymentMethod?: string;
-  notes?: string;
-  trackingNumber?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  invoiceUrl?: string;
-  invoicePdf?: string;
-  invoiceNumber?: string;
-  stripeInvoiceId?: string;
-  stripeStatus?: string;
-  metadata?: Record<string, any>;
-  shippingCostCents?: number;
-  dueDate?: Date;
-  paidAt?: Date;
-  stripeShippingInvoiceItemId?: string | null;
-}
-
-export interface OrderItem {
-  id?: string; // D1 invoice_item ID
-  stripeLineItemId?: string; // Stripe line item ID
-  productId: string;
-  productName: string;
-  productSku?: string; // SKU/part number at purchase time
-  brand?: string; // Brand at purchase time
-  quantity: number;
-  unitPrice: number; // Unit price at purchase time (in euros)
-  totalPrice: number; // Total price for line (in euros)
-  tax?: number; // Tax amount for line (in euros)
-  imageUrl?: string; // Product image at purchase time
-  currency?: string;
-  metadata?: {
-    shopifyVariantId?: string;
-    productId?: string;
-    stripePriceId?: string;
-    stripeProductId?: string;
-    [key: string]: any;
-  };
-  // Legacy fields (kept for backward compatibility)
-  stripeInvoiceItemId?: string | null;
-  taxCents?: number | null;
-}
-
-export type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'processing'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled'
-  | 'refunded';
-
-export interface OrderFilter {
-  status?: OrderStatus;
-  startDate?: Date;
-  endDate?: Date;
-  userId?: string;
-}
+// Re-export cart types (often used alongside orders)
+export type { CartItem, CartSummary, CartMutationResult } from '@b2b/types';

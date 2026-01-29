@@ -6,23 +6,30 @@ export const users = sqliteTable('users', {
   email: text('email').notNull(),
   password_hash: text('password_hash').notNull(),
   role: text('role').notNull(),
-  company_name: text('company_name'),
-  first_name: text('first_name'),
-  last_name: text('last_name'),
+  // Required business fields (enforced at registration)
+  company_name: text('company_name').notNull(),
+  first_name: text('first_name').notNull(),
+  last_name: text('last_name').notNull(),
+  btw_number: text('btw_number').notNull(),
+  // Optional contact
   phone: text('phone'),
-  btw_number: text('btw_number'),
+  // VIES verification (populated after validation)
   btw_number_validated: integer('btw_number_validated').default(0),
   btw_verified_name: text('btw_verified_name'),
   btw_verified_address: text('btw_verified_address'),
   btw_verified_at: text('btw_verified_at'),
-  address_street: text('address_street'),
-  address_house_number: text('address_house_number'),
-  address_postal_code: text('address_postal_code'),
-  address_city: text('address_city'),
-  address_country: text('address_country'),
+  // Required address fields (enforced at registration)
+  address_street: text('address_street').notNull(),
+  address_house_number: text('address_house_number').notNull(),
+  address_postal_code: text('address_postal_code').notNull(),
+  address_city: text('address_city').notNull(),
+  address_country: text('address_country').notNull(),
+  // Stripe integration (set after customer creation)
   stripe_customer_id: text('stripe_customer_id'),
+  // Account status
   is_active: integer('is_active').default(1),
   is_verified: integer('is_verified').default(0),
+  // Timestamps
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -48,8 +55,10 @@ export const products = sqliteTable('products', {
   original_price: real('original_price'),
   image_url: text('image_url'),
   category_id: text('category_id'),
+  // ❌ DEPRECATED: Use product_inventory.stock instead (D1 doesn't support DROP COLUMN)
   in_stock: integer('in_stock').default(1),
   coming_soon: integer('coming_soon').default(0),
+  // ❌ DEPRECATED: Use product_inventory.stock instead (D1 doesn't support DROP COLUMN)
   stock: integer('stock').default(0),
   brand: text('brand'),
   part_number: text('part_number'),
@@ -59,7 +68,9 @@ export const products = sqliteTable('products', {
   min_order_quantity: integer('min_order_quantity').default(1),
   max_order_quantity: integer('max_order_quantity'),
   weight: real('weight'),
+  // ❌ DEPRECATED: Use product_inventory.shopify_product_id instead (D1 doesn't support DROP COLUMN)
   shopify_product_id: text('shopify_product_id'),
+  // ❌ DEPRECATED: Use product_inventory.shopify_variant_id instead (D1 doesn't support DROP COLUMN)
   shopify_variant_id: text('shopify_variant_id'),
   stripe_product_id: text('stripe_product_id'),
   stripe_price_id: text('stripe_price_id'),
@@ -195,21 +206,6 @@ export const webhook_events = sqliteTable('webhook_events', {
   processed_at: text('processed_at'),
 });
 
-export const stock_history = sqliteTable('stock_history', {
-  id: text('id').primaryKey(),
-  product_id: text('product_id').notNull(),
-  shopify_variant_id: text('shopify_variant_id'),
-  change_amount: integer('change_amount').notNull(),
-  previous_stock: integer('previous_stock').notNull(),
-  new_stock: integer('new_stock').notNull(),
-  change_type: text('change_type').notNull(),
-  reference_id: text('reference_id'),
-  reference_type: text('reference_type'),
-  notes: text('notes'),
-  created_by: text('created_by'),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-});
-
 export const password_reset_tokens = sqliteTable('password_reset_tokens', {
   id: text('id').primaryKey(),
   user_id: text('user_id').notNull(),
@@ -230,22 +226,6 @@ export const email_verification_tokens = sqliteTable('email_verification_tokens'
   used_at: text('used_at'),
 });
 
-export const carts = sqliteTable('carts', {
-  id: text('id').primaryKey(),
-  user_id: text('user_id').notNull(),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-  updated_at: text('updated_at').default(sql`(datetime('now'))`),
-});
-
-export const cart_items = sqliteTable('cart_items', {
-  id: text('id').primaryKey(),
-  cart_id: text('cart_id').notNull(),
-  product_id: text('product_id').notNull(),
-  quantity: integer('quantity').notNull(),
-  price: real('price').notNull(),
-  added_at: text('added_at').default(sql`(datetime('now'))`),
-});
-
 export const product_inventory = sqliteTable('product_inventory', {
   product_id: text('product_id').primaryKey(),
   // Single source of truth: stock available across ALL channels (Shopify is master)
@@ -262,24 +242,6 @@ export const product_inventory = sqliteTable('product_inventory', {
     .notNull()
     .default(sql`(datetime('now'))`),
   updated_at: text('updated_at')
-    .notNull()
-    .default(sql`(datetime('now'))`),
-});
-
-export const inventory_sync_log = sqliteTable('inventory_sync_log', {
-  id: text('id').primaryKey(),
-  product_id: text('product_id').notNull(),
-  action: text('action').notNull(),
-  source: text('source').notNull(),
-  // Simplified stock tracking
-  stock_change: integer('stock_change').notNull().default(0),
-  stock_after: integer('stock_after').notNull().default(0),
-  synced_to_shopify: integer('synced_to_shopify').default(0),
-  sync_error: text('sync_error'),
-  reference_id: text('reference_id'),
-  reference_type: text('reference_type'),
-  created_by: text('created_by'),
-  created_at: text('created_at')
     .notNull()
     .default(sql`(datetime('now'))`),
 });

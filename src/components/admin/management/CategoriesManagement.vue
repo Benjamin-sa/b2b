@@ -6,10 +6,8 @@
         <h2 class="text-2xl font-bold text-gray-900">Category Management</h2>
         <p class="text-gray-600 mt-1">Manage your product categories</p>
       </div>
-      <button
-        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-        @click="openModal()"
-      >
+      <button class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+        @click="openModal()">
         > Add Category
       </button>
     </div>
@@ -23,18 +21,9 @@
     <!-- Error state -->
     <div v-else-if="categoryStore.error" class="bg-red-50 border border-red-200 rounded-lg p-4">
       <div class="flex items-center">
-        <svg
-          class="w-5 h-5 text-red-500 mr-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
+        <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <p class="text-red-800">{{ categoryStore.error }}</p>
         <button class="ml-auto text-red-600 hover:text-red-700 font-medium" @click="loadCategories">
@@ -47,17 +36,11 @@
     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Search categories..."
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-          />
+          <input v-model="searchTerm" type="text" placeholder="Search categories..."
+            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors" />
         </div>
-        <select
-          v-model="statusFilter"
-          class="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-        >
+        <select v-model="statusFilter"
+          class="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -71,34 +54,22 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Parent
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Display Order
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Products
               </th>
-              <th
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -107,11 +78,6 @@
             <tr v-for="category in filteredCategories" :key="category.id" class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                  <div
-                    v-if="category.color"
-                    :style="{ backgroundColor: category.color }"
-                    class="w-4 h-4 rounded-full mr-3"
-                  ></div>
                   <div>
                     <div class="text-sm font-medium text-gray-900">
                       {{ getIndentedName(category) }}
@@ -123,30 +89,25 @@
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ getParentName(category.parentId) }}
+                {{ getParentName(category.parent_id || '') }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ category.displayOrder }}
+                {{ category.sort_order }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="[
-                    'px-2 py-1 text-xs font-semibold rounded-full',
-                    category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
-                  ]"
-                >
-                  {{ category.isActive ? 'Active' : 'Inactive' }}
+                <span :class="[
+                  'px-2 py-1 text-xs font-semibold rounded-full',
+                  category.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+                ]">
+                  {{ category.is_active ? 'Active' : 'Inactive' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ category.productCount || 0 }}
+                -
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end space-x-2">
-                  <button
-                    class="text-indigo-600 hover:text-indigo-900"
-                    @click="openModal(category)"
-                  >
+                  <button class="text-indigo-600 hover:text-indigo-900" @click="openModal(category)">
                     Edit
                   </button>
                   <button class="text-red-600 hover:text-red-900" @click="deleteCategory(category)">
@@ -160,30 +121,17 @@
       </div>
 
       <!-- Empty state -->
-      <div
-        v-if="filteredCategories.length === 0 && !categoryStore.isLoading"
-        class="text-center py-12"
-      >
-        <svg
-          class="mx-auto h-12 w-12 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-          />
+      <div v-if="filteredCategories.length === 0 && !categoryStore.isLoading" class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No categories</h3>
         <p class="mt-1 text-sm text-gray-500">Get started by creating a new category.</p>
         <div class="mt-6">
           <button
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-            @click="openModal()"
-          >
+            @click="openModal()">
             > Add Category
           </button>
         </div>
@@ -191,13 +139,8 @@
     </div>
 
     <!-- Category Form Modal -->
-    <CategoryFormModal
-      :is-open="isModalOpen"
-      :category="editingCategory"
-      :categories="categoryStore.categories"
-      @close="closeModal"
-      @saved="handleCategorySaved"
-    />
+    <CategoryFormModal :is-open="isModalOpen" :category="editingCategory" :categories="categoryStore.categories"
+      @close="closeModal" @saved="handleCategorySaved" />
   </div>
 </template>
 
@@ -232,18 +175,11 @@ const filteredCategories = computed(() => {
 
   // Apply status filter
   if (statusFilter.value === 'active') {
-    filtered = filtered.filter((cat) => cat.isActive);
+    filtered = filtered.filter((cat) => cat.is_active);
   } else if (statusFilter.value === 'inactive') {
-    filtered = filtered.filter((cat) => !cat.isActive);
+    filtered = filtered.filter((cat) => !cat.is_active);
   }
-
-  // Sort by displayOrder, then by name
-  return filtered.sort((a, b) => {
-    if (a.displayOrder !== b.displayOrder) {
-      return a.displayOrder - b.displayOrder;
-    }
-    return a.name.localeCompare(b.name);
-  });
+  return filtered;
 });
 
 // Methods
@@ -258,7 +194,7 @@ const getParentName = (parentId?: string) => {
 };
 
 const getIndentedName = (category: Category) => {
-  if (!category.parentId) return category.name;
+  if (!category.parent_id) return category.name;
   return `└ ${category.name}`;
 };
 

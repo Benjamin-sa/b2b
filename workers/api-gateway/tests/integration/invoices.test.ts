@@ -181,19 +181,19 @@ describe('Integration: Invoices', () => {
       const invoiceRequest = {
         items: [
           {
-            stripePriceId: product.stripe_price_id,
+            stripe_price_id: product.stripe_price_id,
             quantity: 1,
             metadata: {
-              productId: product.id,
-              productName: product.name,
-              shopifyVariantId: product.shopify_variant_id || '',
+              product_id: product.id,
+              product_name: product.name,
+              shopify_variant_id: product.shopify_variant_id || '',
             },
           },
         ],
-        shippingCost: 0,
+        shipping_cost: 0,
         metadata: {
           notes: 'Integration test invoice',
-          shippingAddress: {
+          shipping_address: {
             line1: '123 Test Street',
             city: 'Amsterdam',
             postal_code: '1234 AB',

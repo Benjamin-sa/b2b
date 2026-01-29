@@ -1,54 +1,89 @@
 # AI Coding Agent Instructions - B2B Platform
 
 **Platform**: B2B E-commerce on Cloudflare Workers + Vue 3  
-**Status**: Active migration from Firebase to Cloudflare (feature/cloudflare-migration branch)  
-**Architecture**: Microservices with Service Bindings + D1 Database + KV Sessions
+**Status**: Consolidated architecture - Migrated from microservices to modular monolith  
+**Architecture**: API Gateway with Direct D1 Access + Shared Database Package + External Service Bindings
+**Frontend**: Cloudflare Pages (static SPA deployment)
 
 ---
 
 ## 🏗️ Architecture Overview
 
-### Microservices Architecture (Cloudflare Workers)
+### Consolidated Architecture (Modular Monolith)
 
 ```
-Frontend (Vue 3 + Vite)
-    ↓
-API Gateway (Orchestrator)
-    ↓ ↓ ↓ ↓
-    ├─→ Auth Service (D1 + KV)
-    ├─→ Inventory Service (D1)
-    ├─→ Stripe Service (Stripe API wrapper)
-    └─→ Email Service (SendGrid)
+Frontend (Vue 3 SPA on Cloudflare Pages)
+    ↓ HTTPS
+API Gateway (Direct D1 + Service Orchestration)
+    ├─→ @b2b/db package (D1 operations, Drizzle ORM)
+    ├─→ Stripe Service (Stripe API wrapper via service binding)
+    ├─→ Email Queue (SendGrid via queue binding)
+    ├─→ Shopify Sync Service (Shopify API wrapper via service binding)
+    └─→ Telegram Service (Telegram notifications via service binding)
 ```
 
-**Service Boundaries**:
+**Architecture Philosophy**:
 
-- **API Gateway** (`/workers/api-gateway`): Orchestrates multi-service workflows using **service bindings** (NOT HTTP proxying)
-- **Auth Service** (`/workers/auth-service`): JWT authentication, D1 users table, KV sessions
-- **Inventory Service** (`/workers/inventory-service`): Product/category CRUD, D1 database
-- **Stripe Service** (`/workers/stripe-service`): Centralized Stripe operations (customers, products, invoices)
-- **Email Service** (`/workers/email-service`): Transactional emails via SendGrid
+- **API Gateway** (`/workers/api-gateway`): Single entry point with direct D1 database access via `@b2b/db` package
+  - Handles all CRUD operations directly (no intermediate services)
+  - Orchestrates external services (Stripe, Email, Shopify, Telegram) via service bindings
+  - Contains business logic in route handlers and service files
+  - Uses JWT tokens directly (no auth-service proxy)
+- **@b2b/db Package** (`/packages/db`): Centralized database operations library
+  - Drizzle ORM for type-safe queries
+  - Schema definitions in `src/schema.ts`
+  - Operation modules: `operations/products.ts`, `operations/categories.ts`, etc.
+  - Exports individual modules and drizzle-orm functions
+  - Used by API Gateway for all D1 database access
+
+- **External Services** (via service bindings):
+  - **Stripe Service**: Payment processing, customer management, invoicing
+  - **Email Queue**: Transactional emails (welcome, verification, password reset)
+  - **Shopify Sync Service**: Inventory synchronization with Shopify B2C store
+  - **Telegram Service**: Admin notifications
+
 - **Frontend** (`/src`): Vue 3 SPA, Pinia stores, Vue Router, i18n
 
 ### Key Data Flows
 
-1. **User Registration**: Frontend → API Gateway → Auth Service (creates user in D1) + Email Service (sends welcome email) ← **Orchestrated workflow**
-2. **Product Listing**: Frontend → API Gateway → Inventory Service → D1 products table
-3. **Invoice Creation**: Frontend → API Gateway → Stripe Service (creates Stripe invoice) → Returns invoice URL
+1. **User Registration**: Frontend → API Gateway (JWT creation, D1 user insert, Stripe customer creation, Email queue) ← **Direct operations**
+2. **Product Listing**: Frontend → API Gateway → `@b2b/db` getProducts() → D1 products table
+3. **Invoice Creation**: Frontend → API Gateway → `@b2b/db` (order data) + Stripe Service (invoice) → Returns invoice URL
+
+### Migration from Microservices
+
+**What Changed**:
+
+- ❌ **Removed**: Auth-service (JWT now handled directly in API Gateway)
+- ❌ **Removed**: Inventory-service (product operations now in `@b2b/db` + API Gateway routes)
+- ✅ **Consolidated**: All database operations centralized in `@b2b/db` package
+- ✅ **Simplified**: Direct JWT validation in middleware (no service binding calls)
+- ✅ **Kept**: External services (Stripe, Email, Shopify, Telegram) remain as separate workers
+- ✅ **Updated**: frontend is changing from camelCase to snake_case for API data consistency
+
+**Benefits**:
+
+- Reduced latency (no service binding overhead for database operations)
+- Simplified debugging (single codebase for business logic)
+- Type safety across database operations (Drizzle ORM + TypeScript)
+- Easier testing (fewer network calls to mock)
 
 ---
 
 ## 🛠️ Critical Development Patterns
 
-### 1. Cloudflare Worker Structure (MANDATORY)
+### 1. API Gateway Structure (MANDATORY)
 
-**Every worker follows this exact structure:**
+**API Gateway is now a modular monolith:**
 
 ```typescript
-// workers/<service>/src/index.ts
+// workers/api-gateway/src/index.ts
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env } from './types';
+import { loggingMiddleware } from './middleware/logging';
+import { corsMiddleware } from './middleware/cors';
+import { authMiddleware } from './middleware/auth'; // Direct JWT validation
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -57,74 +92,185 @@ const app = new Hono<{ Bindings: Env }>();
 // ============================================================================
 app.use('*', loggingMiddleware); // Log all requests
 app.use('*', corsMiddleware); // Handle CORS
-app.use('*', authMiddleware); // Validate JWT (if protected routes)
 
 // ============================================================================
 // HEALTH CHECK (Always first route)
 // ============================================================================
 app.get('/', (c) => {
   return c.json({
-    service: 'Service Name',
-    version: '1.0.0',
+    service: 'B2B API Gateway',
+    version: '2.0.0',
     status: 'healthy',
     environment: c.env.ENVIRONMENT,
     timestamp: new Date().toISOString(),
   });
 });
 
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // ============================================================================
-// ROUTES (Use Hono router)
+// ROUTES (Direct database operations + external service orchestration)
 // ============================================================================
-app.route('/auth', authRoutes); // Sub-routers for organization
+app.route('/auth', authRoutes); // JWT auth, registration, login
+app.route('/products', productRoutes); // Product CRUD via @b2b/db
+app.route('/categories', categoryRoutes);
+app.route('/admin', adminRoutes); // Admin-only operations
+app.route('/admin/invoices', invoiceRoutes);
 
 // ============================================================================
 // ERROR HANDLING (Always last)
 // ============================================================================
 app.notFound((c) => {
-  return c.json({ error: 'Not Found', code: 'service/not-found' }, 404);
+  return c.json({ error: 'Not Found', code: 'api/not-found' }, 404);
 });
 
 app.onError((err, c) => {
-  console.error('[Service Error]', err);
-  return c.json({ error: 'Internal Error', code: 'service/error' }, 500);
+  console.error('[API Gateway Error]', err);
+  return c.json({ error: 'Internal Error', code: 'api/error' }, 500);
 });
 
 export default app;
 ```
 
-### 2. Service Bindings Pattern (API Gateway)
+### 2. @b2b/db Package Usage (CRITICAL)
 
-**DO NOT use HTTP fetch() between workers. Use service bindings:**
+**ALL database operations MUST use the @b2b/db package:**
+
+### 2. @b2b/db Package Usage (CRITICAL)
+
+**ALL database operations MUST use the @b2b/db package:**
 
 ```typescript
-// ❌ WRONG: HTTP fetch between workers
-const response = await fetch('https://auth-service.workers.dev/auth/validate', {
-  method: 'POST',
-  body: JSON.stringify({ token }),
-});
+// workers/api-gateway/src/routes/products.routes.ts
+import { createDb } from '@b2b/db';
+import {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  type GetProductsOptions,
+} from '@b2b/db/operations';
 
-// ✅ CORRECT: Service binding (direct worker-to-worker)
-const request = new Request('https://dummy.url/auth/validate', {
+// In route handler
+products.get('/', async (c) => {
+  const db = createDb(c.env.DB); // Create Drizzle client from D1 binding
+
+  const result = await getProducts(db, {
+    limit: 50,
+    offset: 0,
+    search: 'laptop',
+    inStockOnly: true,
+  });
+
+  return c.json({
+    products: result.products,
+    total: result.total,
+  });
+});
+```
+
+**Available operation modules** (all in `/packages/db/src/operations/`):
+
+- `products.ts` - Product CRUD, images, specs, tags, dimensions, bulk operations
+- `categories.ts` - Category CRUD, tree building, path traversal
+- `inventory.ts` - Stock adjustments, reservations, Shopify sync
+- `orders.ts` - Order CRUD, items, status, statistics
+- `sessions.ts` - User sessions, password reset tokens, email verification
+- `carts.ts` - Cart CRUD, validation, product joins
+- `webhooks.ts` - Event tracking, idempotency, cleanup
+
+**@b2b/db exports:**
+
+```typescript
+// Main exports (packages/db/src/index.ts)
+export { createDb } from './db';
+export * from './schema';
+export * from './types';
+
+// Drizzle ORM functions
+export { sql, eq, and, or, like, gte, lte, desc, asc } from 'drizzle-orm';
+
+// Individual operation modules
+import * as productOps from './operations/products';
+import * as categoryOps from './operations/categories';
+// ... etc
+```
+
+### 3. External Service Bindings (Stripe, Email, Shopify, Telegram)
+
+**Use service bindings ONLY for external services (NOT database operations):**
+
+```typescript
+// ✅ CORRECT: Service binding for Stripe API
+const request = new Request('https://dummy/customers/create', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ token }),
+  body: JSON.stringify({ email, name }),
 });
-const response = await c.env.AUTH_SERVICE.fetch(request);
+const response = await c.env.STRIPE_SERVICE.fetch(request);
+
+// ✅ CORRECT: Direct database operation
+const db = createDb(c.env.DB);
+const user = await db.select().from(users).where(eq(users.email, email)).get();
+
+// ❌ WRONG: Using service binding for database operations (old pattern)
+const response = await c.env.INVENTORY_SERVICE.fetch(request);
 ```
 
 **wrangler.toml configuration:**
 
 ```toml
 [[services]]
-binding = "AUTH_SERVICE"
-service = "b2b-auth-service"
+binding = "STRIPE_SERVICE"
+service = "b2b-stripe-service"
+
+[[services]]
+binding = "SHOPIFY_SYNC_SERVICE"
+service = "b2b-shopify-sync-service"
+
+[[services]]
+binding = "TELEGRAM_SERVICE"
+service = "b2b-telegram-service"
+
+[[queues.producers]]
+binding = "EMAIL_QUEUE"
+queue = "b2b-email-queue"
+
+# Database binding (direct access)
+[[d1_databases]]
+binding = "DB"
+database_name = "b2b-prod"
 ```
 
-### 3. D1 Database Operations
+### 4. Product Code Auto-Generation
+
+**B2B SKU and Barcode are automatically generated:**
+
+```typescript
+// workers/api-gateway/src/services/product-codes.service.ts
+import { generateNextB2BSku, generateNextBarcode } from '../services/product-codes.service';
+
+// In product creation route
+products.post('/', async (c) => {
+  const body = await c.req.json();
+
+  // Auto-generate SKU if not provided
+  const b2bSku = body.b2b_sku || (await generateNextB2BSku(c.env.DB));
+
+  // Auto-generate EAN-13 barcode if not provided
+  const barcode = body.barcode || (await generateNextBarcode(c.env.DB));
+
+  const product = await createProduct(db, {
+    // ... other fields
+    b2b_sku: b2bSku, // TP-00001, TP-00002, etc.
+    barcode: barcode, // 2000000000017 (EAN-13 with check digit)
+  });
+});
+```
+
+**SKU Format**: `TP-00001` (auto-incremented, 5-digit padded)
+**Barcode Format**: `2XXXXXXXXXXXC` (13-digit EAN-13 with check digit)
+
+### 5. D1 Database Operations
 
 **Always use parameterized queries (prevent SQL injection):**
 
@@ -335,10 +481,10 @@ wrangler d1 execute b2b-prod --remote --command "SELECT * FROM users LIMIT 5"
 npm run dev
 
 # Build for production
-npm run build
+npm run build:frontend
 
-# Preview production build
-npm run preview
+# Deploy to Cloudflare Pages
+npm run deploy:frontend
 ```
 
 **Frontend connects to workers via:**
@@ -581,118 +727,6 @@ CREATE TABLE product_inventory (
   CHECK (reserved_stock <= total_stock)
 );
 ```
-
-### Stock Operations Pattern
-
-**Always JOIN products with product_inventory:**
-
-```typescript
-// ✅ CORRECT: Get product with inventory
-const query = `
-  SELECT 
-    p.*,
-    i.total_stock,
-    i.b2b_stock,
-    i.b2c_stock,
-    i.reserved_stock,
-    i.shopify_variant_id,
-    i.sync_enabled
-  FROM products p
-  LEFT JOIN product_inventory i ON p.id = i.product_id
-  WHERE p.id = ?
-`;
-const result = await c.env.DB.prepare(query).bind(productId).first();
-```
-
-**Update stock (B2B order example):**
-
-```typescript
-// ✅ CORRECT: Update via product_inventory table
-await c.env.DB.prepare(
-  `
-  UPDATE product_inventory 
-  SET 
-    total_stock = total_stock - ?,
-    b2b_stock = b2b_stock - ?,
-    updated_at = ?
-  WHERE product_id = ? AND b2b_stock >= ?
-`
-)
-  .bind(quantity, quantity, new Date().toISOString(), productId, quantity)
-  .run();
-
-// Log the change
-await c.env.DB.prepare(
-  `
-  INSERT INTO inventory_sync_log (id, product_id, action, source, total_change, b2b_change, created_at)
-  VALUES (?, ?, 'b2b_order', 'checkout', ?, ?, ?)
-`
-)
-  .bind(nanoid(), productId, -quantity, -quantity, new Date().toISOString())
-  .run();
-```
-
-### Audit Trail
-
-**All inventory changes MUST be logged:**
-
-```typescript
-// After any stock change, log it:
-await c.env.DB.prepare(
-  `
-  INSERT INTO inventory_sync_log (
-    id, product_id, action, source,
-    total_change, b2b_change, b2c_change,
-    total_stock_after, b2b_stock_after, b2c_stock_after,
-    reference_id, reference_type, created_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
-)
-  .bind(
-    nanoid(),
-    productId,
-    'b2b_order', // action
-    'checkout', // source
-    -quantity, // total_change
-    -quantity, // b2b_change
-    0, // b2c_change
-    newTotalStock, // snapshot after
-    newB2BStock,
-    b2cStock,
-    orderId, // reference
-    'order',
-    new Date().toISOString()
-  )
-  .run();
-```
-
----
-
-## �📚 Key Files Reference
-
-| File                                           | Purpose                                       |
-| ---------------------------------------------- | --------------------------------------------- |
-| `/workers/api-gateway/src/index.ts`            | Service orchestration logic                   |
-| `/workers/auth-service/src/index.ts`           | JWT auth implementation                       |
-| `/workers/auth-service/src/utils/jwt.ts`       | JWT sign/verify functions                     |
-| `/src/stores/auth.ts`                          | Frontend auth state + auto-refresh            |
-| `/src/router/index.ts`                         | Route guards (requiresAuth, requiresVerified) |
-| `/migrations/001_initial_schema.sql`           | Complete D1 schema (19 tables)                |
-| `/migrations/003_product_inventory_system.sql` | **Inventory management system (B2B/B2C)**     |
-| `/workers/stripe-service/src/index.ts`         | Stripe API wrapper                            |
-
----
-
-## 🎯 When Starting a New Task
-
-1. **Identify the service** - Which worker does this belong to?
-2. **Check existing patterns** - Look at similar routes/functions in that service
-3. **Follow the structure** - Use the exact file organization above
-4. **Use service bindings** - Never HTTP fetch between workers
-5. **Test locally first** - `wrangler dev` before deploying
-6. **Check types** - Ensure TypeScript compiles without errors
-7. **Update tests** - Check and update integration/unit tests in `/workers/<service>/tests/`
-8. **Deploy to dev** - Test in dev environment before prod
 
 ### ⚠️ Test File Maintenance (CRITICAL)
 

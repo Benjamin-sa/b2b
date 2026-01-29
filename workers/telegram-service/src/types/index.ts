@@ -48,7 +48,7 @@ export interface InvoiceNotification {
     paid_at?: number;
   };
   metadata?: {
-    orderMetadata?: string;
+    order_metadata?: string;
   };
   lines?: {
     data: Array<{
@@ -60,38 +60,38 @@ export interface InvoiceNotification {
 }
 
 export interface UserRegistrationNotification {
-  firstName?: string;
-  lastName?: string;
-  companyName?: string;
+  first_name?: string;
+  last_name?: string;
+  company_name?: string;
   email?: string;
   phone?: string;
-  btwNumber?: string;
+  btw_number?: string;
   address?: {
     street: string;
-    houseNumber: string;
-    postalCode: string;
+    house_number: string;
+    postal_code: string;
     city: string;
     country: string;
   };
 }
 
 export interface OrderMetadata {
-  userInfo?: {
-    companyName?: string;
-    contactPerson?: string;
+  user_info?: {
+    company_name?: string;
+    contact_person?: string;
     email?: string;
-    btwNumber?: string;
+    btw_number?: string;
   };
-  orderItems?: Array<{
-    productName: string;
+  order_items?: Array<{
+    product_name: string;
     quantity: number;
-    unitPrice: string;
+    unit_price: string;
   }>;
-  shippingAddress?: {
+  shipping_address?: {
     company?: string;
-    contactPerson?: string;
+    contact_person?: string;
     street: string;
-    zipCode: string;
+    zip_code: string;
     city: string;
   };
 }

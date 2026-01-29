@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <ProductsHeader :search-term="filters.search_term" :active-category="currentCategory?.name || ''"
+    <ProductsHeader :search-term="filters.search" :active-category="currentCategory?.name || ''"
       :in-stock-only="filters.in_stock" :sort-by="filters.sort_by" :is-loading="productStore.isLoading"
       :product-count="productStore.products.length" :total-count="productStore.totalItems" :view-mode="viewMode"
       :price-range="priceRange" :has-advanced-filters="showAdvancedFilters" @search="handleSearch"
@@ -146,9 +146,9 @@
                 </div>
                 <div class="flex items-center justify-between mt-3">
                   <span class="text-xl font-bold text-blue-600">€{{ product.price }}</span>
-                  <button :disabled="product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0
+                  <button :disabled="product.coming_soon === 1 || (product.inventory?.stock ?? 0) <= 0
                     " :class="[
-                      product.coming_soon === 1 || (product.inventory?.b2b_stock ?? 0) <= 0
+                      product.coming_soon === 1 || (product.inventory?.stock ?? 0) <= 0
                         ? 'bg-gray-300 cursor-not-allowed'
                         : 'bg-blue-600 hover:bg-blue-700',
                       'px-4 py-2 text-white rounded-md',
@@ -156,7 +156,7 @@
                     <span v-if="product.coming_soon === 1">{{
                       $t('products.card.comingSoon')
                       }}</span>
-                    <span v-else-if="(product.inventory?.b2b_stock ?? 0) <= 0">{{
+                    <span v-else-if="(product.inventory?.stock ?? 0) <= 0">{{
                       $t('products.card.outOfStock')
                       }}</span>
                     <span v-else>{{ $t('products.card.addToCart') }}</span>
@@ -188,7 +188,7 @@ import { useCategoryStore } from '../stores/categories';
 import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
 import { truncateHtml } from '../utils/htmlUtils';
-import type { ProductFilter } from '../types';
+import type { ProductFilter, ProductWithRelations } from '../types';
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
@@ -219,7 +219,7 @@ const categoryIdFromRoute = computed(() => (route.params.categoryId as string) |
 
 // --- Local State for Filters ---
 const filters = reactive<ProductFilter>({
-  search_term: '',
+  search: '',
   category_id: '',
   in_stock: undefined,
   sort_by: 'created_at',
@@ -248,7 +248,7 @@ const currentCategory = computed(() => {
 
 // --- Event Handlers ---
 const handleSearch = (searchTerm: string) => {
-  filters.search_term = searchTerm;
+  filters.search = searchTerm;
 };
 
 const handleCategoryChange = (category: string) => {
@@ -331,7 +331,7 @@ const loadMore = () => {
 };
 
 const clearFilters = () => {
-  filters.search_term = '';
+  filters.search = '';
   filters.category_id = categoryIdFromRoute.value || ''; // Keep category from route
   filters.in_stock = undefined;
   filters.min_price = undefined;

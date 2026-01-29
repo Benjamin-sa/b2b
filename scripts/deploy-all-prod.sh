@@ -20,8 +20,6 @@ NC='\033[0m' # No Color
 
 # Workers to deploy (in dependency order)
 WORKERS=(
-  "auth-service"
-  "inventory-service"
   "stripe-service"
   "email-service"
   "telegram-service"

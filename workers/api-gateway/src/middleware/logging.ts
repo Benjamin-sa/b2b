@@ -17,7 +17,7 @@ export async function loggingMiddleware(c: Context<{ Bindings: Env }>, next: Nex
   const userAgent = c.req.header('User-Agent');
   const ip = c.req.header('CF-Connecting-IP') || 'unknown';
 
-  console.log(`→ ${method} ${path} from ${ip}`);
+  console.log(`→ ${method} ${path} from ${ip} with ${userAgent}`);
 
   await next();
 

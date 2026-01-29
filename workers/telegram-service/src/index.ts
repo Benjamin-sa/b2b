@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createServiceAuthMiddleware } from '../../shared-types/service-auth';
+import { createServiceAuthMiddleware } from '@b2b/types';
 import type { Env } from './types';
 import notifications from './routes/notifications.routes';
 

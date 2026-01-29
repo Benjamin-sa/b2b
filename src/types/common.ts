@@ -1,45 +1,27 @@
-// General utility types and common interfaces
+/**
+ * Common Types - Re-exports from @b2b/types
+ *
+ * DEPRECATED: Import directly from '@b2b/types' or '@b2b/types/common' instead.
+ */
 
-// API Response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+// Re-export all common types from @b2b/types
+export type {
+  ApiError,
+  ApiResponse,
+  PaginationParams,
+  PaginatedResponse,
+  ValidationError,
+  FormState,
+  LoadingState,
+  ISODateString,
+  SQLiteBoolean,
+  RequireFields,
+  OptionalFields,
+  CreateInput,
+  UpdateInput,
+} from '@b2b/types';
 
-// Pagination types
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-// Form validation types
-export interface ValidationError {
-  field: string;
-  message: string;
-}
-
-export interface FormState<T> {
-  data: T;
-  errors: ValidationError[];
-  isSubmitting: boolean;
-  isDirty: boolean;
-}
-
-// File upload types
+// UI-specific types (frontend only, not in shared package)
 export interface FileUpload {
   file: File;
   progress: number;
@@ -48,18 +30,16 @@ export interface FileUpload {
   error?: string;
 }
 
-// Navigation types
 export interface NavItem {
   label: string;
   path: string;
   icon?: string;
   badge?: string;
   children?: NavItem[];
-  requiresAuth?: boolean;
-  requiresAdmin?: boolean;
+  requires_auth?: boolean;
+  requires_admin?: boolean;
 }
 
-// Toast notification types
 export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -70,11 +50,4 @@ export interface Toast {
     label: string;
     onClick: () => void;
   };
-}
-
-// Loading state type
-export interface LoadingState {
-  isLoading: boolean;
-  error: string | null;
-  lastUpdated?: Date;
 }

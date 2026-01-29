@@ -18,67 +18,33 @@
         <div class="relative">
           <button
             class="flex items-center space-x-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow"
-            @click="toggleLanguageMenu"
-          >
-            <svg
-              class="w-5 h-5 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-              />
+            @click="toggleLanguageMenu">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
             </svg>
             <span class="text-sm font-medium text-gray-700">{{ currentLanguage?.name }}</span>
-            <svg
-              class="w-4 h-4 text-gray-500 transition-transform duration-200"
-              :class="{ 'rotate-180': isLanguageMenuOpen }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
+            <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
+              :class="{ 'rotate-180': isLanguageMenuOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           <!-- Language Dropdown -->
           <Transition name="dropdown">
-            <div
-              v-if="isLanguageMenuOpen"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 overflow-hidden"
-            >
-              <button
-                v-for="lang in languages"
-                :key="lang.code"
-                :class="[
-                  'w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center justify-between',
-                  locale === lang.code
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50',
-                ]"
-                @click="setLanguage(lang.code)"
-              >
+            <div v-if="isLanguageMenuOpen"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50 overflow-hidden">
+              <button v-for="lang in languages" :key="lang.code" :class="[
+                'w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center justify-between',
+                locale === lang.code
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-50',
+              ]" @click="setLanguage(lang.code)">
                 <span>{{ lang.name }}</span>
-                <svg
-                  v-if="locale === lang.code"
-                  class="w-5 h-5 text-blue-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
+                <svg v-if="locale === lang.code" class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd"
-                  />
+                    clip-rule="evenodd" />
                 </svg>
               </button>
             </div>
@@ -117,33 +83,16 @@
             <!-- Forms with transition -->
             <Transition name="fade" mode="out-in">
               <!-- Password Reset Form -->
-              <PasswordResetForm
-                v-if="isPasswordResetMode"
-                key="reset-form"
-                :reset-token="resetToken"
-                @back-to-login="handleBackToLogin"
-              />
+              <PasswordResetForm v-if="isPasswordResetMode" key="reset-form" :reset-token="resetToken"
+                @back-to-login="handleBackToLogin" />
 
               <!-- Login Form -->
-              <LoginForm
-                v-else-if="isLoginMode"
-                key="login-form"
-                :loading="authStore.loading"
-                @login="handleLogin"
-              />
+              <LoginForm v-else-if="isLoginMode" key="login-form" :loading="authStore.loading" @login="handleLogin" />
 
               <!-- Register Form -->
-              <RegisterForm
-                v-else
-                key="register-form"
-                :loading="authStore.loading"
-                :vat-validation="vatValidation"
-                :can-submit="canSubmitRegister"
-                :passwords-match="passwordsMatch"
-                :form="registerForm"
-                @vat-input="validateBTW"
-                @submit="handleRegister"
-              />
+              <RegisterForm v-else key="register-form" :loading="authStore.loading" :vat-validation="vatValidation"
+                :can-submit="canSubmitRegister" :passwords-match="passwordsMatch" :form="registerForm"
+                @vat-input="validateBTW" @submit="handleRegister" />
             </Transition>
           </div>
 
@@ -153,8 +102,7 @@
               {{ isLoginMode ? $t('auth.dontHaveAccount') : $t('auth.alreadyHaveAccount') }}
               <button
                 class="font-semibold text-blue-600 hover:text-blue-500 ml-1 focus:outline-none focus:underline transition-colors cursor-pointer"
-                @click="toggleMode"
-              >
+                @click="toggleMode">
                 >
                 {{ isLoginMode ? $t('auth.signUpHere') : $t('auth.signInHere') }}
               </button>
@@ -283,18 +231,18 @@ onUnmounted(() => {
 
 // Form data
 const registerForm = ref({
-  firstName: '',
-  lastName: '',
-  companyName: '',
+  first_name: '',
+  last_name: '',
+  company_name: '',
   email: '',
   password: '',
   confirmPassword: '',
   phone: '',
-  btwNumber: '',
+  btw_number: '',
   address: {
     street: '',
-    houseNumber: '',
-    postalCode: '',
+    house_number: '',
+    postal_code: '',
     city: '',
     country: 'Belgium',
   },
@@ -308,21 +256,21 @@ const passwordsMatch = computed(
 const vatValidation = ref<VATValidationResult>({ isValid: true });
 
 const validateBTW = () => {
-  if (!registerForm.value.btwNumber.trim()) {
+  if (!registerForm.value.btw_number.trim()) {
     vatValidation.value = { isValid: false, error: t('auth.vatRequired') };
     return;
   }
-  vatValidation.value = validateVATNumber(registerForm.value.btwNumber);
+  vatValidation.value = validateVATNumber(registerForm.value.btw_number);
 };
 
 // Watch BTW input for real-time validation
 let btwTimeout: number | null = null;
 watch(
-  () => registerForm.value.btwNumber,
+  () => registerForm.value.btw_number,
   () => {
     if (btwTimeout) clearTimeout(btwTimeout);
     btwTimeout = setTimeout(() => {
-      if (registerForm.value.btwNumber.trim()) {
+      if (registerForm.value.btw_number.trim()) {
         validateBTW();
       } else {
         vatValidation.value = { isValid: true };
@@ -335,7 +283,7 @@ const canSubmitRegister = computed(
   () =>
     passwordsMatch.value &&
     vatValidation.value.isValid &&
-    registerForm.value.btwNumber.trim() !== ''
+    registerForm.value.btw_number.trim() !== ''
 );
 
 // Clear error when switching modes
@@ -378,20 +326,20 @@ const handleRegister = async () => {
   try {
     console.log('Attempting registration...');
 
-    // Prepare registration data as a single object with snake_case
+    // Prepare registration data - form is already in snake_case format
     const registrationData = {
       email: registerForm.value.email,
       password: registerForm.value.password,
       confirm_password: registerForm.value.confirmPassword,
-      company_name: registerForm.value.companyName,
-      first_name: registerForm.value.firstName,
-      last_name: registerForm.value.lastName,
-      btw_number: registerForm.value.btwNumber.replace(/\s/g, '').toUpperCase(),
+      company_name: registerForm.value.company_name,
+      first_name: registerForm.value.first_name,
+      last_name: registerForm.value.last_name,
+      btw_number: registerForm.value.btw_number.replace(/\s/g, '').toUpperCase(),
       phone: registerForm.value.phone,
       address: {
         street: registerForm.value.address.street,
-        house_number: registerForm.value.address.houseNumber,
-        postal_code: registerForm.value.address.postalCode,
+        house_number: registerForm.value.address.house_number,
+        postal_code: registerForm.value.address.postal_code,
         city: registerForm.value.address.city,
         country: registerForm.value.address.country,
       },
@@ -407,18 +355,18 @@ const handleRegister = async () => {
     router.push('/');
     // Reset form
     registerForm.value = {
-      firstName: '',
-      lastName: '',
-      companyName: '',
+      first_name: '',
+      last_name: '',
+      company_name: '',
       email: '',
       password: '',
       confirmPassword: '',
       phone: '',
-      btwNumber: '',
+      btw_number: '',
       address: {
         street: '',
-        houseNumber: '',
-        postalCode: '',
+        house_number: '',
+        postal_code: '',
         city: '',
         country: 'Belgium',
       },
@@ -497,6 +445,7 @@ select:focus {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   .dropdown-enter-active,
   .dropdown-leave-active,
   .fade-enter-active,

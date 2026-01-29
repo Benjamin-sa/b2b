@@ -1,29 +1,13 @@
 <template>
-  <div
-    class="flex items-center gap-3 sm:gap-4 py-3 sm:py-4 border-b border-gray-200 last:border-b-0"
-  >
+  <div class="flex items-center gap-3 sm:gap-4 py-3 sm:py-4 border-b border-gray-200 last:border-b-0">
     <!-- Product Image -->
     <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded-md overflow-hidden">
-      <img
-        v-if="item.product.image_url"
-        :src="item.product.image_url"
-        :alt="item.product.name"
-        class="w-full h-full object-cover"
-        @error="handleImageError"
-      />
+      <img v-if="item.product.image_url" :src="item.product.image_url" :alt="item.product.name"
+        class="w-full h-full object-cover" @error="handleImageError" />
       <div v-else class="w-full h-full flex items-center justify-center">
-        <svg
-          class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
+        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
       </div>
     </div>
@@ -49,28 +33,18 @@
     <!-- Quantity Controls -->
     <div class="flex items-center">
       <div class="flex items-center border border-primary-200 rounded-lg">
-        <button
-          :disabled="quantity <= (item.product.min_order_quantity || 1) || isUpdating"
+        <button :disabled="quantity <= (item.product.min_order_quantity || 1) || isUpdating"
           class="px-2 py-1 text-primary-600 hover:text-primary-800 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          @click="decreaseQuantity"
-        >
+          @click="decreaseQuantity">
           -
         </button>
-        <input
-          v-model.number="quantity"
-          type="number"
-          :min="item.product.min_order_quantity || 1"
+        <input v-model.number="quantity" type="number" :min="item.product.min_order_quantity || 1"
           :max="item.product.max_order_quantity || 999"
-          class="w-10 sm:w-12 px-1 py-1 text-center border-0 text-xs sm:text-sm focus:ring-0"
-          :disabled="isUpdating"
-          @blur="validateAndUpdate"
-          @keyup.enter="validateAndUpdate"
-        />
-        <button
-          :disabled="quantity >= (item.product.max_order_quantity || 999) || isUpdating"
+          class="w-10 sm:w-12 px-1 py-1 text-center border-0 text-xs sm:text-sm focus:ring-0" :disabled="isUpdating"
+          @blur="validateAndUpdate" @keyup.enter="validateAndUpdate" />
+        <button :disabled="quantity >= (item.product.max_order_quantity || 999) || isUpdating"
           class="px-2 py-1 text-primary-600 hover:text-primary-800 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          @click="increaseQuantity"
-        >
+          @click="increaseQuantity">
           +
         </button>
       </div>
@@ -81,41 +55,23 @@
       <div class="text-xs sm:text-sm font-bold text-gray-900">
         €{{ formatPrice(item.price * item.quantity) }}
       </div>
-      <button
-        :disabled="isUpdating"
+      <button :disabled="isUpdating"
         class="text-danger-600 hover:text-danger-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        @click="removeItem"
-      >
+        @click="removeItem">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
     </div>
 
     <!-- Loading Overlay -->
-    <div
-      v-if="isUpdating"
-      class="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center"
-    >
+    <div v-if="isUpdating" class="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center">
       <svg class="animate-spin h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
       </svg>
     </div>
   </div>
@@ -165,7 +121,7 @@ const validateAndUpdate = async () => {
   if (quantity.value !== props.item.quantity) {
     isUpdating.value = true;
     try {
-      emit('updateQuantity', props.item.productId, quantity.value);
+      emit('updateQuantity', props.item.product_id, quantity.value);
       // Small delay to show loading state
       await new Promise((resolve) => setTimeout(resolve, 200));
     } finally {
@@ -193,7 +149,7 @@ const decreaseQuantity = async () => {
 const removeItem = async () => {
   isUpdating.value = true;
   try {
-    emit('removeItem', props.item.productId);
+    emit('removeItem', props.item.product_id);
     await new Promise((resolve) => setTimeout(resolve, 200));
   } finally {
     isUpdating.value = false;
