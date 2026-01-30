@@ -45,7 +45,7 @@
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">{{
               $t('products.filters.category_id')
-              }}</label>
+            }}</label>
             <select v-model="filters.category_id"
               class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
               <option value="">{{ $t('products.filters.allCategories') }}</option>
@@ -57,7 +57,7 @@
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">{{
               $t('products.filters.availability')
-              }}</label>
+            }}</label>
             <select v-model="filters.in_stock"
               class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
               <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
@@ -67,7 +67,7 @@
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">{{
               $t('products.filters.priceRange')
-              }}</label>
+            }}</label>
             <select v-model="priceRange"
               class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
               @change="handlePriceRangeChange">
@@ -155,10 +155,10 @@
                     ]">
                     <span v-if="product.coming_soon === 1">{{
                       $t('products.card.comingSoon')
-                      }}</span>
+                    }}</span>
                     <span v-else-if="(product.inventory?.stock ?? 0) <= 0">{{
                       $t('products.card.outOfStock')
-                      }}</span>
+                    }}</span>
                     <span v-else>{{ $t('products.card.addToCart') }}</span>
                   </button>
                 </div>
