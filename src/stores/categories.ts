@@ -202,33 +202,6 @@ export const useCategoryStore = defineStore('categories', () => {
     // Update local state
     categories.value = categories.value.filter((cat) => cat.id !== id);
   };
-
-  const reorderCategories = async (categoryIds: string[]) => {
-    const response = await authStore.authenticatedFetch(
-      `${API_GATEWAY_URL}api/categories/reorder`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ categoryIds }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to reorder categories');
-    }
-
-    // Update local state
-    categoryIds.forEach((id, index) => {
-      const category = categories.value.find((cat) => cat.id === id);
-      if (category) {
-        category.sort_order = index;
-      }
-    });
-  };
-
   // Get product count for each category (would need to be called separately)
   const updateCategoryProductCounts = async () => {
     // TODO: implement when product/category relationship is finalized.
@@ -251,7 +224,6 @@ export const useCategoryStore = defineStore('categories', () => {
     addCategory,
     updateCategory,
     deleteCategory,
-    reorderCategories,
     updateCategoryProductCounts,
   };
 });

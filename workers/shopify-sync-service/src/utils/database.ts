@@ -47,7 +47,8 @@ export async function getInventoryByShopifyVariantId(
 }
 
 /**
- * Get product inventory by Shopify inventory item ID
+ * Get product inventory by Shopify inventory item ID (returns first match)
+ * @deprecated Use getAllInventoriesByInventoryItemId for webhook processing
  */
 export async function getInventoryByInventoryItemId(
   db: D1Database,
@@ -61,6 +62,25 @@ export async function getInventoryByInventoryItemId(
     .get();
 
   return (result as ProductInventory | null) || null;
+}
+
+/**
+ * Get ALL product inventories linked to a Shopify inventory item ID
+ * Multiple B2B products can link to the same Shopify product/variant
+ * This ensures webhook updates ALL linked products
+ */
+export async function getAllInventoriesByInventoryItemId(
+  db: D1Database,
+  inventoryItemId: string
+): Promise<ProductInventory[]> {
+  const client = createDb(db);
+  const results = await client
+    .select()
+    .from(product_inventory)
+    .where(eq(product_inventory.shopify_inventory_item_id, inventoryItemId))
+    .all();
+
+  return (results as ProductInventory[]) || [];
 }
 
 /**

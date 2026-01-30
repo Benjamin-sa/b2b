@@ -6,6 +6,7 @@
  */
 
 import type { Env } from '../types';
+import { callService } from './service-calls';
 
 // ============================================================================
 // TYPES
@@ -100,36 +101,32 @@ export async function createStripeProduct(
   try {
     console.log(`[Stripe] Creating Stripe product: ${productData.name}`);
 
-    const response = await env.STRIPE_SERVICE.fetch(
-      new Request('http://stripe-service/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': env.SERVICE_SECRET,
-        },
-        body: JSON.stringify({
-          product_id: productData.product_id,
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          images: productData.images,
-          category: productData.category,
-          brand: productData.brand,
-          part_number: productData.part_number,
-          b2b_sku: productData.b2b_sku,
-        }),
-      })
-    );
+    const response = await callService<
+      CreateStripeProductInput,
+      StripeServiceResponse<CreateStripeProductResponse>
+    >(env.STRIPE_SERVICE, env.SERVICE_SECRET, {
+      path: '/products',
+      method: 'POST',
+      body: {
+        product_id: productData.product_id,
+        name: productData.name,
+        description: productData.description,
+        price: productData.price,
+        images: productData.images,
+        category: productData.category,
+        brand: productData.brand,
+        part_number: productData.part_number,
+        b2b_sku: productData.b2b_sku,
+      },
+    });
 
-    const result = (await response.json()) as StripeServiceResponse<CreateStripeProductResponse>;
-
-    if (!result.success) {
-      console.error('[Stripe] Product creation failed:', result.error);
+    if (!response.data.success) {
+      console.error('[Stripe] Product creation failed:', response.data.error);
       return null;
     }
 
-    console.log(`[Stripe] ✅ Product created: ${result.data?.stripe_product_id}`);
-    return result.data!;
+    console.log(`[Stripe] ✅ Product created: ${response.data.data?.stripe_product_id}`);
+    return response.data.data!;
   } catch (error: any) {
     console.error('[Stripe] ❌ Failed to create product:', error);
     return null;
@@ -146,14 +143,13 @@ export async function updateStripeProduct(
   try {
     console.log(`[Stripe] Updating product: ${productData.stripe_product_id}`);
 
-    const response = await env.STRIPE_SERVICE.fetch(
-      new Request('http://stripe-service/products', {
+    const response = await callService<UpdateStripeProductInput, StripeServiceResponse>(
+      env.STRIPE_SERVICE,
+      env.SERVICE_SECRET,
+      {
+        path: '/products',
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': env.SERVICE_SECRET,
-        },
-        body: JSON.stringify({
+        body: {
           product_id: productData.product_id,
           stripe_product_id: productData.stripe_product_id,
           name: productData.name,
@@ -163,14 +159,12 @@ export async function updateStripeProduct(
           brand: productData.brand,
           part_number: productData.part_number,
           b2b_sku: productData.b2b_sku,
-        }),
-      })
+        },
+      }
     );
 
-    const result = (await response.json()) as StripeServiceResponse;
-
-    if (!result.success) {
-      console.error('[Stripe] Product update failed:', result.error);
+    if (!response.data.success) {
+      console.error('[Stripe] Product update failed:', response.data.error);
       return false;
     }
 
@@ -192,26 +186,22 @@ export async function replaceStripePrice(
   try {
     console.log(`[Stripe] Replacing price: ${priceData.stripe_price_id}`);
 
-    const response = await env.STRIPE_SERVICE.fetch(
-      new Request('http://stripe-service/products/price', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': env.SERVICE_SECRET,
-        },
-        body: JSON.stringify(priceData),
-      })
-    );
+    const response = await callService<
+      ReplaceStripePriceInput,
+      StripeServiceResponse<{ new_price_id: string }>
+    >(env.STRIPE_SERVICE, env.SERVICE_SECRET, {
+      path: '/products/price',
+      method: 'PUT',
+      body: priceData,
+    });
 
-    const result = (await response.json()) as StripeServiceResponse<{ new_price_id: string }>;
-
-    if (!result.success) {
-      console.error('[Stripe] Price replacement failed:', result.error);
+    if (!response.data.success) {
+      console.error('[Stripe] Price replacement failed:', response.data.error);
       return null;
     }
 
-    console.log(`[Stripe] ✅ New price created: ${result.data?.new_price_id}`);
-    return result.data!.new_price_id;
+    console.log(`[Stripe] ✅ New price created: ${response.data.data?.new_price_id}`);
+    return response.data.data!.new_price_id;
   } catch (error: any) {
     console.error('[Stripe] ❌ Failed to replace price:', error);
     return null;
@@ -229,23 +219,18 @@ export async function archiveStripeProduct(
   try {
     console.log(`[Stripe] Archiving product: ${stripeProductId}`);
 
-    const response = await env.STRIPE_SERVICE.fetch(
-      new Request(`http://stripe-service/products/${stripeProductId}`, {
+    const response = await callService<{ price_id?: string }, StripeServiceResponse>(
+      env.STRIPE_SERVICE,
+      env.SERVICE_SECRET,
+      {
+        path: `/products/${stripeProductId}`,
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': env.SERVICE_SECRET,
-        },
-        body: JSON.stringify({
-          price_id: stripePriceId,
-        }),
-      })
+        body: { price_id: stripePriceId },
+      }
     );
 
-    const result = (await response.json()) as StripeServiceResponse;
-
-    if (!result.success) {
-      console.error('[Stripe] Product archive failed:', result.error);
+    if (!response.data.success) {
+      console.error('[Stripe] Product archive failed:', response.data.error);
       return false;
     }
 
@@ -267,26 +252,22 @@ export async function createInvoice(
   try {
     console.log(`[Stripe] Creating invoice for customer: ${invoiceData.customer_id}`);
 
-    const response = await env.STRIPE_SERVICE.fetch(
-      new Request('http://stripe-service/invoices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': env.SERVICE_SECRET,
-        },
-        body: JSON.stringify(invoiceData),
-      })
-    );
+    const response = await callService<
+      CreateInvoiceInput,
+      StripeServiceResponse<CreateInvoiceResponse>
+    >(env.STRIPE_SERVICE, env.SERVICE_SECRET, {
+      path: '/invoices',
+      method: 'POST',
+      body: invoiceData,
+    });
 
-    const result = (await response.json()) as StripeServiceResponse<CreateInvoiceResponse>;
-
-    if (!result.success || !result.data) {
-      console.error('[Stripe] Invoice creation failed:', result.error);
+    if (!response.data.success || !response.data.data) {
+      console.error('[Stripe] Invoice creation failed:', response.data.error);
       return null;
     }
 
-    console.log(`[Stripe] ✅ Invoice created: ${result.data.invoice_id}`);
-    return result.data;
+    console.log(`[Stripe] ✅ Invoice created: ${response.data.data.invoice_id}`);
+    return response.data.data;
   } catch (error: any) {
     console.error('[Stripe] ❌ Failed to create invoice:', error);
     return null;

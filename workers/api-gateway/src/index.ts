@@ -21,7 +21,7 @@ import productsRoutes from './routes/products.routes';
 import categoriesRoutes from './routes/categories.routes';
 import invoicesRoutes from './routes/invoices.routes';
 import authRoutes from './routes/auth.routes';
-import adminRoutes from './routes/admin.routes';
+import adminRoutes from './routes/admin/admin.routes';
 
 const app = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 

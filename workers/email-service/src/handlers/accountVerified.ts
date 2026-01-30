@@ -5,7 +5,7 @@
  */
 
 import type { Environment, EmailResponse } from '../types/email';
-import { createSendGridClient } from '../utils/sendgrid';
+import { createResendClient } from '../utils/resend';
 
 /**
  * Send account verified email
@@ -160,12 +160,13 @@ The B2B Team`;
 </html>`;
 
   try {
-    // Send email via SendGrid
-    const sendGridClient = createSendGridClient(env);
-    const result = await sendGridClient.sendEmail(to, subject, html, text, {
-      clickTracking: true, // Can track clicks for marketing purposes
-      emailType: 'account-verified',
-      categories: ['b2b-transactional', 'account-verified'],
+    // Send email via Resend
+    const resendClient = createResendClient(env);
+    const result = await resendClient.sendEmail(to, subject, html, text, {
+      tags: [
+        { name: 'type', value: 'account-verified' },
+        { name: 'platform', value: 'b2b' },
+      ],
     });
 
     return result;

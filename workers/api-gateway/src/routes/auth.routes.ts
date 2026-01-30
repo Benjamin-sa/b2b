@@ -33,6 +33,8 @@ import {
   type UserClaims,
 } from '../utils/jwt';
 import { hashPassword, verifyPassword, validatePassword, validateEmail } from '../utils/password';
+import { callService } from '../utils/service-calls';
+import { notifyUserRegistered } from '../services/notifications.service';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -190,41 +192,37 @@ auth.post('/register', async (c) => {
     // Create Stripe customer via STRIPE_SERVICE binding
     let stripeCustomerId: string | null = null;
     try {
-      const stripeResponse = await c.env.STRIPE_SERVICE.fetch(
-        new Request('http://stripe-service/customers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Service-Token': c.env.SERVICE_SECRET,
-          },
-          body: JSON.stringify({
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            company_name: user.company_name,
-            phone: user.phone,
-            btw_number: user.btw_number,
-            address_street: user.address_street,
-            address_house_number: user.address_house_number,
-            address_city: user.address_city,
-            address_postal_code: user.address_postal_code,
-            address_country: user.address_country,
-            user_id: user.id,
-            role: user.role,
-            ip_address: c.req.header('CF-Connecting-IP'),
-          }),
-        })
-      );
+      const stripeResponse = await callService<
+        any,
+        { success: boolean; data?: { customer_id: string }; error?: any }
+      >(c.env.STRIPE_SERVICE, c.env.SERVICE_SECRET, {
+        path: '/customers',
+        method: 'POST',
+        body: {
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          company_name: user.company_name,
+          phone: user.phone,
+          btw_number: user.btw_number,
+          address_street: user.address_street,
+          address_house_number: user.address_house_number,
+          address_city: user.address_city,
+          address_postal_code: user.address_postal_code,
+          address_country: user.address_country,
+          user_id: user.id,
+          role: user.role,
+          ip_address: c.req.header('CF-Connecting-IP'),
+        },
+      });
 
-      const stripeResult = (await stripeResponse.json()) as any;
-
-      if (stripeResult.success && stripeResult.data?.customer_id) {
-        stripeCustomerId = stripeResult.data.customer_id;
+      if (stripeResponse.data.success && stripeResponse.data.data?.customer_id) {
+        stripeCustomerId = stripeResponse.data.data.customer_id;
         // Update user with Stripe customer ID
         await updateUser(db, userId, { stripe_customer_id: stripeCustomerId });
         console.log(`[Auth] Created Stripe customer ${stripeCustomerId} for user ${userId}`);
       } else {
-        console.error('[Auth] Stripe customer creation failed:', stripeResult);
+        console.error('[Auth] Stripe customer creation failed:', stripeResponse.data);
         // Rollback user creation if Stripe fails
         await deleteUserById(db, userId);
         return c.json(
@@ -296,24 +294,12 @@ auth.post('/register', async (c) => {
     }
 
     // Notify admins via Telegram
-    try {
-      const telegramRequest = new Request('https://dummy/notifications/user/registered', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': c.env.SERVICE_SECRET,
-        },
-        body: JSON.stringify({
-          email: user.email,
-          companyName: user.company_name,
-          firstName: user.first_name,
-          lastName: user.last_name,
-        }),
-      });
-      await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
-    } catch (telegramError) {
-      console.error('[Auth] Failed to send Telegram notification:', telegramError);
-    }
+    notifyUserRegistered(c.env, {
+      email: user.email,
+      companyName: user.company_name ?? undefined,
+      firstName: user.first_name ?? undefined,
+      lastName: user.last_name ?? undefined,
+    });
 
     return c.json({
       accessToken,

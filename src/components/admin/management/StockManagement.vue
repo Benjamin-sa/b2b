@@ -106,7 +106,7 @@
                   <span class="font-medium text-gray-900">{{ product.name }}</span>
                   <span v-if="product.part_number" class="text-xs text-gray-500">{{
                     product.part_number
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </td>
@@ -175,7 +175,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import type { ProductWithInventory, StockUpdate } from '../../../types';
+import type { ProductWithInventory } from '../../../types';
 
 
 // API Configuration
@@ -188,13 +188,6 @@ const error = ref<string | null>(null);
 const searchTerm = ref('');
 const stockFilter = ref('all');
 const syncFilter = ref('all');
-// SIMPLIFIED: Removed stockModeFilter - always unified now
-const editingProduct = ref<ProductWithInventory | null>(null);
-const submitting = ref(false);
-const stockUpdate = ref<StockUpdate>({
-  stock: 0,
-  shopify_inventory_item_id: null,
-});
 
 // Computed
 const filteredProducts = computed(() => {
@@ -231,14 +224,6 @@ const filteredProducts = computed(() => {
   return filtered;
 });
 
-const validationError = computed(() => {
-  // No validation needed in unified mode - just check stock is non-negative
-  if (stockUpdate.value.stock < 0) {
-    return 'Stock cannot be negative';
-  }
-  return null;
-});
-
 // Methods
 const getStockClass = (stock: number): string => {
   if (stock === 0) return 'out-of-stock';
@@ -265,25 +250,6 @@ const refreshData = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const openEditModal = (product: ProductWithInventory) => {
-  editingProduct.value = product;
-  // SIMPLIFIED: Use new 'stock' column as primary source
-  const currentStock = product.inventory?.stock ?? product.inventory?.stock ?? 0;
-
-  stockUpdate.value = {
-    stock: currentStock,
-    shopify_inventory_item_id: product.inventory?.shopify_inventory_item_id || null,
-  };
-};
-
-const closeEditModal = () => {
-  editingProduct.value = null;
-  stockUpdate.value = {
-    stock: 0,
-    shopify_inventory_item_id: null,
-  };
 };
 
 

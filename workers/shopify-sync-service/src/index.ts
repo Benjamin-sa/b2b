@@ -16,7 +16,11 @@ import type { Env } from './types';
 import { syncToShopify, handleShopifyInventoryUpdate } from './services/sync.service';
 import { searchShopifyProducts } from './services/product-search.service';
 import { verifyShopifyWebhook, isWebhookProcessed, markWebhookProcessed } from './utils/webhooks';
-import { getInventoryByInventoryItemId, getInventoryByProductId } from './utils/database';
+import {
+  getInventoryByInventoryItemId,
+  getInventoryByProductId,
+  getAllInventoriesByInventoryItemId,
+} from './utils/database';
 import { adjustShopifyInventory } from './utils/shopify';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -541,36 +545,54 @@ app.post('/webhooks/inventory-update', async (c) => {
       ? inventoryItemId.split('/').pop() || inventoryItemId
       : inventoryItemId;
 
-    // 8. Find linked product
-    const inventory = await getInventoryByInventoryItemId(c.env.DB, cleanInventoryItemId);
-    if (!inventory) {
+    // 8. Find ALL linked products (multiple B2B products can link to same Shopify item)
+    const inventories = await getAllInventoriesByInventoryItemId(c.env.DB, cleanInventoryItemId);
+    if (inventories.length === 0) {
       console.warn(`⚠️ No B2B product linked to Shopify inventory item ${cleanInventoryItemId}`);
       await markWebhookProcessed(c.env.DB, webhookId, topic, body, true, 'No linked product');
       return c.json({ success: true, message: 'No linked product found' });
     }
 
-    // 9. Check if sync is enabled
-    if (!inventory.sync_enabled) {
-      console.log(`⏸️ Sync disabled for product ${inventory.product_id}, skipping`);
-      await markWebhookProcessed(c.env.DB, webhookId, topic, body, true, 'Sync disabled');
-      return c.json({ success: true, message: 'Sync disabled for product' });
-    }
-
-    // 10. Process the inventory update using sync service (handles stock_mode properly)
-    await handleShopifyInventoryUpdate(
-      c.env,
-      inventory.shopify_variant_id || '',
-      available,
-      webhookId
+    console.log(
+      `📦 Found ${inventories.length} product(s) linked to inventory item ${cleanInventoryItemId}`
     );
+
+    // 9. Process each linked product
+    const updatedProducts: string[] = [];
+    const skippedProducts: string[] = [];
+
+    for (const inventory of inventories) {
+      // Check if sync is enabled for this product
+      if (!inventory.sync_enabled) {
+        console.log(`⏸️ Sync disabled for product ${inventory.product_id}, skipping`);
+        skippedProducts.push(inventory.product_id);
+        continue;
+      }
+
+      // 10. Process the inventory update for this product
+      try {
+        await handleShopifyInventoryUpdate(
+          c.env,
+          inventory.shopify_variant_id || '',
+          available,
+          webhookId,
+          inventory.product_id // Pass specific product ID to update
+        );
+        updatedProducts.push(inventory.product_id);
+        console.log(`✅ Updated stock for product ${inventory.product_id}: → ${available}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to update product ${inventory.product_id}:`, error.message);
+      }
+    }
 
     // 11. Mark webhook as processed
     await markWebhookProcessed(c.env.DB, webhookId, topic, body, true);
 
     return c.json({
       success: true,
-      message: 'Inventory updated',
-      productId: inventory.product_id,
+      message: `Inventory updated for ${updatedProducts.length} product(s)`,
+      updatedProducts,
+      skippedProducts,
     });
   } catch (error: any) {
     console.error('❌ Error processing inventory webhook:', error);

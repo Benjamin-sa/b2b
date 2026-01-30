@@ -23,6 +23,8 @@ import {
 } from '@b2b/db/operations';
 import { requireStripeCustomerMiddleware } from '../middleware/auth';
 import { createInvoice } from '../utils/stripe';
+import { callService } from '../utils/service-calls';
+import { notifyInvoiceCreated } from '../services/notifications.service';
 
 const invoices = new Hono<{ Bindings: Env; Variables: ContextVariables }>();
 
@@ -120,41 +122,21 @@ async function validateStock(
     if (isShopifyLinked) {
       // Query Shopify for stock (source of truth)
       try {
-        const shopifyHeaders = new Headers();
-        shopifyHeaders.set('Content-Type', 'application/json');
-        shopifyHeaders.set('X-Service-Token', env.SERVICE_SECRET);
-
-        const shopifyCheckRequest = new Request('https://dummy/inventory/check', {
+        const response = await callService<
+          { products: Array<{ product_id: string; requested_quantity: number }> },
+          { success: boolean; items: Array<{ product_id: string; available: number; sufficient: boolean }> }
+        >(env.SHOPIFY_SYNC_SERVICE, env.SERVICE_SECRET, {
+          path: '/inventory/check',
           method: 'POST',
-          headers: shopifyHeaders,
-          body: JSON.stringify({
-            products: [{ product_id: productId, requested_quantity: requestedQuantity }],
-          }),
+          body: { products: [{ product_id: productId, requested_quantity: requestedQuantity }] },
         });
 
-        const shopifyResponse = await env.SHOPIFY_SYNC_SERVICE.fetch(shopifyCheckRequest);
-
-        if (!shopifyResponse.ok) {
-          errors.push({
-            product_id: productId,
-            available: 0,
-            requested: requestedQuantity,
-            error: 'Failed to check Shopify stock',
-          });
+        if (!response.ok) {
+          errors.push({ product_id: productId, available: 0, requested: requestedQuantity, error: 'Failed to check Shopify stock' });
           continue;
         }
 
-        const shopifyResult = (await shopifyResponse.json()) as {
-          success: boolean;
-          items: Array<{
-            product_id: string;
-            available: number;
-            requested: number;
-            sufficient: boolean;
-          }>;
-        };
-
-        const checkResult = shopifyResult.items[0];
+        const checkResult = response.data.items[0];
         if (!checkResult?.sufficient) {
           errors.push({
             product_id: productId,
@@ -165,16 +147,10 @@ async function validateStock(
           continue;
         }
 
-        // Shopify has sufficient stock
         shopifyItems.push(item);
       } catch (shopifyError) {
         console.error(`[Invoice] Shopify stock check failed for ${productId}:`, shopifyError);
-        errors.push({
-          product_id: productId,
-          available: 0,
-          requested: requestedQuantity,
-          error: 'Shopify stock check failed',
-        });
+        errors.push({ product_id: productId, available: 0, requested: requestedQuantity, error: 'Shopify stock check failed' });
       }
     } else {
       // Standalone product - check D1 stock
@@ -359,39 +335,29 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     // Standalone products: stock deducted via Stripe payment webhook (invoice.paid)
     if (stockValidation.shopifyItems.length > 0) {
       try {
-        const shopifyHeaders = new Headers();
-        shopifyHeaders.set('Content-Type', 'application/json');
-        shopifyHeaders.set('X-Service-Token', c.env.SERVICE_SECRET);
-
-        const shopifyRequest = new Request('https://dummy/sync/deduct', {
+        const response = await callService<
+          { products: Array<{ product_id: string; quantity: number; reason: string; reference_id: string }> },
+          { success: boolean; results?: Array<{ product_id: string; success: boolean }> }
+        >(c.env.SHOPIFY_SYNC_SERVICE, c.env.SERVICE_SECRET, {
+          path: '/sync/deduct',
           method: 'POST',
-          headers: shopifyHeaders,
-          body: JSON.stringify({
+          body: {
             products: stockValidation.shopifyItems.map((item) => ({
               product_id: item.metadata.product_id,
               quantity: item.quantity,
-              reason: 'other', // Shopify reason code
+              reason: 'correction',
               reference_id: stripeResult.invoice_id,
             })),
-          }),
+          },
         });
 
-        const deductResponse = await c.env.SHOPIFY_SYNC_SERVICE.fetch(shopifyRequest);
-        const deductResult = (await deductResponse.json()) as {
-          success: boolean;
-          results?: Array<{ product_id: string; success: boolean; new_quantity?: number }>;
-        };
-
-        if (deductResult.success) {
-          console.log(
-            `✅ Shopify inventory deducted for ${stockValidation.shopifyItems.length} items - Shopify webhook will update D1`
-          );
+        if (response.data.success) {
+          console.log(`✅ Shopify inventory deducted for ${stockValidation.shopifyItems.length} items`);
         } else {
-          console.warn('⚠️ Some Shopify stock deductions failed:', deductResult.results);
+          console.warn('⚠️ Some Shopify stock deductions failed:', response.data.results);
         }
       } catch (shopifyError) {
         console.warn('⚠️ Failed to deduct Shopify stock:', shopifyError);
-        // Don't fail the invoice - stock mismatch can be fixed manually
       }
     }
 
@@ -402,55 +368,30 @@ invoices.post('/', requireStripeCustomerMiddleware, async (c) => {
     }
 
     // Step 5: Send Telegram notification (non-blocking)
-    try {
-      const telegramHeaders = new Headers();
-      telegramHeaders.set('Content-Type', 'application/json');
-      telegramHeaders.set('X-Service-Token', c.env.SERVICE_SECRET);
-
-      const telegramRequest = new Request('https://dummy/notifications/invoice/created', {
-        method: 'POST',
-        headers: telegramHeaders,
-        body: JSON.stringify({
-          id: stripeResult.invoice_id,
-          number: stripeResult.invoice_number,
-          amount_due: stripeResult.amount_due,
-          currency: stripeResult.currency,
-          customer_email: user.email || undefined,
-          lines: {
-            data: lineItems.map((item: any) => ({
-              amount: item.amount || 0,
-              quantity: item.quantity || 1,
-              description: item.description || 'Product',
-            })),
-          },
-          metadata: {
-            order_metadata: JSON.stringify({
-              user_id: user.userId,
-              invoice_url: stripeResult.hosted_invoice_url,
-              status: stripeResult.status,
-              user_info: body.metadata?.user_info,
-              order_items: orderItems.map((item: any) => ({
-                product_name: item.product_name,
-                quantity: item.quantity,
-                unit_price: item.unit_price.toString(),
-              })),
-              shipping_address: {
-                company: shippingAddr?.company,
-                contact_person: shippingAddr?.contact_person,
-                street: shippingAddr?.street,
-                zip_code: shippingAddr?.zip_code,
-                city: shippingAddr?.city,
-              },
-            }),
-          },
-        }),
-      });
-
-      await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
-      console.log('✅ Telegram notification sent');
-    } catch (telegramError) {
-      console.warn('⚠️ Failed to send Telegram notification:', telegramError);
-    }
+    notifyInvoiceCreated(c.env, {
+      invoiceId: stripeResult.invoice_id,
+      invoiceNumber: stripeResult.invoice_number,
+      amountDue: stripeResult.amount_due,
+      currency: stripeResult.currency,
+      customerEmail: user.email,
+      userId: user.userId,
+      invoiceUrl: stripeResult.hosted_invoice_url,
+      status: stripeResult.status,
+      items: orderItems.map((item: any) => ({
+        productName: item.product_name,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        amount: item.total_price * 100,
+      })),
+      shippingAddress: shippingAddr ? {
+        company: shippingAddr.company,
+        contactPerson: shippingAddr.contact_person,
+        street: shippingAddr.street,
+        zipCode: shippingAddr.zip_code,
+        city: shippingAddr.city,
+      } : undefined,
+      userInfo: body.metadata?.user_info,
+    });
 
     // Return success
     console.log(`✅ Invoice created: ${stripeResult.invoice_id} for user ${user.userId}`);

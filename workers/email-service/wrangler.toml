@@ -43,6 +43,6 @@ FRONTEND_URL = "http://localhost:5173"
 ALLOWED_ORIGINS = "localhost:5173,localhost:3000"
 
 # Secrets to set via: wrangler secret put <NAME> --env dev
-# - SENDGRID_API_KEY
+# - RESEND_API_KEY
 
 

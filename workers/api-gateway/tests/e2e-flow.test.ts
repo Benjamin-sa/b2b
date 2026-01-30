@@ -6,9 +6,9 @@
  * Test Flow:
  * 1. Customer Registration → Verify response
  * 2. Admin Login → Get token
- * 3. Create Product linked to Shopify test product
- * 4. Create Checkout (Invoice) with product
- * 5. Verify stock decreased (wait for Shopify sync)
+ * 3. Create simple test product (no Shopify linkage)
+ * 4. Create Checkout (Invoice) with EXISTING Shopify-linked product
+ * 5. Verify stock decreased (wait for Shopify webhook)
  * 6. CRUD operations (categories, products, cleanup)
  *
  * Prerequisites:
@@ -17,6 +17,7 @@
  *    - TEST_ADMIN_EMAIL
  *    - TEST_ADMIN_PASSWORD
  *    - API_GATEWAY_DEV_URL (optional)
+ * 3. Ensure EXISTING_SHOPIFY_PRODUCT exists in D1 with Shopify linkage
  *
  * Run: npm test e2e-flow
  */
@@ -31,25 +32,20 @@ import { ApiClient, createApiClient } from './helpers/api-client';
 const DEV_WORKER_URL =
   process.env.API_GATEWAY_DEV_URL || 'https://b2b-api-gateway-dev.benkee-sauter.workers.dev';
 
-// Shopify Test Product - This must exist in your Shopify store
-// The location_id is stored as a secret in Shopify sync service
-const SHOPIFY_TEST_PRODUCT = {
-  variantId: 'gid://shopify/ProductVariant/56915737051517',
-  productId: 'gid://shopify/Product/15530726064509',
-  inventoryItemId: 'gid://shopify/InventoryItem/54075829813629',
-  // Extract numeric IDs for REST API
-  variantIdNumeric: '56915737051517',
-  productIdNumeric: '15530726064509',
-  inventoryItemIdNumeric: '54075829813629',
-  title: 'Test-product - AUX',
-  productTitle: 'Test-product',
-  sku: null as string | null,
-  price: '0.00',
-  inventoryQuantity: 99,
-  // Location ID - you'll need to get this from your Shopify store
-  // Can be found in Shopify Admin → Settings → Locations
-  // Or via API: GET /admin/api/2024-01/locations.json
-  locationId: null as string | null, // Will be set dynamically if available
+// Existing Shopify-linked product in D1 database
+// This product is already linked to Shopify and has sync_enabled = 1
+// Used for checkout/stock verification tests
+// NOTE: If multiple products link to same Shopify item, webhook updates FIRST match only
+const EXISTING_SHOPIFY_PRODUCT = {
+  // D1 product_id (from product_inventory table)
+  // This is the FIRST product linked to the Shopify inventory item (gets webhook updates)
+  productId: '4c080e4c3c8a4df3b4307',
+  // Shopify IDs (numeric format)
+  shopifyProductId: '15530726064509',
+  shopifyVariantId: '56915737051517',
+  shopifyInventoryItemId: '54075829813629',
+  shopifyLocationId: '61447897206',
+  syncEnabled: 1,
 };
 
 // Test data storage (shared across tests)
@@ -70,7 +66,8 @@ interface TestContext {
   createdOrderId: string | null;
   createdInvoiceId: string | null;
 
-  // Stock tracking
+  // Checkout tracking (may be existing product, not created one)
+  checkoutProductId: string | null;
   initialStock: number;
   finalStock: number;
 }
@@ -86,6 +83,7 @@ const ctx: TestContext = {
   createdCategoryId: null,
   createdOrderId: null,
   createdInvoiceId: null,
+  checkoutProductId: null,
   initialStock: 0,
   finalStock: 0,
 };
@@ -103,13 +101,6 @@ function log(step: string, message: string, data?: any) {
 
 function logSuccess(step: string, message: string) {
   console.log(`\n✅ [E2E] [${step}] ${message}`);
-}
-
-function logError(step: string, message: string, error?: any) {
-  console.error(`\n❌ [E2E] [${step}] ${message}`);
-  if (error) {
-    console.error(error);
-  }
 }
 
 async function sleep(ms: number) {
@@ -382,49 +373,17 @@ describe('E2E Flow Tests', () => {
   });
 
   // ==========================================================================
-  // STEP 5: CREATE PRODUCT LINKED TO SHOPIFY
+  // STEP 5: CREATE SIMPLE TEST PRODUCT (No Shopify linkage)
   // ==========================================================================
-  describe('Step 5: Create Product with Shopify Link', () => {
-    let existingLinkedProduct: any = null;
-
-    it('should find an existing Shopify-linked product for reference', async () => {
-      log('PRODUCT', 'Looking for existing Shopify-linked product...');
-
-      // Get existing products to find one with Shopify linkage
-      const response = await ctx.adminClient!.get('/api/products?limit=50');
-
-      expect(response.ok).toBe(true);
-
-      const products = response.data.products || [];
-      existingLinkedProduct = products.find(
-        (p: any) => p.inventory?.shopify_inventory_item_id || p.inventory?.shopify_variant_id
-      );
-
-      if (existingLinkedProduct) {
-        log('PRODUCT', '✅ Found existing linked product:', {
-          id: existingLinkedProduct.id,
-          name: existingLinkedProduct.name,
-          inventory: existingLinkedProduct.inventory,
-        });
-        // Copy location_id from existing product if available
-        if (existingLinkedProduct.inventory?.shopify_location_id) {
-          SHOPIFY_TEST_PRODUCT.locationId = existingLinkedProduct.inventory.shopify_location_id;
-          log('PRODUCT', `📍 Using location_id: ${SHOPIFY_TEST_PRODUCT.locationId}`);
-        }
-      } else {
-        log('PRODUCT', '⚠️ No existing Shopify-linked products found');
-        log('PRODUCT', 'Stock validation during checkout may fail without location_id');
-      }
-    });
-
-    it('should create a product linked to Shopify test product', async () => {
-      log('PRODUCT', 'Creating product linked to Shopify...');
-      log('PRODUCT', '📋 Shopify is SOURCE OF TRUTH for inventory');
-      log('PRODUCT', 'Shopify link:', SHOPIFY_TEST_PRODUCT);
+  describe('Step 5: Create Simple Test Product', () => {
+    it('should create a simple product without Shopify linkage', async () => {
+      log('PRODUCT', 'Creating simple test product (no Shopify linkage)...');
+      log('PRODUCT', '📋 This product is for CRUD testing only');
+      log('PRODUCT', '📋 Checkout will use existing Shopify-linked product');
 
       const productData = {
         name: `E2E Test Product ${Date.now()}`,
-        description: 'Product created by E2E tests - linked to Shopify',
+        description: 'Simple product created by E2E tests - NOT linked to Shopify',
         price: 19.99,
         original_price: 24.99,
         category_id: ctx.createdCategoryId,
@@ -435,13 +394,10 @@ describe('E2E Flow Tests', () => {
         max_order_quantity: 10,
         weight: 0.5,
         images: ['https://via.placeholder.com/400x400.png?text=E2E+Test'],
-        // Shopify linkage - stored in inventory table
-        shopify_product_id: SHOPIFY_TEST_PRODUCT.productId,
-        shopify_variant_id: SHOPIFY_TEST_PRODUCT.variantId,
-        shopify_inventory_item_id: SHOPIFY_TEST_PRODUCT.inventoryItemId,
-        shopify_location_id: SHOPIFY_TEST_PRODUCT.locationId,
-        sync_enabled: 1,
-        stock: SHOPIFY_TEST_PRODUCT.inventoryQuantity,
+        // No Shopify linkage - just local stock
+        total_stock: 50,
+        b2b_stock: 50,
+        b2c_stock: 0,
       };
 
       const response = await ctx.adminClient!.post('/api/products', productData, { auth: true });
@@ -456,20 +412,17 @@ describe('E2E Flow Tests', () => {
       expect(response.data).toHaveProperty('stripe_price_id');
 
       ctx.createdProductId = response.data.id;
-      ctx.initialStock =
-        response.data.stock ||
-        response.data.inventory?.stock ||
-        SHOPIFY_TEST_PRODUCT.inventoryQuantity;
 
       logSuccess('PRODUCT', `Product created: ${ctx.createdProductId}`);
-      log('PRODUCT', `Initial stock: ${ctx.initialStock}`);
       log('PRODUCT', 'Inventory:', response.data.inventory);
     });
 
-    it('should verify product has inventory record with Shopify linkage', async () => {
+    it('should verify product has inventory record', async () => {
       log('PRODUCT', `Verifying product: ${ctx.createdProductId}`);
 
-      const response = await ctx.adminClient!.get(`/api/products/${ctx.createdProductId}`);
+      const response = await ctx.adminClient!.get(`/api/products/${ctx.createdProductId}`, {
+        auth: true,
+      });
 
       expect(response.ok).toBe(true);
       expect(response.data).toHaveProperty('id', ctx.createdProductId);
@@ -484,15 +437,6 @@ describe('E2E Flow Tests', () => {
 
       if (response.data.inventory) {
         log('PRODUCT', 'Inventory record:', response.data.inventory);
-
-        // Verify Shopify linkage
-        if (response.data.inventory.shopify_inventory_item_id) {
-          logSuccess('PRODUCT', '✅ Product linked to Shopify inventory');
-        } else {
-          log('PRODUCT', '⚠️ Shopify inventory_item_id not set - stock check may fail');
-        }
-      } else {
-        log('PRODUCT', '⚠️ No inventory record found');
       }
 
       logSuccess('PRODUCT', 'Product verified');
@@ -500,56 +444,54 @@ describe('E2E Flow Tests', () => {
   });
 
   // ==========================================================================
-  // STEP 6: CREATE CHECKOUT (INVOICE)
+  // STEP 6: CREATE CHECKOUT (INVOICE) - Uses existing Shopify-linked product
   // ==========================================================================
-  describe('Step 6: Create Checkout with Product', () => {
+  describe('Step 6: Create Checkout with Existing Shopify Product', () => {
     let stripePriceId: string;
     let productIdForCheckout: string;
-    let shopifyVariantId: string | null = null;
+    let shopifyVariantId: string;
 
-    it('should get product details for checkout', async () => {
-      log('CHECKOUT', 'Getting product details for checkout...');
-
-      // First, try to use an existing Shopify-linked product for more reliable testing
-      const listResponse = await ctx.adminClient!.get('/api/products?limit=50');
-      expect(listResponse.ok).toBe(true);
-
-      const products = listResponse.data.products || [];
-
-      // Find a product that's properly linked to Shopify (has location_id)
-      const linkedProduct = products.find(
-        (p: any) =>
-          p.inventory?.shopify_inventory_item_id &&
-          p.inventory?.shopify_location_id &&
-          p.stripe_price_id
+    it('should get existing Shopify-linked product for checkout', async () => {
+      log('CHECKOUT', 'Getting existing Shopify-linked product for checkout...');
+      log('CHECKOUT', `📋 Using known product: ${EXISTING_SHOPIFY_PRODUCT.productId}`);
+      log('CHECKOUT', `📋 Shopify variant: ${EXISTING_SHOPIFY_PRODUCT.shopifyVariantId}`);
+      log(
+        'CHECKOUT',
+        `📋 Shopify inventory_item: ${EXISTING_SHOPIFY_PRODUCT.shopifyInventoryItemId}`
       );
 
-      if (linkedProduct) {
-        log('CHECKOUT', '✅ Using existing Shopify-linked product for checkout:', {
-          id: linkedProduct.id,
-          name: linkedProduct.name,
-          stripe_price_id: linkedProduct.stripe_price_id,
-          shopify_inventory_item_id: linkedProduct.inventory?.shopify_inventory_item_id,
-        });
-        productIdForCheckout = linkedProduct.id;
-        stripePriceId = linkedProduct.stripe_price_id;
-        shopifyVariantId = linkedProduct.inventory?.shopify_variant_id;
-      } else {
-        // Fall back to our created product
-        log('CHECKOUT', '⚠️ No fully linked product found, using created product');
-        const response = await ctx.adminClient!.get(`/api/products/${ctx.createdProductId}`);
-        expect(response.ok).toBe(true);
-        expect(response.data).toHaveProperty('stripe_price_id');
+      // Fetch the existing Shopify-linked product
+      const response = await ctx.adminClient!.get(
+        `/api/products/${EXISTING_SHOPIFY_PRODUCT.productId}`,
+        { auth: true }
+      );
 
-        productIdForCheckout = ctx.createdProductId!;
-        stripePriceId = response.data.stripe_price_id;
-        shopifyVariantId = response.data.inventory?.shopify_variant_id;
-      }
+      expect(response.ok).toBe(true);
+      expect(response.data).toHaveProperty('stripe_price_id');
 
+      log('CHECKOUT', '✅ Found existing Shopify-linked product:', {
+        id: response.data.id,
+        name: response.data.name,
+        stripe_price_id: response.data.stripe_price_id,
+        shopify_inventory_item_id: response.data.inventory?.shopify_inventory_item_id,
+        shopify_variant_id: response.data.inventory?.shopify_variant_id,
+        current_stock: response.data.inventory?.stock || response.data.stock,
+      });
+
+      productIdForCheckout = response.data.id;
+      stripePriceId = response.data.stripe_price_id;
+      shopifyVariantId =
+        response.data.inventory?.shopify_variant_id || EXISTING_SHOPIFY_PRODUCT.shopifyVariantId;
+
+      // Store for verification - this is the product whose stock we'll check
+      ctx.checkoutProductId = productIdForCheckout;
+      ctx.initialStock = response.data.inventory?.stock || response.data.stock || 0;
+
+      log('CHECKOUT', `📊 Initial stock for checkout product: ${ctx.initialStock}`);
       log('CHECKOUT', `Using product: ${productIdForCheckout}`);
       log('CHECKOUT', `Stripe Price ID: ${stripePriceId}`);
 
-      logSuccess('CHECKOUT', 'Got product details for checkout');
+      logSuccess('CHECKOUT', 'Got existing Shopify-linked product for checkout');
     });
 
     it('should create invoice (checkout) as customer', async () => {
@@ -576,7 +518,7 @@ describe('E2E Flow Tests', () => {
             metadata: {
               product_id: productIdForCheckout,
               product_name: 'E2E Test Product',
-              shopify_variant_id: shopifyVariantId || SHOPIFY_TEST_PRODUCT.variantId,
+              shopify_variant_id: shopifyVariantId,
             },
           },
         ],
@@ -643,52 +585,59 @@ describe('E2E Flow Tests', () => {
       log('CHECKOUT', `Order ID: ${ctx.createdOrderId}`);
     });
 
-    it('should wait for Shopify webhook to process (4 seconds)', async () => {
-      log('SYNC', 'Waiting 4 seconds for Shopify webhook to update stock...');
+    it('should wait for Shopify webhook to process (10 seconds)', async () => {
+      // Skip waiting if no invoice was created
+      if (!ctx.createdInvoiceId) {
+        log('SYNC', 'Skipping - no invoice was created');
+        return;
+      }
+
+      log('SYNC', 'Waiting 10 seconds for Shopify webhook to update stock...');
       log('SYNC', 'Flow: Invoice → Shopify sync triggered → Shopify webhook → D1 updated');
 
-      await sleep(4000);
+      await sleep(10000);
 
       logSuccess('SYNC', 'Wait complete - Shopify webhook should have processed');
-    });
+    }, 15000); // Increase test timeout to 15s
 
-    it('should verify stock flow (Shopify is source of truth)', async () => {
-      log('STOCK', 'Verifying stock management flow...');
-      log('STOCK', '📋 Architecture:');
-      log('STOCK', '  1. Stock check queries Shopify API directly');
-      log('STOCK', '  2. Invoice creation triggers Shopify inventory adjustment');
-      log('STOCK', '  3. Shopify webhook updates local D1 inventory');
+    it('should verify stock was reduced after invoice creation', async () => {
+      // Skip verification if no invoice was created
+      if (!ctx.createdInvoiceId || !ctx.checkoutProductId) {
+        log('STOCK', 'Skipping - no invoice or checkout product');
+        return;
+      }
 
-      const response = await ctx.adminClient!.get(`/api/products/${ctx.createdProductId}`);
+      log('STOCK', 'Verifying stock was reduced after invoice creation...');
+      log('STOCK', `📋 Checking product: ${ctx.checkoutProductId}`);
+      log('STOCK', '📋 Expected flow:');
+      log('STOCK', '  1. Invoice created → Shopify inventory adjustment triggered');
+      log('STOCK', '  2. Shopify webhook received → D1 stock updated');
+      log('STOCK', `  3. Initial stock: ${ctx.initialStock} → Expected: ${ctx.initialStock - 1}`);
+
+      // IMPORTANT: Check the CHECKOUT product, not the created test product
+      // The webhook updates the product linked to the Shopify inventory_item_id
+      const response = await ctx.adminClient!.get(`/api/products/${ctx.checkoutProductId}`, {
+        auth: true,
+      });
 
       expect(response.ok).toBe(true);
 
       const currentStock = response.data.stock || response.data.inventory?.stock || 0;
       ctx.finalStock = currentStock;
 
-      log('STOCK', `Local D1 stock: ${ctx.finalStock}`);
+      log('STOCK', `Product ID: ${ctx.checkoutProductId}`);
+      log('STOCK', `Initial stock: ${ctx.initialStock}`);
+      log('STOCK', `Current stock: ${ctx.finalStock}`);
+      log('STOCK', `Invoice ID: ${ctx.createdInvoiceId}`);
 
-      if (ctx.createdInvoiceId) {
-        log('STOCK', `✅ Invoice was created: ${ctx.createdInvoiceId}`);
-        log('STOCK', '📌 Stock update depends on Shopify webhook delivery');
-        log('STOCK', '📌 In production, webhook updates D1 within seconds');
+      // CRITICAL: Stock MUST be reduced after invoice creation
+      expect(ctx.finalStock).toBeLessThan(ctx.initialStock);
 
-        // The local stock might or might not have updated depending on webhook timing
-        // This is expected behavior - Shopify is the source of truth
-        if (ctx.finalStock < ctx.initialStock) {
-          logSuccess(
-            'STOCK',
-            `Webhook received - stock updated: ${ctx.initialStock} → ${ctx.finalStock}`
-          );
-        } else {
-          log('STOCK', '⏳ Webhook may still be pending - this is normal in test environment');
-          log('STOCK', '📌 Verify in Shopify admin that stock decreased');
-        }
-      } else {
-        log('STOCK', 'Invoice was not created, no stock change expected');
-      }
-
-      logSuccess('STOCK', 'Stock verification complete');
+      const stockReduction = ctx.initialStock - ctx.finalStock;
+      logSuccess(
+        'STOCK',
+        `✅ Stock correctly reduced by ${stockReduction}: ${ctx.initialStock} → ${ctx.finalStock}`
+      );
     });
   });
 
@@ -703,7 +652,7 @@ describe('E2E Flow Tests', () => {
       it('should list categories', async () => {
         log('CRUD', 'Listing categories...');
 
-        const response = await ctx.adminClient!.get('/api/categories');
+        const response = await ctx.adminClient!.get('/api/categories', { auth: true });
 
         expect(response.ok).toBe(true);
         expect(response.data).toHaveProperty('categories');
@@ -770,7 +719,7 @@ describe('E2E Flow Tests', () => {
       it('should list products', async () => {
         log('CRUD', 'Listing products...');
 
-        const response = await ctx.adminClient!.get('/api/products');
+        const response = await ctx.adminClient!.get('/api/products', { auth: true });
 
         expect(response.ok).toBe(true);
         expect(response.data).toHaveProperty('products');
@@ -808,7 +757,9 @@ describe('E2E Flow Tests', () => {
       it('should get single product', async () => {
         log('CRUD', `Getting product: ${testProductId}`);
 
-        const response = await ctx.adminClient!.get(`/api/products/${testProductId}`);
+        const response = await ctx.adminClient!.get(`/api/products/${testProductId}`, {
+          auth: true,
+        });
 
         expect(response.ok).toBe(true);
         expect(response.data).toHaveProperty('id', testProductId);
@@ -840,6 +791,7 @@ describe('E2E Flow Tests', () => {
 
         const response = await ctx.adminClient!.get('/api/products', {
           params: { search: 'CRUD Test' },
+          auth: true,
         });
 
         expect(response.ok).toBe(true);
@@ -853,6 +805,7 @@ describe('E2E Flow Tests', () => {
 
         const response = await ctx.adminClient!.get('/api/products', {
           params: { in_stock: 'true' },
+          auth: true,
         });
 
         expect(response.ok).toBe(true);
@@ -882,7 +835,9 @@ describe('E2E Flow Tests', () => {
     it('should return 404 for non-existent product', async () => {
       log('ERROR', 'Testing 404 for non-existent product...');
 
-      const response = await ctx.adminClient!.get('/api/products/nonexistent-product-id-12345');
+      const response = await ctx.adminClient!.get('/api/products/nonexistent-product-id-12345', {
+        auth: true,
+      });
 
       expect(response.status).toBe(404);
       expect(response.error).toHaveProperty('code', 'products/not-found');
@@ -992,9 +947,11 @@ describe('E2E Flow Tests', () => {
       console.log(`Customer ID: ${ctx.customerId || 'N/A'}`);
       console.log(`Created Product ID: ${ctx.createdProductId || 'N/A'}`);
       console.log(`Created Category ID: ${ctx.createdCategoryId || 'N/A'}`);
+      console.log(`Checkout Product ID: ${ctx.checkoutProductId || 'N/A'}`);
       console.log(`Created Invoice ID: ${ctx.createdInvoiceId || 'N/A'}`);
       console.log(`Initial Stock: ${ctx.initialStock}`);
       console.log(`Final Stock: ${ctx.finalStock}`);
+      console.log(`Stock Reduced: ${ctx.finalStock < ctx.initialStock ? '✅ YES' : '❌ NO'}`);
       console.log('='.repeat(60));
       console.log('\n');
 

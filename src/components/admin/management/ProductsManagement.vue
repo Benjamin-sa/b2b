@@ -8,33 +8,18 @@
       </div>
       <button
         class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-        @click="showAddForm = true"
-      >
+        @click="showAddForm = true">
         >
-        <svg
-          class="w-5 h-5 inline-block mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
+        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
         Add Product
       </button>
     </div>
 
     <!-- Add/Edit Product Form -->
-    <ProductForm
-      v-if="showAddForm || editingProduct"
-      :product="editingProduct"
-      @cancel="cancelForm"
-      @save="handleSave"
-    />
+    <ProductForm v-if="showAddForm || editingProduct" :product="editingProduct" @cancel="cancelForm"
+      @save="handleSave" />
 
     <!-- Products List -->
     <div v-if="!showAddForm && !editingProduct" class="bg-white shadow rounded-lg">
@@ -42,31 +27,23 @@
       <div class="p-6 border-b border-gray-200">
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="flex-1">
-            <input
-              v-model="searchTerm"
-              type="text"
-              placeholder="Search products..."
+            <input v-model="searchTerm" type="text" placeholder="Search products..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              @input="searchProducts"
-            />
+              @input="searchProducts" />
           </div>
           <div class="flex gap-2">
-            <select
-              v-model="selectedCategory"
+            <select v-model="selectedCategory"
               class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              @change="filterProducts"
-            >
+              @change="filterProducts">
               >
               <option value="">All Categories</option>
               <option v-for="category in categories" :key="category" :value="category">
                 {{ category }}
               </option>
             </select>
-            <select
-              v-model="stockFilter"
+            <select v-model="stockFilter"
               class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              @change="filterProducts"
-            >
+              @change="filterProducts">
               >
               <option value="">All Stock Status</option>
               <option value="true">In Stock</option>
@@ -81,34 +58,22 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Product
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Price
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Stock
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 SKU
               </th>
-              <th
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -120,46 +85,23 @@
             <tr v-else-if="productStore.products.length === 0">
               <td colspan="6" class="px-6 py-4 text-center text-gray-500">No products found</td>
             </tr>
-            <tr
-              v-for="product in productStore.products"
-              v-else
-              :key="product.id"
-              class="hover:bg-gray-50"
-            >
+            <tr v-for="product in productStore.products" v-else :key="product.id" class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
-                    <img
-                      v-if="product.image_url"
-                      :src="product.image_url"
-                      :alt="product.name"
-                      class="h-10 w-10 rounded-lg object-cover"
-                    />
-                    <div
-                      v-else
-                      class="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center"
-                    >
-                      <svg
-                        class="h-6 w-6 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
+                    <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
+                      class="h-10 w-10 rounded-lg object-cover" />
+                    <div v-else class="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
+                      <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                   </div>
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
-                    <div
-                      class="text-sm text-gray-500 html-content"
-                      v-html="truncateHtml(product.description || '', 60)"
-                    ></div>
+                    <div class="text-sm text-gray-500 html-content"
+                      v-html="truncateHtml(product.description || '', 60)"></div>
                   </div>
                 </div>
               </td>
@@ -168,22 +110,18 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 €{{ product.price.toFixed(2) }}
-                <span
-                  v-if="product.original_price && product.original_price > product.price"
-                  class="text-xs text-gray-500 line-through ml-1"
-                >
+                <span v-if="product.original_price && product.original_price > product.price"
+                  class="text-xs text-gray-500 line-through ml-1">
                   €{{ product.original_price.toFixed(2) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="[
-                    (product.inventory?.stock ?? 0) > 0
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800',
-                    'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                  ]"
-                >
+                <span :class="[
+                  (product.inventory?.stock ?? 0) > 0
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800',
+                  'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
+                ]">
                   {{ (product.inventory?.stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock' }}
                 </span>
               </td>
@@ -191,10 +129,7 @@
                 {{ product.inventory?.shopify_variant_id || '-' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  class="text-blue-600 hover:text-blue-900 mr-3"
-                  @click="editProduct(product)"
-                >
+                <button class="text-blue-600 hover:text-blue-900 mr-3" @click="editProduct(product)">
                   Edit
                 </button>
                 <button class="text-red-600 hover:text-red-900" @click="confirmDelete(product)">
@@ -218,30 +153,22 @@
           </div>
           <div class="flex items-center space-x-2">
             <!-- First Page -->
-            <button
-              :disabled="productStore.currentPage === 1"
-              :class="[
-                productStore.currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50',
-                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
-              ]"
-              @click="goToPage(1)"
-            >
+            <button :disabled="productStore.currentPage === 1" :class="[
+              productStore.currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50',
+              'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
+            ]" @click="goToPage(1)">
               First
             </button>
 
             <!-- Previous Page -->
-            <button
-              :disabled="productStore.currentPage === 1"
-              :class="[
-                productStore.currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50',
-                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
-              ]"
-              @click="goToPage(productStore.currentPage - 1)"
-            >
+            <button :disabled="productStore.currentPage === 1" :class="[
+              productStore.currentPage === 1
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50',
+              'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
+            ]" @click="goToPage(productStore.currentPage - 1)">
               Previous
             </button>
 
@@ -251,46 +178,34 @@
                 <!-- Ellipsis -->
                 <span v-if="page === -1" class="px-2 text-gray-500">...</span>
                 <!-- Page Button -->
-                <button
-                  v-else
-                  :class="[
-                    page === productStore.currentPage
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300',
-                    'px-3 py-1 border rounded-md text-sm font-medium',
-                  ]"
-                  @click="goToPage(page)"
-                >
+                <button v-else :class="[
+                  page === productStore.currentPage
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300',
+                  'px-3 py-1 border rounded-md text-sm font-medium',
+                ]" @click="goToPage(page)">
                   {{ page }}
                 </button>
               </template>
             </div>
 
             <!-- Next Page -->
-            <button
-              :disabled="productStore.currentPage === productStore.totalPages"
-              :class="[
-                productStore.currentPage === productStore.totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50',
-                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
-              ]"
-              @click="goToPage(productStore.currentPage + 1)"
-            >
+            <button :disabled="productStore.currentPage === productStore.totalPages" :class="[
+              productStore.currentPage === productStore.totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50',
+              'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
+            ]" @click="goToPage(productStore.currentPage + 1)">
               Next
             </button>
 
             <!-- Last Page -->
-            <button
-              :disabled="productStore.currentPage === productStore.totalPages"
-              :class="[
-                productStore.currentPage === productStore.totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50',
-                'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
-              ]"
-              @click="goToPage(productStore.totalPages)"
-            >
+            <button :disabled="productStore.currentPage === productStore.totalPages" :class="[
+              productStore.currentPage === productStore.totalPages
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-white text-gray-700 hover:bg-gray-50',
+              'px-3 py-1 border border-gray-300 rounded-md text-sm font-medium',
+            ]" @click="goToPage(productStore.totalPages)">
               Last
             </button>
           </div>
@@ -299,11 +214,8 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div
-      v-if="productToDelete"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      @click="productToDelete = null"
-    >
+    <div v-if="productToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      @click="productToDelete = null">
       <div class="absolute inset-0 bg-black bg-opacity-50"></div>
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full" @click.stop>
         <div class="p-6">
@@ -313,16 +225,12 @@
             undone.
           </p>
           <div class="flex justify-end space-x-4">
-            <button
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              @click="productToDelete = null"
-            >
+            <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              @click="productToDelete = null">
               > Cancel
             </button>
-            <button
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-              @click="deleteProduct"
-            >
+            <button class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              @click="deleteProduct">
               > Delete
             </button>
           </div>
@@ -335,14 +243,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useProductStore } from '../../../stores/products';
-import type { Product } from '../../../types';
+import type { Product, ProductWithRelations } from '../../../types';
 import ProductForm from '../ProductForm.vue';
 import { truncateHtml } from '../../../utils/htmlUtils';
 
 const productStore = useProductStore();
 
 const showAddForm = ref(false);
-const editingProduct = ref<Product | null>(null);
+const editingProduct = ref<ProductWithRelations | null>(null);
 const productToDelete = ref<Product | null>(null);
 const searchTerm = ref('');
 const selectedCategory = ref('');
@@ -419,8 +327,12 @@ const handleSave = () => {
   productStore.fetchProducts();
 };
 
-const editProduct = (product: Product) => {
-  editingProduct.value = product;
+const editProduct = async (product: Product) => {
+  // Fetch full product details with images, specifications, etc.
+  const fullProduct = await productStore.getProductById(product.id);
+  if (fullProduct) {
+    editingProduct.value = fullProduct;
+  }
 };
 
 const confirmDelete = (product: Product) => {

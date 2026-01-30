@@ -1,5 +1,5 @@
 import type { Environment, EmailResponse } from '../types/email';
-import { createSendGridClient } from '../utils/sendgrid';
+import { createResendClient } from '../utils/resend';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -134,17 +134,18 @@ This email was sent to ${to} because you created an account on 4Tparts B2B.
 If you didn't create this account, please contact us immediately.
     `;
 
-    // Send email via SendGrid
-    const sendGridClient = createSendGridClient(env);
-    const result = await sendGridClient.sendEmail(
+    // Send email via Resend
+    const resendClient = createResendClient(env);
+    const result = await resendClient.sendEmail(
       to,
       'Welcome to 4Tparts B2B Platform',
       htmlContent,
       textContent,
       {
-        clickTracking: true, // Can track clicks for marketing purposes
-        emailType: 'welcome',
-        categories: ['b2b-transactional', 'welcome'],
+        tags: [
+          { name: 'type', value: 'welcome' },
+          { name: 'platform', value: 'b2b' },
+        ],
       }
     );
 

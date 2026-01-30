@@ -419,10 +419,10 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useProductStore } from '../../stores/products';
 import { useCategoryStore } from '../../stores/categories';
 import ImageUpload from './ImageUpload.vue';
-import type { ProductWithDetails } from '@b2b/db';
+import type { ProductWithRelations } from '../../types';
 
 interface Props {
-  product?: ProductWithDetails | null;
+  product?: ProductWithRelations | null;
 }
 
 const props = defineProps<Props>();

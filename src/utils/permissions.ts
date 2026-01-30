@@ -18,7 +18,7 @@ export const usePermissions = () => {
       return false;
     }
 
-    const userPermissions = rolePermissions[authStore.userProfile.role];
+    const userPermissions = rolePermissions[authStore.userProfile.role as UserRole];
     return userPermissions.includes(permission);
   };
 

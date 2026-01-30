@@ -6,9 +6,9 @@
  */
 
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { Env } from '../../types';
 import type { EmailQueueMessage } from '@b2b/types';
-import { adminMiddleware, type AuthenticatedUser } from '../middleware/auth';
+import { adminMiddleware, type AuthenticatedUser } from '../../middleware/auth';
 import { createDb } from '@b2b/db';
 import {
   getUsers,
@@ -19,8 +19,9 @@ import {
   updateUserPassword,
 } from '@b2b/db/operations/users';
 import { deleteUserSessions } from '@b2b/db/operations/sessions';
-import { hashPassword } from '../utils/password';
-import invoicesRoutes from './admin/invoices.routes';
+import { hashPassword } from '../../utils/password';
+import { notifyUserVerified } from '../../services/notifications.service';
+import invoicesRoutes from './invoices.routes';
 
 const admin = new Hono<{ Bindings: Env; Variables: { user: AuthenticatedUser } }>();
 
@@ -318,36 +319,14 @@ admin.post('/users/:userId/verify', async (c) => {
     }
 
     // Send Telegram notification (NON-BLOCKING)
-    try {
-      const telegramMessage = `
-✅ <b>User Verified</b>
-
-👤 <b>User:</b> ${verifiedUser.first_name || ''} ${verifiedUser.last_name || ''}
-🏢 <b>Company:</b> ${verifiedUser.company_name || 'N/A'}
-📧 <b>Email:</b> ${verifiedUser.email}
-${verifiedUser.phone ? `📞 <b>Phone:</b> ${verifiedUser.phone}` : ''}
-${verifiedUser.btw_number ? `🔖 <b>VAT:</b> ${verifiedUser.btw_number}` : ''}
-
-<i>User has been verified and notified via email.</i>
-      `.trim();
-
-      const telegramRequest = new Request('https://dummy/notifications/custom', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Token': c.env.SERVICE_SECRET,
-        },
-        body: JSON.stringify({
-          message: telegramMessage,
-          parseMode: 'HTML',
-        }),
-      });
-
-      await c.env.TELEGRAM_SERVICE.fetch(telegramRequest);
-      console.log('✅ [Admin] Telegram notification sent');
-    } catch (telegramError) {
-      console.error('⚠️ [Admin] Failed to send Telegram notification:', telegramError);
-    }
+    notifyUserVerified(c.env, {
+      email: verifiedUser.email,
+      firstName: verifiedUser.first_name ?? undefined,
+      lastName: verifiedUser.last_name ?? undefined,
+      companyName: verifiedUser.company_name ?? undefined,
+      phone: verifiedUser.phone ?? undefined,
+      btwNumber: verifiedUser.btw_number ?? undefined,
+    });
 
     // Map to response format
     const userResponse = {

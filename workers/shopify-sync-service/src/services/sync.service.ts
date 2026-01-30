@@ -56,19 +56,36 @@ export async function syncToShopify(
 /**
  * Process Shopify inventory update webhook
  * Shopify is the source of truth - update our stock to match
+ * @param env - Environment bindings
+ * @param variantId - Shopify variant ID (used if productId not provided)
+ * @param newAvailable - New stock level from Shopify
+ * @param webhookId - Webhook ID for logging
+ * @param productId - Optional: specific product ID to update (for multi-product webhooks)
  */
 export async function handleShopifyInventoryUpdate(
   env: Env,
   variantId: string,
   newAvailable: number,
-  webhookId: string
+  webhookId: string,
+  productId?: string
 ): Promise<void> {
-  console.log(`📥 Shopify webhook: variant=${variantId}, available=${newAvailable}`);
+  console.log(
+    `📥 Shopify webhook: variant=${variantId}, available=${newAvailable}, productId=${productId || 'auto-detect'}`
+  );
 
-  const inventory = await getInventoryByShopifyVariantId(env.DB, variantId);
+  let inventory;
+
+  // If productId is provided, use it directly; otherwise look up by variant ID
+  if (productId) {
+    inventory = await getInventoryByProductId(env.DB, productId);
+  } else {
+    inventory = await getInventoryByShopifyVariantId(env.DB, variantId);
+  }
 
   if (!inventory) {
-    console.warn(`⚠️ No B2B product linked to Shopify variant ${variantId}`);
+    console.warn(
+      `⚠️ No B2B product found: ${productId ? `productId=${productId}` : `variantId=${variantId}`}`
+    );
     return;
   }
 

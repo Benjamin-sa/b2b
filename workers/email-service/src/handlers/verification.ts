@@ -1,5 +1,5 @@
 import type { Environment, EmailResponse } from '../types/email';
-import { createSendGridClient } from '../utils/sendgrid';
+import { createResendClient } from '../utils/resend';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -22,7 +22,7 @@ export async function sendVerificationEmail(
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #ffffff;">
         <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden;">
-          Great news! Your 4Tparts B2B account has been approved.
+          Your 4Tparts B2B account has been approved and is ready to use.
         </div>
         
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa;">
@@ -33,7 +33,7 @@ export async function sendVerificationEmail(
                 <tr>
                   <td style="padding: 40px 40px 20px 40px; text-align: center;">
                     <h1 style="margin: 0; color: #466478; font-size: 24px; font-weight: bold;">
-                      Account Approved!
+                      Account Approved
                     </h1>
                   </td>
                 </tr>
@@ -103,11 +103,11 @@ export async function sendVerificationEmail(
     `;
 
     const textContent = `
-4Tparts B2B - Account Verified!
+4Tparts B2B - Account Approved
 
 Hello ${userName},
 
-Excellent news! Your 4Tparts B2B account for ${companyName} has been successfully verified and approved by our team.
+Your 4Tparts B2B account for ${companyName} has been successfully verified and approved by our team.
 
 You now have full access to our B2B platform, including exclusive pricing, bulk ordering capabilities, and priority support.
 
@@ -122,7 +122,7 @@ WHAT YOU CAN DO NOW:
 
 If you have any questions or need assistance getting started, our dedicated B2B support team is here to help at support@4tparts.com.
 
-Welcome to 4Tparts B2B!
+Welcome to 4Tparts B2B,
 The 4Tparts Team
 
 ---
@@ -130,16 +130,19 @@ This verification email was sent to ${to} for your 4Tparts B2B account.
 You're receiving this because your account was recently approved.
     `;
 
-    const sendGridClient = createSendGridClient(env);
-    const result = await sendGridClient.sendEmail(
+    // Send email via Resend
+    const resendClient = createResendClient(env);
+    const result = await resendClient.sendEmail(
       to,
-      'Verify Your Email - 4Tparts B2B',
+      'Your 4Tparts B2B Account Has Been Approved',
       htmlContent,
       textContent,
       {
-        clickTracking: false, // CRITICAL: Disable click tracking to preserve verification URL
-        emailType: 'email-verification',
-        categories: ['b2b-transactional', 'email-verification'],
+        tags: [
+          { name: 'type', value: 'account-approval' },
+          { name: 'platform', value: 'b2b' },
+        ],
+        replyTo: 'support@4tparts.com',
       }
     );
 

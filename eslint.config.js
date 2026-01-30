@@ -30,6 +30,14 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'max-depth': ['warn', 4], // limit nested blocks
+      'max-lines-per-function': ['warn', { max: 120, skipComments: true, skipBlankLines: true }],
+      'max-statements': ['warn', 30], // limit statements per function
+      complexity: ['warn', 8], // cyclomatic complexity
+      'max-params': ['warn', 4], // limit function params
+      'max-nested-callbacks': ['warn', 3],
+      'max-lines': ['warn', { max: 400, skipComments: true, skipBlankLines: true }],
+      '@typescript-eslint/no-unused-function': 'warn',
       'vue/no-mutating-props': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
       'no-useless-catch': 'warn',

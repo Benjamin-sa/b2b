@@ -1,5 +1,5 @@
 import type { Environment, EmailResponse } from '../types/email';
-import { createSendGridClient } from '../utils/sendgrid';
+import { createResendClient } from '../utils/resend';
 
 /**
  * Core email sending logic - used by both HTTP handler and queue consumer
@@ -130,16 +130,18 @@ This password reset was requested for ${to} on 4Tparts B2B.
 If you didn't request this, please contact support immediately.
     `;
 
-    const sendGridClient = createSendGridClient(env);
-    const result = await sendGridClient.sendEmail(
+    // Send email via Resend
+    const resendClient = createResendClient(env);
+    const result = await resendClient.sendEmail(
       to,
       'Password Reset - 4Tparts B2B',
       htmlContent,
       textContent,
       {
-        clickTracking: false, // CRITICAL: Disable click tracking to preserve reset URL
-        emailType: 'password-reset',
-        categories: ['b2b-transactional', 'password-reset'],
+        tags: [
+          { name: 'type', value: 'password-reset' },
+          { name: 'platform', value: 'b2b' },
+        ],
       }
     );
 

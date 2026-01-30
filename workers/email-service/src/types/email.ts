@@ -7,7 +7,7 @@ export interface EmailResponse {
 }
 
 export interface Environment {
-  SENDGRID_API_KEY: string;
+  RESEND_API_KEY: string;
   SERVICE_SECRET: string; // Service-to-service authentication
   ENVIRONMENT: string;
   FRONTEND_URL: string;
