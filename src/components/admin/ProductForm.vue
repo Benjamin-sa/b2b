@@ -8,6 +8,16 @@
       <!-- Images -->
       <div>
         <h3 class="text-lg font-semibold mb-4">Images</h3>
+        <!-- Image count info when editing -->
+        <div v-if="isEditing && originalImages.length > 0 && !imagesModified"
+          class="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+          📷 {{ originalImages.length }} existing image(s) loaded. Images will be preserved unless you add, remove, or
+          reorder them.
+        </div>
+        <div v-if="imagesModified"
+          class="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+          ⚠️ Images have been modified. The new image set will be saved.
+        </div>
         <ImageUpload v-model="form.images" :max-images="8" :max-file-size="10" />
       </div>
 
@@ -415,7 +425,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { useProductStore } from '../../stores/products';
 import { useCategoryStore } from '../../stores/categories';
 import ImageUpload from './ImageUpload.vue';
@@ -434,6 +444,10 @@ const emit = defineEmits<{
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const loading = ref(false);
+
+// Track if images were explicitly modified by the user
+const imagesModified = ref(false);
+const originalImages = ref<string[]>([]);
 
 // Get available categories sorted by display order
 const availableCategories = computed(() => {
@@ -515,6 +529,16 @@ onMounted(async () => {
   await categoryStore.fetchCategories();
 
   if (props.product) {
+    // Build images array from product data - prioritize images array, fallback to image_url
+    const productImages = props.product.images && props.product.images.length > 0
+      ? [...props.product.images]
+      : props.product.image_url
+        ? [props.product.image_url]
+        : [];
+
+    // Store original images for comparison (to detect if user made changes)
+    originalImages.value = [...productImages];
+
     Object.assign(form, {
       id: props.product.id,
       name: props.product.name,
@@ -527,7 +551,7 @@ onMounted(async () => {
       brand: props.product.brand || '',
       part_number: props.product.part_number || '',
       b2b_sku: props.product.b2b_sku || '', // Custom B2B SKU
-      images: props.product.images || [],
+      images: productImages,
       specifications: props.product.specifications || [],
       unit: props.product.unit || '',
       min_order_quantity: props.product.min_order_quantity || 1,
@@ -541,6 +565,8 @@ onMounted(async () => {
       shopify_inventory_item_id: props.product.inventory?.shopify_inventory_item_id || '',
       shopify_location_id: props.product.inventory?.shopify_location_id || '',
     });
+
+    console.log('[ProductForm] Loaded product images:', productImages);
 
     // Enable inventory linking if product has inventory data
     enableInventoryLinking.value = !!(
@@ -568,6 +594,24 @@ onMounted(async () => {
     }
   }
 });
+
+// Watch for image changes to track if user modified them
+watch(
+  () => form.images,
+  (newImages) => {
+    // Compare with original images to detect changes
+    const newSet = new Set(newImages);
+    const originalSet = new Set(originalImages.value);
+
+    // Mark as modified if the sets are different
+    if (newImages.length !== originalImages.value.length ||
+      newImages.some(img => !originalSet.has(img)) ||
+      originalImages.value.some(img => !newSet.has(img))) {
+      imagesModified.value = true;
+    }
+  },
+  { deep: true }
+);
 
 const addTag = () => {
   form.tags.push('');
@@ -790,10 +834,19 @@ const submitForm = async () => {
       category_id: form.category_id,
       specifications: cleanedSpecs,
       tags: cleanedTags,
-      image_url: form.images[0] || '',
-      images: form.images,
       coming_soon: form.coming_soon,
     };
+
+    // Only include images if:
+    // 1. This is a new product (always include images)
+    // 2. OR images were explicitly modified by the user
+    if (!props.product || imagesModified.value) {
+      productData.image_url = form.images[0] || '';
+      productData.images = form.images;
+      console.log('[ProductForm] Including images in update:', form.images);
+    } else {
+      console.log('[ProductForm] Images not modified, preserving existing images');
+    }
 
     // INVENTORY LOGIC:
     // - Shopify-linked: Stock comes from Shopify search, stored initially, then webhook updates

@@ -179,15 +179,15 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition;
     }
-    // For navigating to Products from ProductDetail, let the component handle scroll restoration
+    // For navigating to Products from ProductDetail, the component handles scroll via KeepAlive + onActivated
     if (to.name === 'Products' && from.name === 'ProductDetail') {
       return false; // Don't scroll, let component handle it
     }
     if (to.name === 'CategoryProducts' && from.name === 'ProductDetail') {
       return false; // Don't scroll, let component handle it
     }
-    // Default: scroll to top
-    return { top: 0 };
+    // Default: scroll to top smoothly
+    return { top: 0, behavior: 'instant' };
   },
 });
 

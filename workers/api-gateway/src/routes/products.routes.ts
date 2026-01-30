@@ -17,8 +17,11 @@ import {
   getProductWithDetails,
   getProductsByCategory,
   addProductImage,
+  deleteProductImages,
   setProductTags,
   setProductDimensions,
+  addProductSpecification,
+  deleteProductSpecifications,
   type GetProductsOptions,
 } from '@b2b/db/operations';
 import { getInventoryByProductId, upsertInventory } from '@b2b/db/operations';
@@ -490,7 +493,72 @@ products.patch('/:id', async (c) => {
     delete updateData.shopify_location_id;
     delete updateData.sync_enabled;
 
+    // Extract related data fields (they go to separate tables, not products table)
+    const imagesToUpdate = body.images;
+    const tagsToUpdate = body.tags;
+    const specsToUpdate = body.specifications;
+    const dimensionsToUpdate = body.dimensions;
+
+    delete updateData.images;
+    delete updateData.tags;
+    delete updateData.specifications;
+    delete updateData.dimensions;
+
+    // If images are being updated, ensure image_url is set to the first image
+    if (imagesToUpdate !== undefined && Array.isArray(imagesToUpdate)) {
+      updateData.image_url = imagesToUpdate[0] || null;
+    }
+
     const updated = await updateProduct(db, productId, updateData);
+
+    // Update images if provided (only if frontend explicitly sent images)
+    if (imagesToUpdate !== undefined && Array.isArray(imagesToUpdate)) {
+      // Delete existing images first
+      await deleteProductImages(db, productId);
+      // Add new images
+      for (let i = 0; i < imagesToUpdate.length; i++) {
+        if (imagesToUpdate[i]) {
+          await addProductImage(db, {
+            id: crypto.randomUUID(),
+            product_id: productId,
+            image_url: imagesToUpdate[i],
+            sort_order: i,
+          });
+        }
+      }
+      console.log(`[Products] Updated ${imagesToUpdate.length} images for product ${productId}`);
+    }
+
+    // Update tags if provided
+    if (tagsToUpdate !== undefined && Array.isArray(tagsToUpdate)) {
+      await setProductTags(db, productId, tagsToUpdate);
+    }
+
+    // Update specifications if provided
+    if (specsToUpdate !== undefined && Array.isArray(specsToUpdate)) {
+      await deleteProductSpecifications(db, productId);
+      for (const spec of specsToUpdate) {
+        if (spec.key && spec.value) {
+          await addProductSpecification(db, {
+            id: crypto.randomUUID(),
+            product_id: productId,
+            spec_key: spec.key,
+            spec_value: spec.value,
+          });
+        }
+      }
+    }
+
+    // Update dimensions if provided
+    if (dimensionsToUpdate) {
+      await setProductDimensions(db, {
+        product_id: productId,
+        length: dimensionsToUpdate.length || 0,
+        width: dimensionsToUpdate.width || 0,
+        height: dimensionsToUpdate.height || 0,
+        unit: dimensionsToUpdate.unit || 'cm',
+      });
+    }
 
     // Update inventory record with Shopify linkage and/or stock
     const hasInventoryUpdate =

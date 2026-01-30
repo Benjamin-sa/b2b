@@ -3,6 +3,7 @@
 ## ✅ Changes Made to Fix Spam Issues
 
 ### 1. Email Content Fixes (Completed)
+
 - ✅ Fixed subject-content mismatch: Changed "Verify Your Email" → "Your 4Tparts B2B Account Has Been Approved"
 - ✅ Reduced exclamation marks (spam trigger)
 - ✅ Improved professional tone
@@ -15,24 +16,30 @@
 **You MUST configure these DNS records for your sending domain:**
 
 #### SPF Record
+
 Add this TXT record to `4tparts.com`:
+
 ```
 v=spf1 include:_spf.resend.com ~all
 ```
 
 #### DKIM Record
+
 1. Log into Resend Dashboard → Settings → Domains
 2. Add `4tparts.com` as a verified domain
 3. Copy the DKIM TXT records provided by Resend
 4. Add them to your DNS (usually 3 records: `resend._domainkey`, `resend2._domainkey`, etc.)
 
 #### DMARC Record
+
 Add this TXT record to `_dmarc.4tparts.com`:
+
 ```
 v=DMARC1; p=quarantine; rua=mailto:dmarc@4tparts.com; pct=100; adkim=s; aspf=s
 ```
 
 **Check current status:**
+
 ```bash
 # Check SPF
 dig TXT 4tparts.com | grep spf
@@ -53,6 +60,7 @@ dig TXT _dmarc.4tparts.com
 5. Wait for verification (can take up to 72 hours)
 
 **Current sender**: `noreply@4tparts.com`
+
 - Change this to a real inbox like `no-reply@4tparts.com` and set up auto-responder
 
 ### 4. Email Warm-up Strategy
@@ -64,6 +72,7 @@ dig TXT _dmarc.4tparts.com
 **Week 5+**: Normal volume
 
 **Tips:**
+
 - Start with most engaged users (those who opened previous emails)
 - Monitor bounce rates (keep < 2%)
 - Monitor complaint rates (keep < 0.1%)
@@ -71,6 +80,7 @@ dig TXT _dmarc.4tparts.com
 ### 5. Additional Improvements
 
 #### A. Add Unsubscribe Link (Transactional Emails)
+
 ```typescript
 // In verification.ts, add to HTML:
 <p style="font-size: 12px; color: #999;">
@@ -85,11 +95,13 @@ headers: {
 ```
 
 #### B. Monitor Email Reputation
+
 - Use https://www.mail-tester.com/ to test emails (score should be > 8/10)
 - Check blacklists: https://mxtoolbox.com/blacklists.aspx
 - Monitor Resend dashboard for bounces/complaints
 
 #### C. Improve Content Quality
+
 - ✅ Use more text than images (currently text-heavy, good)
 - ✅ Avoid spam trigger words: "Free", "Click here", "Act now", excessive caps
 - ✅ Include physical address in footer (for CAN-SPAM compliance)
@@ -128,11 +140,13 @@ curl -X POST https://b2b-email-service.YOUR-SUBDOMAIN.workers.dev/send \
 ### 7. Monitoring & Alerts
 
 **Set up Cloudflare alerts for:**
+
 - Email bounce rate > 2%
 - Email complaint rate > 0.1%
 - Delivery failures > 5%
 
 **Resend Dashboard:**
+
 - Monitor open rates (should be > 20% for transactional emails)
 - Check bounce types (hard vs. soft)
 - Watch for spam complaints
@@ -145,12 +159,12 @@ Add this footer to all emails:
 <tr>
   <td style="padding: 20px 40px; border-top: 1px solid #eee; text-align: center;">
     <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">
-      4Tparts B.V.<br>
-      Your Company Address<br>
+      4Tparts B.V.<br />
+      Your Company Address<br />
       City, Postal Code, Netherlands
     </p>
     <p style="margin: 0; font-size: 12px; color: #666;">
-      This email was sent to ${to} for your 4Tparts B2B account.<br>
+      This email was sent to ${to} for your 4Tparts B2B account.<br />
       You're receiving this because your account was recently approved.
     </p>
   </td>
@@ -159,18 +173,18 @@ Add this footer to all emails:
 
 ## 📊 Current Status
 
-| Item | Status | Priority |
-|------|--------|----------|
-| Subject-content match | ✅ Fixed | High |
-| Exclamation marks reduced | ✅ Fixed | Medium |
-| Reply-To header | ✅ Added | Medium |
-| SPF record | ⚠️ Action needed | **Critical** |
-| DKIM records | ⚠️ Action needed | **Critical** |
-| DMARC policy | ⚠️ Action needed | **Critical** |
-| Domain verification | ⚠️ Action needed | **Critical** |
-| Email warm-up | ⏳ Pending | High |
-| Physical address | ❌ Missing | Medium |
-| Unsubscribe link | ❌ Missing | Low |
+| Item                      | Status           | Priority     |
+| ------------------------- | ---------------- | ------------ |
+| Subject-content match     | ✅ Fixed         | High         |
+| Exclamation marks reduced | ✅ Fixed         | Medium       |
+| Reply-To header           | ✅ Added         | Medium       |
+| SPF record                | ⚠️ Action needed | **Critical** |
+| DKIM records              | ⚠️ Action needed | **Critical** |
+| DMARC policy              | ⚠️ Action needed | **Critical** |
+| Domain verification       | ⚠️ Action needed | **Critical** |
+| Email warm-up             | ⏳ Pending       | High         |
+| Physical address          | ❌ Missing       | Medium       |
+| Unsubscribe link          | ❌ Missing       | Low          |
 
 ## 🚀 Next Steps (DO THIS NOW)
 

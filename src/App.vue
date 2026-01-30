@@ -96,7 +96,10 @@ const onAfterEnter = () => {
               @before-enter="onBeforeEnter"
               @after-enter="onAfterEnter"
             >
-              <component :is="Component" :key="slotRoute.path" />
+              <!-- KeepAlive caches Products/CategoryProducts views for smooth back navigation -->
+              <KeepAlive :include="['Products', 'CategoryProducts']">
+                <component :is="Component" :key="slotRoute.fullPath" />
+              </KeepAlive>
             </Transition>
           </router-view>
         </div>

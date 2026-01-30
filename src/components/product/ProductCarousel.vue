@@ -5,34 +5,18 @@
       <h2 class="text-2xl font-bold text-gray-900 text-center w-full">{{ title }}</h2>
       <div class="flex items-center space-x-2">
         <!-- Navigation buttons -->
-        <button
-          :disabled="!canScrollLeft"
+        <button :disabled="!canScrollLeft"
           class="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          :class="canScrollLeft ? 'text-primary-600 hover:text-primary-700' : 'text-gray-400'"
-          @click="scrollLeft"
-        >
+          :class="canScrollLeft ? 'text-primary-600 hover:text-primary-700' : 'text-gray-400'" @click="scrollLeft">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <button
-          :disabled="!canScrollRight"
+        <button :disabled="!canScrollRight"
           class="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          :class="canScrollRight ? 'text-primary-600 hover:text-primary-700' : 'text-gray-400'"
-          @click="scrollRight"
-        >
+          :class="canScrollRight ? 'text-primary-600 hover:text-primary-700' : 'text-gray-400'" @click="scrollRight">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5l7 7-7 7"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
@@ -58,26 +42,20 @@
 
     <!-- Products carousel -->
     <div v-else class="relative">
-      <div
-        ref="carouselContainer"
-        class="flex overflow-x-auto scrollbar-hide space-x-4 pb-4"
-        style="scroll-behavior: smooth"
-        @scroll="updateScrollState"
-      >
+      <div ref="carouselContainer" class="flex overflow-x-auto scrollbar-hide space-x-4 pb-4"
+        style="scroll-behavior: smooth" @scroll="updateScrollState">
         <div v-for="product in products" :key="product.id" class="flex-none w-80 lg:w-72">
           <ProductCard :product="product" @add-to-cart="handleAddToCart" />
         </div>
       </div>
 
       <!-- Gradient overlays for visual scroll indication -->
-      <div
-        v-if="canScrollLeft"
-        class="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10"
-      ></div>
-      <div
-        v-if="canScrollRight"
-        class="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"
-      ></div>
+      <div v-if="canScrollLeft"
+        class="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10">
+      </div>
+      <div v-if="canScrollRight"
+        class="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10">
+      </div>
     </div>
   </div>
 </template>

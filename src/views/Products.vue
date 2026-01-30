@@ -181,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, computed, nextTick } from 'vue';
+import { ref, onMounted, onActivated, watch, reactive, computed, nextTick } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useProductStore } from '../stores/products';
 import { useCategoryStore } from '../stores/categories';
@@ -189,6 +189,11 @@ import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
 import { truncateHtml } from '../utils/htmlUtils';
 import type { ProductFilter, ProductWithRelations } from '../types';
+
+// Define component name for KeepAlive matching
+defineOptions({
+  name: 'Products',
+});
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
@@ -344,39 +349,44 @@ const clearFilters = () => {
 };
 
 // --- Lifecycle ---
+
+// Track if this is the first mount (component created) vs reactivation (coming back)
+const isFirstMount = ref(true);
+
 onMounted(async () => {
   // Load categories first
   await categoryStore.fetchCategories();
 
+  // Fresh navigation - fetch products on first mount
+  if (isFirstMount.value) {
+    applyFiltersAndFetch(false);
+    isFirstMount.value = false;
+  }
+});
+
+// onActivated is called when returning to a KeepAlive cached component
+onActivated(async () => {
   // Check if we're returning from product detail page
   const navState = productStore.getNavigationState();
 
-  if (navState.shouldRestore && navState.filters) {
-    // Restore saved state
-    Object.assign(filters, navState.filters);
-    viewMode.value = navState.viewMode;
-    priceRange.value = navState.priceRange;
-    showAdvancedFilters.value = navState.showAdvancedFilters;
-
-    // Restore scroll position after DOM updates
+  if (navState.shouldRestore) {
+    // Restore scroll position smoothly after Vue has updated the DOM
     await nextTick();
-    // Small delay to ensure products are rendered
-    setTimeout(() => {
+    // Use requestAnimationFrame for smooth, jank-free scroll restoration
+    requestAnimationFrame(() => {
       window.scrollTo({
         top: navState.scrollPosition,
         behavior: 'instant',
       });
-    }, 50);
-  } else {
-    // Fresh navigation - fetch products
-    applyFiltersAndFetch(false);
+    });
   }
 });
 
-// Save state before navigating to product detail
+// Save scroll position before navigating to product detail
 onBeforeRouteLeave((to, _from, next) => {
   if (to.name === 'ProductDetail') {
-    // Save current state before navigating to product detail
+    // Save scroll position before navigating to product detail
+    // Filters/viewMode are preserved by KeepAlive, only need scroll position
     productStore.saveNavigationState(
       { ...filters },
       viewMode.value,
