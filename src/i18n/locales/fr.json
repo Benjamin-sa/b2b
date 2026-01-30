@@ -145,6 +145,12 @@
       "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
       "missingFields": "Veuillez remplir tous les champs obligatoires.",
       "serverError": "Une erreur de serveur s'est produite. Veuillez réessayer plus tard."
+    },
+    "validation": {
+      "vatRequired": "VAT/BTW number is required",
+      "vatTooShort": "VAT/BTW number is too short",
+      "vatUnknownCountry": "Unknown country code: {code}. Only EU countries are allowed.",
+      "vatInvalidFormat": "Invalid format for {country}. Expected format: {format}"
     }
   },
   "products": {
@@ -253,9 +259,28 @@
       "adding": "Ajout en cours...",
       "comingSoon": "Bientôt disponible",
       "addedToCart": "Ajouté au panier ✓",
-      "accountVerificationRequired": "Vérification du compte requise"
+      "accountVerificationRequired": "Vérification du compte requise",
+      "barcode": "Barcode"
     },
-    "loadMore": "Charger plus de produits"
+    "loadMore": "Charger plus de produits",
+    "fetchErrorTitle": "Error",
+    "fetchError": "Failed to fetch products",
+    "createSuccessTitle": "Success",
+    "createSuccess": "Product created successfully",
+    "createErrorTitle": "Error",
+    "createError": "Failed to create product",
+    "updateSuccessTitle": "Success",
+    "updateSuccess": "Product updated successfully",
+    "updateErrorTitle": "Error",
+    "updateError": "Failed to update product",
+    "deleteSuccessTitle": "Success",
+    "deleteSuccess": "Product deleted successfully",
+    "deleteErrorTitle": "Error",
+    "deleteError": "Failed to delete product",
+    "stockUpdateSuccessTitle": "Success",
+    "stockUpdateSuccess": "Stock updated successfully",
+    "stockUpdateErrorTitle": "Error",
+    "stockUpdateError": "Failed to update stock"
   },
   "common": {
     "actions": {
@@ -288,7 +313,8 @@
       "error": "Une erreur est survenue",
       "success": "Succès",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet article ?"
-    }
+    },
+    "loading": "Loading..."
   },
   "profile": {
     "header": {
@@ -596,5 +622,190 @@
     "goBack": "Retour",
     "helpfulLinks": "Liens Utiles",
     "needHelp": "Besoin d'aide ? Contactez-nous à"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "4Tparts B2B Platform ('we', 'us', or 'our') is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our B2B e-commerce platform."
+    },
+    "dataCollection": {
+      "title": "Information We Collect",
+      "personal": {
+        "title": "Personal Information",
+        "content": "We collect information that you provide directly to us, including: name, email address, company name, VAT/BTW number, business address, phone number, and payment information."
+      },
+      "automatic": {
+        "title": "Automatically Collected Information",
+        "content": "When you access our platform, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and cookies installed on your device."
+      },
+      "business": {
+        "title": "Business Information",
+        "content": "As a B2B platform, we collect business-related information such as company registration details, VAT numbers, order history, and transaction data necessary for invoice generation and tax compliance."
+      }
+    },
+    "dataUse": {
+      "title": "How We Use Your Information",
+      "purposes": {
+        "title": "We use the information we collect to:",
+        "item1": "Process and fulfill your orders and invoices",
+        "item2": "Verify your business credentials and VAT registration",
+        "item3": "Communicate with you about products, services, and promotions",
+        "item4": "Improve and optimize our platform",
+        "item5": "Comply with legal obligations and tax requirements",
+        "item6": "Prevent fraud and maintain platform security"
+      }
+    },
+    "dataSharing": {
+      "title": "Information Sharing and Disclosure",
+      "intro": "We may share your information in the following circumstances:",
+      "service": "With service providers who perform services on our behalf (payment processors, shipping companies, email services)",
+      "legal": "When required by law or to respond to legal processes",
+      "business": "In connection with a business transfer, merger, or acquisition",
+      "consent": "With your consent or at your direction"
+    },
+    "gdpr": {
+      "title": "GDPR Compliance",
+      "intro": "As a European business, we comply with the General Data Protection Regulation (GDPR). You have the right to:",
+      "access": "Access your personal data",
+      "rectify": "Rectify inaccurate personal data",
+      "erase": "Request erasure of your personal data",
+      "restrict": "Restrict processing of your personal data",
+      "portability": "Data portability",
+      "object": "Object to processing of your personal data",
+      "contact": "To exercise these rights, please contact us at privacy@4Tparts.com"
+    },
+    "cookies": {
+      "title": "Cookies and Tracking",
+      "content": "We use cookies and similar tracking technologies to track activity on our platform. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our platform."
+    },
+    "security": {
+      "title": "Data Security",
+      "content": "We implement appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage. However, no method of transmission over the Internet is 100% secure."
+    },
+    "retention": {
+      "title": "Data Retention",
+      "content": "We retain your personal data for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required by law (e.g., tax and accounting requirements)."
+    },
+    "contact": {
+      "title": "Contact Us",
+      "content": "If you have questions about this Privacy Policy, please contact us at:",
+      "email": "Email: privacy@4Tparts.com",
+      "phone": "Phone: +32 (0) 47 21 2118"
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "Welcome to 4Tparts B2B Platform. These Terms of Service ('Terms') govern your access to and use of our B2B e-commerce platform. By accessing or using our platform, you agree to be bound by these Terms."
+    },
+    "eligibility": {
+      "title": "Eligibility",
+      "content": "Our platform is intended solely for business-to-business transactions. You must be a registered business entity with a valid VAT/BTW number to use our services. You represent that you have the authority to bind your business to these Terms."
+    },
+    "account": {
+      "title": "Account Registration",
+      "verification": {
+        "title": "Verification",
+        "content": "All accounts are subject to verification. We reserve the right to reject or suspend any account if we cannot verify your business credentials or VAT registration."
+      },
+      "responsibility": {
+        "title": "Account Responsibility",
+        "content": "You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must notify us immediately of any unauthorized use."
+      }
+    },
+    "orders": {
+      "title": "Orders and Pricing",
+      "placement": {
+        "title": "Order Placement",
+        "content": "All orders are subject to acceptance by us. We reserve the right to refuse or cancel any order for any reason, including product availability, errors in pricing or product information, or fraud concerns."
+      },
+      "pricing": {
+        "title": "Pricing",
+        "content": "All prices are listed in Euros (EUR) and exclude VAT unless otherwise stated. Prices are subject to change without notice. The price applicable to your order is the price displayed at the time of order placement."
+      },
+      "minimum": {
+        "title": "Minimum Order Quantities",
+        "content": "Certain products may have minimum order quantities. These requirements will be clearly indicated on the product page."
+      }
+    },
+    "payment": {
+      "title": "Payment Terms",
+      "invoice": {
+        "title": "Invoice Payment",
+        "content": "Payment is made via invoice with standard payment terms of 30 days from the invoice date, unless otherwise agreed in writing. Late payments may be subject to interest charges."
+      },
+      "vat": {
+        "title": "VAT and Taxes",
+        "content": "As a B2B transaction within the EU, VAT will be applied according to applicable regulations. You are responsible for providing accurate VAT information. Reverse charge mechanisms may apply for intra-EU transactions."
+      }
+    },
+    "shipping": {
+      "title": "Shipping and Delivery",
+      "policy": {
+        "title": "Shipping Policy",
+        "content": "Shipping costs are calculated based on weight and destination. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery to the carrier."
+      },
+      "delay": {
+        "title": "Delays",
+        "content": "We are not liable for delays caused by circumstances beyond our control, including but not limited to carrier delays, customs clearance, or force majeure events."
+      }
+    },
+    "returns": {
+      "title": "Returns and Refunds",
+      "policy": {
+        "title": "Return Policy",
+        "content": "Returns are accepted within 14 days of delivery for defective or incorrect products. Products must be unused and in original packaging. Custom orders are not eligible for return."
+      },
+      "process": {
+        "title": "Return Process",
+        "content": "To initiate a return, contact our support team at support@4Tparts.com. Return shipping costs are the responsibility of the customer unless the return is due to our error."
+      }
+    },
+    "warranty": {
+      "title": "Warranties and Disclaimers",
+      "limited": {
+        "title": "Limited Warranty",
+        "content": "Products are provided with manufacturer warranties where applicable. We make no additional warranties beyond those provided by the manufacturer."
+      },
+      "disclaimer": {
+        "title": "Disclaimer",
+        "content": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR PLATFORM AND PRODUCTS ARE PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED."
+      }
+    },
+    "liability": {
+      "title": "Limitation of Liability",
+      "content": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT PAID BY YOU FOR THE SPECIFIC PRODUCT OR SERVICE GIVING RISE TO THE CLAIM."
+    },
+    "intellectual": {
+      "title": "Intellectual Property",
+      "content": "All content on our platform, including text, graphics, logos, and software, is the property of 4Tparts or its licensors and is protected by copyright and trademark laws. You may not use our intellectual property without prior written consent."
+    },
+    "termination": {
+      "title": "Termination",
+      "content": "We reserve the right to suspend or terminate your account at any time for violation of these Terms, fraudulent activity, or any other reason at our sole discretion. Upon termination, you must pay all outstanding invoices."
+    },
+    "governing": {
+      "title": "Governing Law",
+      "content": "These Terms are governed by the laws of Belgium. Any disputes shall be resolved in the courts of Belgium."
+    },
+    "changes": {
+      "title": "Changes to Terms",
+      "content": "We reserve the right to modify these Terms at any time. We will notify you of material changes via email. Your continued use of the platform after changes constitutes acceptance of the modified Terms."
+    },
+    "contact": {
+      "title": "Contact Information",
+      "content": "For questions about these Terms, please contact us at:",
+      "email": "Email: support@4Tparts.com",
+      "phone": "Phone: +32 (0) 47 21 2118"
+    }
+  },
+  "admin": {
+    "userUpdated": "User updated",
+    "userVerificationUpdated": "User verification updated",
+    "userStatusUpdated": "User status updated"
   }
 }

@@ -259,9 +259,28 @@
       "adding": "Toevoegen...",
       "comingSoon": "Binnenkort beschikbaar",
       "addedToCart": "Toegevoegd ✓",
-      "accountVerificationRequired": "Accountverificatie Vereist"
+      "accountVerificationRequired": "Accountverificatie Vereist",
+      "barcode": "Barcode"
     },
-    "loadMore": "Meer Producten Laden"
+    "loadMore": "Meer Producten Laden",
+    "fetchErrorTitle": "Error",
+    "fetchError": "Failed to fetch products",
+    "createSuccessTitle": "Success",
+    "createSuccess": "Product created successfully",
+    "createErrorTitle": "Error",
+    "createError": "Failed to create product",
+    "updateSuccessTitle": "Success",
+    "updateSuccess": "Product updated successfully",
+    "updateErrorTitle": "Error",
+    "updateError": "Failed to update product",
+    "deleteSuccessTitle": "Success",
+    "deleteSuccess": "Product deleted successfully",
+    "deleteErrorTitle": "Error",
+    "deleteError": "Failed to delete product",
+    "stockUpdateSuccessTitle": "Success",
+    "stockUpdateSuccess": "Stock updated successfully",
+    "stockUpdateErrorTitle": "Error",
+    "stockUpdateError": "Failed to update stock"
   },
   "common": {
     "actions": {
@@ -294,7 +313,8 @@
       "error": "Er is een fout opgetreden",
       "success": "Succes",
       "confirmDelete": "Weet u zeker dat u dit item wilt verwijderen?"
-    }
+    },
+    "loading": "Loading..."
   },
   "profile": {
     "header": {
@@ -782,5 +802,10 @@
     "goBack": "Ga Terug",
     "helpfulLinks": "Handige Links",
     "needHelp": "Hulp nodig? Neem contact met ons op via"
+  },
+  "admin": {
+    "userUpdated": "User updated",
+    "userVerificationUpdated": "User verification updated",
+    "userStatusUpdated": "User status updated"
   }
 }
