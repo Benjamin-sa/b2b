@@ -428,6 +428,7 @@
 import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { useProductStore } from '../../stores/products';
 import { useCategoryStore } from '../../stores/categories';
+import { useAuthStore } from '../../stores/auth';
 import ImageUpload from './ImageUpload.vue';
 import type { ProductWithRelations } from '../../types';
 
@@ -443,6 +444,7 @@ const emit = defineEmits<{
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const authStore = useAuthStore();
 const loading = ref(false);
 
 // Track if images were explicitly modified by the user
@@ -715,6 +717,7 @@ const searchShopifyProducts = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.accessToken}`,
       },
     });
 

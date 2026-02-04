@@ -367,7 +367,7 @@ const filterProducts = () => {
   }
 
   if (searchTerm.value.trim()) {
-    filters.search_term = searchTerm.value;
+    filters.search = searchTerm.value;
   }
 
   // Always call fetchProducts with filters (empty object will fetch all)
@@ -390,7 +390,7 @@ const goToPage = (page: number) => {
   }
 
   if (searchTerm.value.trim()) {
-    filters.search_term = searchTerm.value;
+    filters.search = searchTerm.value;
   }
 
   productStore.fetchProducts(filters);

@@ -83,7 +83,7 @@
     "emailRequired": "E-mail Requis",
     "emailRequiredMessage": "Veuillez d'abord entrer votre adresse e-mail pour réinitialiser votre mot de passe.",
     "resetEmailSent": "E-mail de réinitialisation envoyé",
-    "resetEmailSentMessage": "Les instructions de réinitialisation du mot de passe ont été envoyées à {email}. Veuillez vérifier votre e-mail et suivre les instructions.",
+    "resetEmailSentMessage": "Les instructions de réinitialisation du mot de passe ont été envoyées à votre e-mail. Veuillez vérifier votre e-mail et suivre les instructions.",
     "resetFailed": "Échec de la réinitialisation",
     "resetFailedMessage": "Échec de l'envoi de l'e-mail de réinitialisation du mot de passe. Veuillez réessayer ou contacter le support si le problème persiste.",
     "resetYourPassword": "Réinitialisez Votre Mot de Passe",
@@ -145,6 +145,12 @@
       "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
       "missingFields": "Veuillez remplir tous les champs obligatoires.",
       "serverError": "Une erreur de serveur s'est produite. Veuillez réessayer plus tard."
+    },
+    "validation": {
+      "vatRequired": "Le numéro de TVA est requis",
+      "vatTooShort": "Le numéro de TVA est trop court",
+      "vatUnknownCountry": "Code pays inconnu : {code}. Seuls les pays de l'UE sont autorisés.",
+      "vatInvalidFormat": "Format invalide pour {country}. Format attendu : {format}"
     }
   },
   "products": {
@@ -588,6 +594,186 @@
     "tryAgain": "Réessayer",
     "noProducts": "Aucun produit disponible",
     "viewAll": "Voir tous les {title}"
+  },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "lastUpdated": "Dernière mise à jour : {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "La plateforme B2B 4Tparts ('nous', 'notre' ou 'nos') s'engage à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme de commerce électronique B2B."
+    },
+    "dataCollection": {
+      "title": "Informations que nous collectons",
+      "personal": {
+        "title": "Informations personnelles",
+        "content": "Nous collectons les informations que vous nous fournissez directement, notamment : nom, adresse e-mail, nom de l'entreprise, numéro de TVA, adresse professionnelle, numéro de téléphone et informations de paiement."
+      },
+      "automatic": {
+        "title": "Informations collectées automatiquement",
+        "content": "Lorsque vous accédez à notre plateforme, nous collectons automatiquement certaines informations sur votre appareil, notamment des informations sur votre navigateur web, votre adresse IP, votre fuseau horaire et les cookies installés sur votre appareil."
+      },
+      "business": {
+        "title": "Informations commerciales",
+        "content": "En tant que plateforme B2B, nous collectons des informations relatives à l'entreprise telles que les détails d'enregistrement de l'entreprise, les numéros de TVA, l'historique des commandes et les données de transaction nécessaires à la génération de factures et à la conformité fiscale."
+      }
+    },
+    "dataUse": {
+      "title": "Comment nous utilisons vos informations",
+      "purposes": {
+        "title": "Nous utilisons les informations que nous collectons pour :",
+        "item1": "Traiter et honorer vos commandes et factures",
+        "item2": "Vérifier vos informations d'identification d'entreprise et votre enregistrement à la TVA",
+        "item3": "Communiquer avec vous au sujet des produits, services et promotions",
+        "item4": "Améliorer et optimiser notre plateforme",
+        "item5": "Se conformer aux obligations légales et aux exigences fiscales",
+        "item6": "Prévenir la fraude et maintenir la sécurité de la plateforme"
+      }
+    },
+    "dataSharing": {
+      "title": "Partage et divulgation des informations",
+      "intro": "Nous pouvons partager vos informations dans les circonstances suivantes :",
+      "service": "Avec des prestataires de services qui effectuent des services en notre nom (processeurs de paiement, sociétés d'expédition, services de messagerie électronique)",
+      "legal": "Lorsque la loi l'exige ou pour répondre à des processus légaux",
+      "business": "Dans le cadre d'un transfert d'entreprise, d'une fusion ou d'une acquisition",
+      "consent": "Avec votre consentement ou sur votre instruction"
+    },
+    "gdpr": {
+      "title": "Conformité au RGPD",
+      "intro": "En tant qu'entreprise européenne, nous respectons le Règlement Général sur la Protection des Données (RGPD). Vous avez le droit de :",
+      "access": "Accéder à vos données personnelles",
+      "rectify": "Rectifier des données personnelles inexactes",
+      "erase": "Demander l'effacement de vos données personnelles",
+      "restrict": "Restreindre le traitement de vos données personnelles",
+      "portability": "Portabilité des données",
+      "object": "Vous opposer au traitement de vos données personnelles",
+      "contact": "Pour exercer ces droits, veuillez nous contacter à privacy@4Tparts.com"
+    },
+    "cookies": {
+      "title": "Cookies et suivi",
+      "content": "Nous utilisons des cookies et des technologies de suivi similaires pour suivre l'activité sur notre plateforme. Vous pouvez demander à votre navigateur de refuser tous les cookies ou d'indiquer quand un cookie est envoyé. Cependant, si vous n'acceptez pas les cookies, vous ne pourrez peut-être pas utiliser certaines parties de notre plateforme."
+    },
+    "security": {
+      "title": "Sécurité des données",
+      "content": "Nous mettons en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données personnelles contre le traitement non autorisé ou illicite, la perte accidentelle, la destruction ou les dommages. Cependant, aucune méthode de transmission sur Internet n'est sûre à 100 %."
+    },
+    "retention": {
+      "title": "Rétention des données",
+      "content": "Nous conservons vos données personnelles aussi longtemps que nécessaire pour atteindre les objectifs décrits dans cette politique de confidentialité, à moins qu'une période de rétention plus longue ne soit requise par la loi (par exemple, exigences fiscales et comptables)."
+    },
+    "contact": {
+      "title": "Contactez-nous",
+      "content": "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à :",
+      "email": "E-mail: privacy@4Tparts.com",
+      "phone": "Téléphone: +32 (0) 47 21 2118"
+    }
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "lastUpdated": "Dernière mise à jour : {date}",
+    "introduction": {
+      "title": "Introduction",
+      "content": "Bienvenue sur la plateforme B2B 4Tparts. Ces conditions d'utilisation ('Conditions') régissent votre accès et votre utilisation de notre plateforme de commerce électronique B2B. En accédant ou en utilisant notre plateforme, vous acceptez d'être lié par ces Conditions."
+    },
+    "eligibility": {
+      "title": "Éligibilité",
+      "content": "Notre plateforme est destinée exclusivement aux transactions interentreprises (B2B). Vous devez être une entité commerciale enregistrée avec un numéro de TVA valide pour utiliser nos services. Vous déclarez que vous avez le pouvoir de lier votre entreprise à ces Conditions."
+    },
+    "account": {
+      "title": "Enregistrement du compte",
+      "verification": {
+        "title": "Vérification",
+        "content": "Tous les comptes sont soumis à vérification. Nous nous réservons le droit de rejeter ou de suspendre tout compte si nous ne pouvons pas vérifier vos informations d'identification d'entreprise ou votre enregistrement à la TVA."
+      },
+      "responsibility": {
+        "title": "Responsabilité du compte",
+        "content": "Vous êtes responsable du maintien de la confidentialité de vos identifiants de compte et de toutes les activités qui se produisent sous votre compte. Vous devez nous informer immédiatement de toute utilisation non autorisée."
+      }
+    },
+    "orders": {
+      "title": "Commandes et prix",
+      "placement": {
+        "title": "Passation de commande",
+        "content": "Toutes les commandes sont soumises à notre acceptation. Nous nous réservons le droit de refuser ou d'annuler toute commande pour toute raison, y compris la disponibilité des produits, des erreurs de prix ou d'informations sur les produits, ou des préoccupations de fraude."
+      },
+      "pricing": {
+        "title": "Prix",
+        "content": "Tous les prix sont indiqués en euros (EUR) et excluent la TVA, sauf indication contraire. Les prix sont sujets à changement sans préavis. Le prix applicable à votre commande est le prix affiché au moment de la passation de la commande."
+      },
+      "minimum": {
+        "title": "Quantités minimales de commande",
+        "content": "Certains produits peuvent avoir des quantités minimales de commande. Ces exigences seront clairement indiquées sur la page du produit."
+      }
+    },
+    "payment": {
+      "title": "Conditions de paiement",
+      "invoice": {
+        "title": "Paiement par facture",
+        "content": "Le paiement est effectué par facture avec des conditions de paiement standard de 30 jours à compter de la date de facture, sauf accord contraire écrit. Les paiements en retard peuvent être soumis à des intérêts."
+      },
+      "vat": {
+        "title": "TVA et taxes",
+        "content": "En tant que transaction B2B au sein de l'UE, la TVA sera appliquée conformément aux réglementations applicables. Vous êtes responsable de fournir des informations de TVA exactes. Des mécanismes d'autoliquidation peuvent s'appliquer pour les transactions intra-UE."
+      }
+    },
+    "shipping": {
+      "title": "Expédition et livraison",
+      "policy": {
+        "title": "Politique d'expédition",
+        "content": "Les frais d'expédition sont calculés en fonction du poids et de la destination. Les délais de livraison sont des estimations et ne sont pas garantis. Le risque de perte vous est transféré au moment de la remise au transporteur."
+      },
+      "delay": {
+        "title": "Retards",
+        "content": "Nous ne sommes pas responsables des retards causés par des circonstances indépendantes de notre volonté, y compris, mais sans s'y limiter, les retards du transporteur, le dédouanement ou les événements de force majeure."
+      }
+    },
+    "returns": {
+      "title": "Retours et remboursements",
+      "policy": {
+        "title": "Politique de retour",
+        "content": "Les retours sont acceptés dans les 14 jours suivant la livraison pour les produits défectueux ou incorrects. Les produits doivent être inutilisés et dans leur emballage d'origine. Les commandes personnalisées ne sont pas éligibles au retour."
+      },
+      "process": {
+        "title": "Processus de retour",
+        "content": "Pour initier un retour, contactez notre équipe de support à support@4Tparts.com. Les frais de retour sont à la charge du client, sauf si le retour est dû à notre erreur."
+      }
+    },
+    "warranty": {
+      "title": "Garanties et exclusions",
+      "limited": {
+        "title": "Garantie limitée",
+        "content": "Les produits sont fournis avec les garanties du fabricant le cas échéant. Nous ne donnons aucune garantie supplémentaire au-delà de celles fournies par le fabricant."
+      },
+      "disclaimer": {
+        "title": "Exclusion de garantie",
+        "content": "DANS LA MESURE MAXIMALE PERMISE PAR LA LOI, NOTRE PLATEFORME ET NOS PRODUITS SONT FOURNIS 'EN L'ÉTAT' SANS GARANTIE D'AUCUNE SORTE, QU'ELLE SOIT EXPRESSE OU IMPLICITE."
+      }
+    },
+    "liability": {
+      "title": "Limitation de responsabilité",
+      "content": "DANS LA MESURE MAXIMALE PERMISE PAR LA LOI, NOUS NE SERONS PAS RESPONSABLES DES DOMMAGES INDIRECTS, ACCIDENTELS, SPÉCIAUX, CONSÉCUTIFS OU PUNITIFS, OU DE TOUTE PERTE DE PROFITS OU DE REVENUS. NOTRE RESPONSABILITÉ TOTALE NE DÉPASSERA PAS LE MONTANT PAYÉ PAR VOUS POUR LE PRODUIT OU LE SERVICE SPÉCIFIQUE DONNANT LIEU À LA RÉCLAMATION."
+    },
+    "intellectual": {
+      "title": "Propriété intellectuelle",
+      "content": "Tout le contenu de notre plateforme, y compris les textes, graphiques, logos et logiciels, est la propriété de 4Tparts ou de ses concédants de licence et est protégé par les lois sur le droit d'auteur et les marques de commerce. Vous ne pouvez pas utiliser notre propriété intellectuelle sans consentement écrit préalable."
+    },
+    "termination": {
+      "title": "Résiliation",
+      "content": "Nous nous réservons le droit de suspendre ou de résilier votre compte à tout moment pour violation de ces Conditions, activité frauduleuse ou toute autre raison à notre seule discrétion. En cas de résiliation, vous devez payer toutes les factures en suspens."
+    },
+    "governing": {
+      "title": "Loi applicable",
+      "content": "Ces Conditions sont régies par les lois belges. Tout litige sera résolu devant les tribunaux belges."
+    },
+    "changes": {
+      "title": "Modification des Conditions",
+      "content": "Nous nous réservons le droit de modifier ces Conditions à tout moment. Nous vous informerons des changements matériels par e-mail. Votre utilisation continue de la plateforme après les changements constitue une acceptation des Conditions modifiées."
+    },
+    "contact": {
+      "title": "Informations de contact",
+      "content": "Pour toute question sur ces Conditions, veuillez nous contacter à :",
+      "email": "E-mail: support@4Tparts.com",
+      "phone": "Téléphone: +32 (0) 47 21 2118"
+    }
   },
   "notFound": {
     "title": "Page Non Trouvée",

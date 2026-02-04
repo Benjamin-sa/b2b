@@ -72,7 +72,6 @@
       <button
         class="w-full bg-white border border-primary-200 text-primary-700 py-2 px-4 rounded-lg sm:rounded-xl hover:bg-primary-50 hover:border-primary-300 transition-colors duration-200 text-sm sm:text-base font-medium"
         @click="continueShopping">
-        >
         {{ $t('cart.continueShopping') }}
       </button>
 

@@ -106,7 +106,7 @@
                   <span class="font-medium text-gray-900">{{ product.name }}</span>
                   <span v-if="product.part_number" class="text-xs text-gray-500">{{
                     product.part_number
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </td>
@@ -176,7 +176,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import type { ProductWithInventory } from '../../../types';
+import { useAuthStore } from '../../../stores/auth';
 
+const authStore = useAuthStore();
 
 // API Configuration
 const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5174';
@@ -237,7 +239,7 @@ const refreshData = async () => {
   error.value = null;
 
   try {
-    const response = await fetch(`${API_GATEWAY_URL}/api/products?limit=100`);
+    const response = await authStore.authenticatedFetch(`${API_GATEWAY_URL}/api/products?limit=100`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch products: ${response.statusText}`);

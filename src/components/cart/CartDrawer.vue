@@ -20,7 +20,6 @@
             </h2>
             <button class="p-2 -m-2 text-gray-400 hover:text-primary-600 transition-colors duration-200"
               @click="closeDrawer">
-              >
               <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -47,7 +46,6 @@
                 <button
                   class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:from-primary-700 hover:to-primary-800 transform hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base font-medium"
                   @click="goToProducts">
-                  >
                   {{ $t('cart.browseProducts') }}
                 </button>
               </div>

@@ -19,78 +19,42 @@
           <div class="relative">
             <div class="flex">
               <div class="relative flex-1">
-                <input
-                  v-model="searchTerm"
-                  type="text"
-                  :placeholder="$t('products.header.searchPlaceholder')"
+                <input v-model="searchTerm" type="text" :placeholder="$t('products.header.searchPlaceholder')"
                   class="w-full px-4 py-3 pl-12 pr-10 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  @keyup.enter="onSearch"
-                />
+                  @keyup.enter="onSearch" />
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 <!-- Clear search button -->
-                <button
-                  v-if="searchTerm"
+                <button v-if="searchTerm"
                   class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  @click="clearSearch"
-                >
-                  >
+                  @click="clearSearch">
                   <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <button
-                :class="[
-                  'px-6 py-3 text-white border transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                  hasUnsearchedText
-                    ? 'bg-orange-500 border-orange-500 hover:bg-orange-600 animate-pulse'
-                    : 'bg-blue-600 border-blue-600 hover:bg-blue-700',
-                ]"
-                @click="onSearch"
-              >
+              <button :class="[
+                'px-6 py-3 text-white border transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                hasUnsearchedText
+                  ? 'bg-orange-500 border-orange-500 hover:bg-orange-600 animate-pulse'
+                  : 'bg-blue-600 border-blue-600 hover:bg-blue-700',
+              ]" @click="onSearch">
                 {{ $t('common.actions.search') }}
               </button>
-              <button
-                :class="[
-                  'px-4 py-3 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                  hasAdvancedFilters
-                    ? 'text-blue-600 bg-blue-50 border-blue-300 hover:bg-blue-100'
-                    : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50',
-                ]"
-                @click="toggleAdvancedFilters"
-              >
+              <button :class="[
+                'px-4 py-3 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                hasAdvancedFilters
+                  ? 'text-blue-600 bg-blue-50 border-blue-300 hover:bg-blue-100'
+                  : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50',
+              ]" @click="toggleAdvancedFilters">
                 {{ $t('common.actions.filter') }}
-                <svg
-                  class="inline w-4 h-4 ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894l-4-2A1 1 0 018 15.586V11.414a1 1 0 00-.293-.707L1.293 4.293A1 1 0 011 4V4z"
-                  />
+                <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-1.447.894l-4-2A1 1 0 018 15.586V11.414a1 1 0 00-.293-.707L1.293 4.293A1 1 0 011 4V4z" />
                 </svg>
               </button>
             </div>
@@ -98,70 +62,40 @@
 
           <!-- Active Filters -->
           <div v-if="hasActiveFilters" class="flex flex-wrap gap-2 mt-3">
-            <span
-              v-if="activeCategory"
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-            >
+            <span v-if="activeCategory"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               {{ activeCategory }}
               <button
                 class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
-                @click="clearCategory"
-              >
-                >
+                @click="clearCategory">
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </span>
-            <span
-              v-if="inStockOnly"
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-            >
+            <span v-if="inStockOnly"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
               {{ $t('products.header.inStockOnly') }}
               <button
                 class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none"
-                @click="clearStockFilter"
-              >
-                >
+                @click="clearStockFilter">
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </span>
-            <span
-              v-if="priceRange"
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
-            >
+            <span v-if="priceRange"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
               {{ getPriceRangeLabel(priceRange) }}
               <button
                 class="ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-purple-400 hover:bg-purple-200 hover:text-purple-500 focus:outline-none"
-                @click="clearPriceRange"
-              >
-                >
+                @click="clearPriceRange">
                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </span>
-            <button
-              class="text-xs text-gray-500 hover:text-gray-700 underline"
-              @click="clearAllFilters"
-            >
+            <button class="text-xs text-gray-500 hover:text-gray-700 underline" @click="clearAllFilters">
               {{ $t('products.header.clearAll') }}
             </button>
           </div>
@@ -178,9 +112,7 @@
               {{ getResultsText() }}
             </span>
             <div v-if="isLoading" class="flex items-center space-x-2">
-              <div
-                class="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"
-              ></div>
+              <div class="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
               <span class="text-sm text-gray-500">{{ $t('products.header.loading') }}</span>
             </div>
           </div>
@@ -189,11 +121,9 @@
             <!-- Sort Dropdown -->
             <div class="flex items-center space-x-2">
               <label class="text-sm text-gray-600">{{ $t('products.header.sortBy') }}</label>
-              <select
-                v-model="sortBy"
+              <select v-model="sortBy"
                 class="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                @change="onSortChange"
-              >
+                @change="onSortChange">
                 <option value="name">{{ $t('products.header.name') }}</option>
                 <option value="price">{{ $t('products.header.price') }}</option>
                 <option value="createdAt">{{ $t('products.header.newest') }}</option>
@@ -203,37 +133,26 @@
 
             <!-- View Toggle -->
             <div class="flex items-center border border-gray-300 rounded-md">
-              <button
-                :class="[
-                  'p-2 border-r border-gray-300',
-                  viewMode === 'grid'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-400 hover:text-gray-600',
-                ]"
-                @click="setViewMode('grid')"
-              >
+              <button :class="[
+                'p-2 border-r border-gray-300',
+                viewMode === 'grid'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-400 hover:text-gray-600',
+              ]" @click="setViewMode('grid')">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
-                    d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
+                    d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </button>
-              <button
-                :class="[
-                  'p-2',
-                  viewMode === 'list'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-400 hover:text-gray-600',
-                ]"
-                @click="setViewMode('list')"
-              >
+              <button :class="[
+                'p-2',
+                viewMode === 'list'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-400 hover:text-gray-600',
+              ]" @click="setViewMode('list')">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
               </button>
             </div>

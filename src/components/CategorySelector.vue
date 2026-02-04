@@ -54,7 +54,6 @@
             <button v-if="index < breadcrumb.length - 1"
               class="hover:text-primary-600 transition-colors whitespace-nowrap font-medium"
               @click="selectCategory(item.category)">
-              >
               {{ item.name }}
             </button>
             <span v-else class="text-primary-700 font-bold whitespace-nowrap">{{ item.name }}</span>

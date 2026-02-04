@@ -13,18 +13,9 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg
-                  class="h-5 w-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
+                <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
@@ -45,18 +36,9 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg
-                  class="h-5 w-5 text-yellow-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
@@ -77,18 +59,9 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg
-                  class="h-5 w-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
@@ -109,18 +82,9 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg
-                  class="h-5 w-5 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
@@ -143,23 +107,17 @@
         <!-- Search -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Search invoices..."
+          <input v-model="filters.search" type="text" placeholder="Search invoices..."
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            @input="debouncedSearch"
-          />
+            @input="debouncedSearch" />
         </div>
 
         <!-- Status Filter -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            v-model="filters.status"
+          <select v-model="filters.status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            @change="loadInvoices"
-          >
+            @change="loadInvoices">
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="paid">Paid</option>
@@ -173,23 +131,17 @@
         <!-- Date From -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-          <input
-            v-model="filters.date_from"
-            type="date"
+          <input v-model="filters.date_from" type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            @change="loadInvoices"
-          />
+            @change="loadInvoices" />
         </div>
 
         <!-- Date To -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-          <input
-            v-model="filters.date_to"
-            type="date"
+          <input v-model="filters.date_to" type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            @change="loadInvoices"
-          />
+            @change="loadInvoices" />
         </div>
       </div>
 
@@ -208,46 +160,20 @@
         <h3 class="text-lg font-medium text-gray-900">All Invoices</h3>
         <div class="flex items-center space-x-2">
           <label class="text-sm text-gray-600">Sort by:</label>
-          <select
-            v-model="sorting.field"
+          <select v-model="sorting.field"
             class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            @change="loadInvoices"
-          >
+            @change="loadInvoices">
             <option value="created_at">Date</option>
             <option value="total_amount">Amount</option>
             <option value="status">Status</option>
           </select>
-          <button
-            class="p-1 border border-gray-300 rounded-md hover:bg-gray-50"
-            @click="toggleSortOrder"
-          >
-            <svg
-              v-if="sorting.order === 'desc'"
-              class="h-5 w-5 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
+          <button class="p-1 border border-gray-300 rounded-md hover:bg-gray-50" @click="toggleSortOrder">
+            <svg v-if="sorting.order === 'desc'" class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
-            <svg
-              v-else
-              class="h-5 w-5 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 15l7-7 7 7"
-              />
+            <svg v-else class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
             </svg>
           </button>
         </div>
@@ -256,34 +182,22 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Invoice Number
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Customer
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Amount
               </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -320,33 +234,22 @@
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="[
-                    getStatusColor(invoice.status),
-                    'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                  ]"
-                >
+                <span :class="[
+                  getStatusColor(invoice.status),
+                  'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
+                ]">
                   {{ getStatusLabel(invoice.status) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
                   class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  @click="viewInvoiceDetails(invoice.id)"
-                >
+                  @click="viewInvoiceDetails(invoice.id)">
                   <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                   View
                 </button>
@@ -361,11 +264,9 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <label class="text-sm text-gray-600">Per page:</label>
-            <select
-              v-model.number="pagination.limit"
+            <select v-model.number="pagination.limit"
               class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              @change="changePageSize"
-            >
+              @change="changePageSize">
               <option :value="10">10</option>
               <option :value="25">25</option>
               <option :value="50">50</option>
@@ -379,32 +280,24 @@
               {{ pagination.total }} items)
             </span>
             <div class="flex space-x-1">
-              <button
-                :disabled="!pagination.hasPrevPage"
+              <button :disabled="!pagination.hasPrevPage"
                 class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                @click="goToPage(1)"
-              >
+                @click="goToPage(1)">
                 First
               </button>
-              <button
-                :disabled="!pagination.hasPrevPage"
+              <button :disabled="!pagination.hasPrevPage"
                 class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                @click="goToPage(pagination.page - 1)"
-              >
+                @click="goToPage(pagination.page - 1)">
                 Previous
               </button>
-              <button
-                :disabled="!pagination.hasNextPage"
+              <button :disabled="!pagination.hasNextPage"
                 class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                @click="goToPage(pagination.page + 1)"
-              >
+                @click="goToPage(pagination.page + 1)">
                 Next
               </button>
-              <button
-                :disabled="!pagination.hasNextPage"
+              <button :disabled="!pagination.hasNextPage"
                 class="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                @click="goToPage(pagination.totalPages)"
-              >
+                @click="goToPage(pagination.totalPages)">
                 Last
               </button>
             </div>
@@ -414,15 +307,12 @@
     </div>
 
     <!-- Invoice Details Modal -->
-    <div
-      v-if="selectedInvoice"
+    <div v-if="selectedInvoice"
       class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
-      @click="closeModal"
-    >
+      @click="closeModal">
       <div
         class="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto"
-        @click.stop
-      >
+        @click.stop>
         <div class="mt-3">
           <!-- Modal Header -->
           <div class="flex justify-between items-start border-b pb-4">
@@ -432,12 +322,7 @@
             </div>
             <button class="text-gray-400 hover:text-gray-600" @click="closeModal">
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -476,12 +361,10 @@
                 <div class="space-y-2">
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Status</label>
-                    <span
-                      :class="[
-                        getStatusColor(selectedInvoice.status),
-                        'inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1',
-                      ]"
-                    >
+                    <span :class="[
+                      getStatusColor(selectedInvoice.status),
+                      'inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1',
+                    ]">
                       {{ getStatusLabel(selectedInvoice.status) }}
                     </span>
                   </div>
@@ -511,10 +394,7 @@
             <div v-if="selectedInvoice.shipping_address_street">
               <h4 class="text-md font-medium text-gray-900 mb-3">Shipping Address</h4>
               <div class="bg-gray-50 p-4 rounded-lg">
-                <p
-                  v-if="selectedInvoice.shipping_address_contact"
-                  class="text-sm text-gray-900 font-medium"
-                >
+                <p v-if="selectedInvoice.shipping_address_contact" class="text-sm text-gray-900 font-medium">
                   {{ selectedInvoice.shipping_address_contact }}
                 </p>
                 <p v-if="selectedInvoice.shipping_address_company" class="text-sm text-gray-900">
@@ -529,14 +409,27 @@
             </div>
 
             <!-- Line Items -->
-            <div v-if="selectedInvoice.items && selectedInvoice.items.length > 0">
+            <div>
               <h4 class="text-md font-medium text-gray-900 mb-3">Line Items</h4>
-              <div class="border rounded-lg overflow-hidden">
+              <div v-if="loadingDetails" class="flex justify-center py-8">
+                <svg class="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+              </div>
+              <div v-else-if="selectedInvoice.items && selectedInvoice.items.length > 0"
+                class="border rounded-lg overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">
                     <tr>
                       <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         Product
+                      </th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        SKU
                       </th>
                       <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                         Quantity
@@ -554,18 +447,24 @@
                       <td class="px-4 py-2 text-sm text-gray-900">
                         {{ item.product_name || 'Unknown Product' }}
                       </td>
+                      <td class="px-4 py-2 text-sm text-gray-500">
+                        {{ item.b2b_sku || '-' }}
+                      </td>
                       <td class="px-4 py-2 text-sm text-gray-900 text-right">
                         {{ item.quantity }}
                       </td>
                       <td class="px-4 py-2 text-sm text-gray-900 text-right">
-                        €{{ item.unit_price }}
+                        €{{ item.unit_price?.toFixed(2) }}
                       </td>
                       <td class="px-4 py-2 text-sm font-medium text-gray-900 text-right">
-                        €{{ item.total_price }}
+                        €{{ item.total_price?.toFixed(2) }}
                       </td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+              <div v-else class="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+                No items found for this invoice
               </div>
             </div>
 
@@ -597,43 +496,26 @@
           <!-- Modal Actions -->
           <div class="mt-6 flex justify-between items-center border-t pt-4">
             <div class="flex space-x-2">
-              <a
-                v-if="selectedInvoice.invoice_url"
-                :href="selectedInvoice.invoice_url"
-                target="_blank"
-                class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              <a v-if="selectedInvoice.invoice_url" :href="selectedInvoice.invoice_url" target="_blank"
+                class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
                 View Invoice
               </a>
-              <a
-                v-if="selectedInvoice.invoice_pdf"
-                :href="selectedInvoice.invoice_pdf"
-                target="_blank"
-                class="inline-flex items-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
+              <a v-if="selectedInvoice.invoice_pdf" :href="selectedInvoice.invoice_pdf" target="_blank"
+                class="inline-flex items-center px-4 py-2 border border-green-300 shadow-sm text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Download PDF
               </a>
             </div>
             <button
               class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              @click="closeModal"
-            >
+              @click="closeModal">
               Close
             </button>
           </div>
@@ -683,6 +565,7 @@ interface InvoiceItem {
   id: string;
   product_id: string;
   product_name: string | null;
+  b2b_sku: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -716,6 +599,7 @@ interface StatsData {
 }
 
 const loading = ref(false);
+const loadingDetails = ref(false);
 const invoices = ref<Invoice[]>([]);
 const selectedInvoice = ref<Invoice | null>(null);
 const stats = ref<StatsData | null>(null);
@@ -793,13 +677,33 @@ const loadStats = async () => {
   }
 };
 
-const viewInvoiceDetails = (invoiceId: string) => {
-  // Find the invoice in the already-loaded invoices array
+const viewInvoiceDetails = async (invoiceId: string) => {
+  loadingDetails.value = true;
+
+  // First show the modal with basic info from the list
   const invoice = invoices.value.find((inv) => inv.id === invoiceId);
   if (invoice) {
-    selectedInvoice.value = invoice;
-  } else {
-    console.error('Invoice not found:', invoiceId);
+    selectedInvoice.value = { ...invoice };
+  }
+
+  try {
+    // Fetch full invoice details with items
+    const response = await authStore.authenticatedFetch(
+      `${import.meta.env.VITE_API_GATEWAY_URL}/admin/invoices/${invoiceId}`
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch invoice details');
+
+    const result = await response.json();
+    selectedInvoice.value = {
+      ...result.data.invoice,
+      items: result.data.items
+    };
+  } catch (error) {
+    console.error('Error loading invoice details:', error);
+    // Keep showing the basic invoice info from the list
+  } finally {
+    loadingDetails.value = false;
   }
 };
 

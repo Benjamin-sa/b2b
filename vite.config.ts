@@ -16,7 +16,11 @@ export default defineConfig({
   build: {
     // Explicitly exclude workers directory from build
     rollupOptions: {
-      external: (id) => id.includes('workers/') || id.includes('workers\\'),
+      external: (id) =>
+        id.includes('workers/') ||
+        id.includes('workers\\') ||
+        id.includes('server/') ||
+        id.includes('server\\'),
       output: {
         manualChunks: {
           // Separate vendor chunks for better caching
@@ -34,5 +38,17 @@ export default defineConfig({
   publicDir: 'public',
   server: {
     port: 5173,
+    // Enable SPA fallback for client-side routing
+    strictPort: false,
+    // Fallback to index.html for client-side routing
+    fs: {
+      strict: false,
+      // Deny access to server and workers directories
+      deny: ['**/server/**', '**/workers/**', '**/.git/**'],
+    },
+  },
+  // Ensure preview server also uses SPA fallback
+  preview: {
+    port: 4173,
   },
 });

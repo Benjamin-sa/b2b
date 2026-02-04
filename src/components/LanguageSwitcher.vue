@@ -2,55 +2,31 @@
   <div ref="languageSwitcherRef" class="relative">
     <button class="flex items-center space-x-2 w-full" @click="toggleDropdown">
       <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
       </svg>
       <span class="text-sm font-medium text-gray-700">{{
         currentLanguage?.name || 'Language'
-      }}</span>
-      <svg
-        class="w-4 h-4 text-gray-500 transition-transform duration-200"
-        :class="{ 'rotate-180': isOpen }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+        }}</span>
+      <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': isOpen }" fill="none"
+        stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
     <Transition name="dropdown">
-      <div
-        v-if="isOpen"
-        class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
-      >
-        <button
-          v-for="lang in languages"
-          :key="lang.code"
-          :class="[
-            'block w-full text-left px-4 py-2 text-sm transition-colors',
-            locale === lang.code
-              ? 'bg-blue-50 text-blue-700 font-medium'
-              : 'text-gray-700 hover:bg-gray-100',
-          ]"
-          @click="setLanguage(lang.code)"
-        >
+      <div v-if="isOpen" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+        <button v-for="lang in languages" :key="lang.code" :class="[
+          'block w-full text-left px-4 py-2 text-sm transition-colors',
+          locale === lang.code
+            ? 'bg-blue-50 text-blue-700 font-medium'
+            : 'text-gray-700 hover:bg-gray-100',
+        ]" @click="setLanguage(lang.code)">
           <div class="flex items-center justify-between">
             <span>{{ lang.name }}</span>
-            <svg
-              v-if="locale === lang.code"
-              class="w-4 h-4 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
+            <svg v-if="locale === lang.code" class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
+                clip-rule="evenodd" />
             </svg>
           </div>
         </button>
@@ -126,6 +102,7 @@ onUnmounted(() => {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   .dropdown-enter-active,
   .dropdown-leave-active {
     transition: opacity 0.2s ease !important;
