@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "deploy:frontend": "npm run build:frontend && wrangler pages deploy dist --project-name=b2b-frontend",
+    "deploy:frontend": "npm run build:frontend && cp _routes.json dist/ && rm -rf .wrangler/deploy && wrangler pages deploy dist --project-name=b2b-frontend",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
