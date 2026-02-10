@@ -1,49 +1,43 @@
 <template>
-  <div class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">
-      {{ isEditing ? 'Edit Product' : 'Add Product' }}
-    </h2>
+  <div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-4 py-4 sm:px-6 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">
+        {{ isEditing ? 'Edit Product' : 'Add Product' }}
+      </h2>
+    </div>
 
-    <form class="space-y-8" @submit.prevent="submitForm">
+    <form class="divide-y divide-gray-200" @submit.prevent="submitForm" @keydown.enter.prevent>
       <!-- Images -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Images</h3>
-        <!-- Image count info when editing -->
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Images</h3>
         <div v-if="isEditing && originalImages.length > 0 && !imagesModified"
-          class="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
-          📷 {{ originalImages.length }} existing image(s) loaded. Images will be preserved unless you add, remove, or
-          reorder them.
+          class="mb-3 p-2.5 bg-primary-50 border border-primary-200 rounded-lg text-sm text-primary-800">
+          📷 {{ originalImages.length }} existing image(s). Images will be preserved unless you modify them.
         </div>
         <div v-if="imagesModified"
-          class="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+          class="mb-3 p-2.5 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
           ⚠️ Images have been modified. The new image set will be saved.
         </div>
         <ImageUpload v-model="form.images" :max-images="8" :max-file-size="10" />
       </div>
 
       <!-- Basic Information -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Basic Information</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Basic Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Name -->
           <div class="md:col-span-2">
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-              Product Name
-            </label>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
             <input id="name" v-model="form.name" type="text" required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Enter product name" />
           </div>
 
           <!-- Description -->
           <div class="md:col-span-2">
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-
-            <!-- Rich Text Editor Toolbar -->
-            <div class="border border-gray-300 rounded-md overflow-hidden">
-              <div class="bg-gray-50 px-3 py-2 border-b border-gray-300 flex gap-1">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <div class="border border-gray-300 rounded-lg overflow-hidden">
+              <div class="bg-gray-50 px-2 py-1.5 border-b border-gray-300 flex gap-1">
                 <button type="button"
                   class="px-2 py-1 text-sm border border-gray-300 rounded bg-white hover:bg-gray-100" title="Bold"
                   @click="formatText('bold')">
@@ -61,19 +55,17 @@
                 </button>
               </div>
               <div ref="descriptionEditor" contenteditable="true"
-                class="w-full px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                class="w-full px-3 py-2 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Enter product description" style="white-space: pre-wrap" @input="onDescriptionChange"
-                @blur="onDescriptionChange" @focus="onEditorFocus"></div>
+                @blur="onDescriptionChange" @focus="onEditorFocus" @keydown.enter.stop></div>
             </div>
           </div>
 
           <!-- Category -->
           <div>
-            <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
+            <label for="categoryId" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select id="category" v-model="form.category_id" required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
               <option value="">Select category</option>
               <option v-for="category in availableCategories" :key="category.id" :value="category.id">
                 {{ getIndentedCategoryName(category) }}
@@ -83,35 +75,37 @@
 
           <!-- Brand -->
           <div>
-            <label for="brand" class="block text-sm font-medium text-gray-700 mb-2"> Brand </label>
+            <label for="brand" class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
             <input id="brand" v-model="form.brand" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Enter brand name" />
           </div>
           <!-- Shopify Product ID -->
           <div>
-            <label for="shopifyProductId" class="block text-sm font-medium text-gray-700 mb-2">
-              Shopify Product ID
-            </label>
+            <label for="shopifyProductId" class="block text-sm font-medium text-gray-700 mb-1">Shopify Product
+              ID</label>
             <input id="shopifyProductId" v-model="form.shopify_product_id" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Shopify Product ID" />
           </div>
 
-          <!-- Shopify Product Search (Debug Tool) -->
-          <div class="md:col-span-2 border-2 border-blue-200 bg-blue-50 rounded-lg p-4">
-            <h4 class="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
-              🔍 Shopify Product Search (Link Inventory)
+          <!-- Shopify Product Search -->
+          <div class="md:col-span-2 border border-gray-200 bg-gray-50 rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Shopify Product Search
             </h4>
 
             <!-- Search Input -->
-            <div class="mb-3">
-              <input v-model="shopifySearchQuery" type="text"
-                placeholder="Search by product name, variant ID, or SKU..."
-                class="w-full px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div class="mb-3 flex flex-col sm:flex-row gap-2">
+              <input v-model="shopifySearchQuery" type="text" placeholder="Search by name, variant ID, or SKU..."
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 @keyup.enter="searchShopifyProducts" />
               <button type="button" :disabled="shopifySearchLoading"
-                class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 text-sm font-medium transition-colors whitespace-nowrap"
                 @click="searchShopifyProducts">
                 {{ shopifySearchLoading ? 'Searching...' : 'Search Shopify' }}
               </button>
@@ -120,7 +114,7 @@
             <!-- Search Results -->
             <div v-if="shopifySearchResults.length > 0" class="max-h-60 overflow-y-auto space-y-2">
               <div v-for="variant in shopifySearchResults" :key="variant.id"
-                class="p-3 bg-white border border-blue-200 rounded hover:bg-blue-50 transition">
+                class="p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                 <div class="font-semibold text-sm text-gray-900">{{ variant.title }}</div>
                 <div class="text-xs text-gray-600 mt-1">
                   <span class="font-mono">Variant ID:</span> {{ extractShopifyId(variant.id) }}
@@ -138,11 +132,11 @@
                 <div v-if="variant.inventoryLevels && variant.inventoryLevels.length > 0" class="mt-2 space-y-1">
                   <div class="text-xs font-semibold text-gray-700">Available Locations:</div>
                   <button v-for="location in variant.inventoryLevels" :key="location.locationId" type="button"
-                    class="w-full text-left px-2 py-1.5 bg-blue-50 border border-blue-300 rounded text-xs hover:bg-blue-100 transition"
+                    class="w-full text-left px-2 py-1.5 bg-primary-50 border border-primary-200 rounded-lg text-xs hover:bg-primary-100 transition"
                     @click="selectShopifyVariantWithLocation(variant, location)">
                     <div class="flex justify-between items-center">
                       <span class="font-medium">{{ location.locationName }}</span>
-                      <span class="text-blue-700 font-semibold">{{ location.available }} units</span>
+                      <span class="text-primary-700 font-semibold">{{ location.available }} units</span>
                     </div>
                     <div class="text-gray-500 text-[10px] font-mono">ID: {{ extractShopifyId(location.locationId) }}
                     </div>
@@ -184,18 +178,14 @@
             </div>
 
             <!-- Shopify Stock Display (Read-Only) -->
-            <div v-if="form.shopify_variant_id" class="mt-3 p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
-              <h5 class="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
-                📊 Shopify Inventory (Source of Truth)
-              </h5>
-
-              <div class="mb-4 p-3 bg-white border border-purple-200 rounded">
-                <div class="text-xs font-semibold text-gray-700 mb-1">Current Stock in Shopify</div>
-                <div class="text-2xl font-bold text-purple-900">{{ shopifyTotalStock }}</div>
-                <div class="text-xs text-gray-500 mt-2">
-                  <strong>⚠️ Stock is managed by Shopify.</strong><br>
-                  To change stock, update it in your Shopify admin.<br>
-                  Stock will sync automatically via webhook.
+            <div v-if="form.shopify_variant_id" class="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-medium text-gray-500">Shopify Stock</div>
+                  <div class="text-xl font-bold text-gray-900">{{ shopifyTotalStock }}</div>
+                </div>
+                <div class="text-xs text-gray-400 text-right max-w-[200px]">
+                  Stock syncs automatically from Shopify via webhook.
                 </div>
               </div>
             </div>
@@ -208,215 +198,184 @@
           </div>
 
           <!-- Standalone Stock Management (No Shopify Link) -->
-          <div v-if="!form.shopify_variant_id"
-            class="md:col-span-2 border-2 border-green-200 bg-green-50 rounded-lg p-4">
-            <h4 class="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
-              📦 Standalone Stock Management
+          <div v-if="!form.shopify_variant_id" class="md:col-span-2 border border-green-200 bg-green-50 rounded-lg p-4">
+            <h4 class="text-sm font-semibold text-green-900 mb-2 flex items-center gap-2">
+              📦 Stock Management
             </h4>
-            <p class="text-xs text-gray-600 mb-4">
-              This product is <strong>not linked to Shopify</strong>. Stock is managed locally in the B2B database.
-              When customers place orders, stock will be deducted after payment is confirmed.
+            <p class="text-xs text-gray-600 mb-3">
+              Stock is managed locally. It will be deducted after payment.
             </p>
 
-            <!-- Single Stock Input -->
             <div class="mb-3">
-              <label for="standaloneTotal" class="block text-xs font-semibold text-gray-700 mb-2">
-                📊 Available Stock
-              </label>
+              <label for="standaloneTotal" class="block text-xs font-medium text-gray-700 mb-1">Available Stock</label>
               <input id="standaloneTotal" v-model.number="standaloneStock.total_stock" type="number" min="0"
-                class="w-full px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-center font-semibold" />
-              <div class="text-xs text-gray-600 mt-1 text-center">
-                Total units available for B2B orders
-              </div>
+                class="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 text-center font-semibold" />
             </div>
 
-            <!-- Info about linking to Shopify -->
-            <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-              💡 <strong>Tip:</strong> To sync stock with Shopify, use the search above to link this product to a
-              Shopify variant.
+            <div class="p-2 bg-primary-50 border border-primary-200 rounded-lg text-xs text-primary-800">
+              💡 To sync stock with Shopify, use the search above to link this product.
             </div>
           </div>
 
           <!-- Part Number -->
           <div>
-            <label for="partNumber" class="block text-sm font-medium text-gray-700 mb-2">
-              Part Number
-            </label>
+            <label for="partNumber" class="block text-sm font-medium text-gray-700 mb-1">Part Number</label>
             <input id="partNumber" v-model="form.part_number" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Enter part number" />
           </div>
 
           <!-- B2B SKU -->
           <div>
-            <label for="b2bSku" class="block text-sm font-medium text-gray-700 mb-2">
-              B2B SKU
-              <span class="text-xs text-gray-500 ml-1">(Auto-generated if empty)</span>
+            <label for="b2bSku" class="block text-sm font-medium text-gray-700 mb-1">
+              B2B SKU <span class="text-xs text-gray-400">(auto-generated if empty)</span>
             </label>
             <input id="b2bSku" v-model="form.b2b_sku" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="TP-00001 (auto-generated)" />
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="TP-00001" />
           </div>
         </div>
       </div>
 
       <!-- Pricing -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Pricing</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Price -->
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Pricing</h3>
+        <div class="grid grid-cols-2 md:grid-cols-2 gap-4">
           <div>
-            <label for="price" class="block text-sm font-medium text-gray-700 mb-2"> Price </label>
+            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Price (€)</label>
             <input id="price" v-model.number="form.price" type="number" step="0.01" min="0" required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
-
-          <!-- Original Price -->
           <div>
-            <label for="originalPrice" class="block text-sm font-medium text-gray-700 mb-2">
-              Original Price
-            </label>
+            <label for="originalPrice" class="block text-sm font-medium text-gray-700 mb-1">Original Price (€)</label>
             <input id="originalPrice" v-model.number="form.original_price" type="number" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
 
-          <!-- Coming Soon Toggle -->
-          <div class="md:col-span-2">
-            <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4 flex flex-col gap-2">
-              <label class="flex items-center">
-                <input v-model="form.coming_soon" type="checkbox"
-                  class="mr-2 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded" />
+          <div class="col-span-2">
+            <label class="flex items-center gap-2 p-3 border border-yellow-200 bg-yellow-50 rounded-lg cursor-pointer">
+              <input v-model="form.coming_soon" type="checkbox"
+                class="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded" />
+              <div>
                 <span class="text-sm font-medium text-gray-800">Coming Soon</span>
-              </label>
-              <p class="text-xs text-gray-600">
-                Mark this product as coming soon (not yet available for purchase)
-              </p>
-            </div>
-          </div>
-
-          <!-- Unit -->
-          <div>
-            <label for="unit" class="block text-sm font-medium text-gray-700 mb-2"> Unit </label>
-            <input id="unit" v-model="form.unit" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., piece, kg, meter" />
-          </div>
-
-          <!-- Min Order Quantity -->
-          <div>
-            <label for="minOrderQuantity" class="block text-sm font-medium text-gray-700 mb-2">
-              Minimum Order Quantity
+                <p class="text-xs text-gray-500">Not yet available for purchase</p>
+              </div>
             </label>
+          </div>
+
+          <div>
+            <label for="unit" class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+            <input id="unit" v-model="form.unit" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="piece, kg, meter" />
+          </div>
+          <div>
+            <label for="minOrderQuantity" class="block text-sm font-medium text-gray-700 mb-1">Min Order Qty</label>
             <input id="minOrderQuantity" v-model.number="form.min_order_quantity" type="number" min="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="1" />
           </div>
-
-          <!-- Max Order Quantity -->
           <div>
-            <label for="maxOrderQuantity" class="block text-sm font-medium text-gray-700 mb-2">
-              Maximum Order Quantity
-            </label>
+            <label for="maxOrderQuantity" class="block text-sm font-medium text-gray-700 mb-1">Max Order Qty</label>
             <input id="maxOrderQuantity" v-model.number="form.max_order_quantity" type="number" min="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="No limit" />
           </div>
         </div>
       </div>
 
       <!-- Physical Properties -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Physical Properties</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Weight -->
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Physical Properties</h3>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label for="weight" class="block text-sm font-medium text-gray-700 mb-2">
-              Weight (kg)
-            </label>
+            <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
             <input id="weight" v-model.number="form.weight" type="number" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
-
-          <!-- Dimensions -->
           <div>
-            <label for="length" class="block text-sm font-medium text-gray-700 mb-2">
-              Length (cm)
-            </label>
+            <label for="length" class="block text-sm font-medium text-gray-700 mb-1">Length (cm)</label>
             <input id="length" v-model.number="form.dimensions.length" type="number" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
-
           <div>
-            <label for="width" class="block text-sm font-medium text-gray-700 mb-2">
-              Width (cm)
-            </label>
+            <label for="width" class="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
             <input id="width" v-model.number="form.dimensions.width" type="number" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
-
           <div>
-            <label for="height" class="block text-sm font-medium text-gray-700 mb-2">
-              Height (cm)
-            </label>
+            <label for="height" class="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
             <input id="height" v-model.number="form.dimensions.height" type="number" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="0.00" />
           </div>
         </div>
       </div>
 
       <!-- Tags -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Tags</h3>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2"> Product Tags </label>
-          <div class="space-y-2">
-            <div v-for="(_, index) in form.tags" :key="index" class="flex gap-2">
-              <input v-model="form.tags[index]" type="text" placeholder="Enter tag"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button type="button" class="px-3 py-2 text-red-600 hover:text-red-800" @click="removeTag(index)">
-                > Remove
-              </button>
-            </div>
-            <button type="button" class="text-blue-600 hover:text-blue-800 text-sm" @click="addTag">
-              + Add Tag
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Tags</h3>
+        <div class="space-y-2">
+          <div v-for="(_, index) in form.tags" :key="index" class="flex gap-2">
+            <input v-model="form.tags[index]" type="text" placeholder="Enter tag"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            <button type="button"
+              class="px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg text-sm transition-colors"
+              @click="removeTag(index)">
+              Remove
             </button>
           </div>
+          <button type="button"
+            class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-800 text-sm font-medium"
+            @click="addTag">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Tag
+          </button>
         </div>
       </div>
 
       <!-- Specifications -->
-      <div>
-        <h3 class="text-lg font-semibold mb-4">Specifications</h3>
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Specifications</h3>
         <div class="space-y-2">
-          <div v-for="(spec, index) in form.specifications" :key="index" class="flex gap-2">
+          <div v-for="(spec, index) in form.specifications" :key="index" class="flex flex-col sm:flex-row gap-2">
             <input v-model="spec.key" type="text" placeholder="Property name"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
             <input v-model="spec.value" type="text" placeholder="Value"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <button type="button" class="px-3 py-2 text-red-600 hover:text-red-800" @click="removeSpecification(index)">
-              > Remove
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            <button type="button"
+              class="px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg text-sm transition-colors self-end sm:self-auto"
+              @click="removeSpecification(index)">
+              Remove
             </button>
           </div>
-          <button type="button" class="text-blue-600 hover:text-blue-800 text-sm" @click="addSpecification">
-            + Add Specification
+          <button type="button"
+            class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-800 text-sm font-medium"
+            @click="addSpecification">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Specification
           </button>
         </div>
       </div>
 
       <!-- Submit Buttons -->
-      <div class="flex justify-end space-x-4 pt-6 border-t">
-        <button type="button" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+      <div class="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 sm:px-6 flex justify-end gap-3">
+        <button type="button"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           @click="$emit('cancel')">
-          > Cancel
+          Cancel
         </button>
         <button type="submit" :disabled="loading || !!standaloneStockError"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+          class="px-5 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
           {{ loading ? 'Saving...' : isEditing ? 'Update Product' : 'Add Product' }}
         </button>
       </div>

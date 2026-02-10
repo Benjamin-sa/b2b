@@ -137,6 +137,24 @@ export async function updateLastSyncTime(
     .run();
 }
 
+/**
+ * Get all inventory records that are linked to Shopify and have sync enabled
+ * Used for bulk stock pull operations
+ */
+export async function getAllLinkedInventories(db: D1Database): Promise<ProductInventory[]> {
+  const client = createDb(db);
+  const results = await client
+    .select()
+    .from(product_inventory)
+    .where(eq(product_inventory.sync_enabled, 1))
+    .all();
+
+  // Filter to only those with Shopify linkage
+  return (results as ProductInventory[]).filter(
+    (inv) => inv.shopify_inventory_item_id && inv.shopify_location_id
+  );
+}
+
 // ============================================================================
 // DEPRECATED FUNCTIONS - Will be removed in next version
 // ============================================================================

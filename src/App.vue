@@ -64,11 +64,12 @@ const onAfterEnter = () => {
     </div>
 
     <!-- Authenticated and verified users: show navigation and main content -->
-    <div v-else-if="authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin)" class="min-h-screen">
+    <div v-else-if="authStore.isAuthenticated && (authStore.isVerified || authStore.isAdmin)"
+      class="min-h-screen flex flex-col">
       <Navigation :show-admin-panel="showAdminPanel" @toggle-admin="toggleAdminPanel" />
 
-      <main class="max-w-screen-2xl mx-auto py-10 sm:px-8 lg:px-14">
-        <div class="px-4 py-8 sm:px-0">
+      <main class="flex-1 max-w-screen-2xl mx-auto w-full py-6 sm:px-6 lg:px-10">
+        <div class="px-4 py-4 sm:px-0">
           <!-- Render routed views with dynamic transitions -->
           <router-view v-slot="{ Component, route: slotRoute }">
             <Transition :name="(slotRoute.meta?.transition as string) || 'page'" mode="out-in"

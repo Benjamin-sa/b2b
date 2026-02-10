@@ -1,19 +1,16 @@
 <template>
   <div
-    class="bg-white rounded-lg sm:rounded-xl border-2 border-gray-200 overflow-hidden shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer group transform hover:scale-105 hover:border-primary-300"
+    class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer group"
     @click="$emit('click', category)">
     <!-- Category Image -->
-    <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+    <div class="aspect-w-16 aspect-h-9 bg-gray-50">
       <img v-if="category.image_url" :src="category.image_url" :alt="category.name"
-        class="w-full h-36 sm:h-40 lg:h-48 object-cover group-hover:scale-110 transition-transform duration-300" />
-      <div v-else
-        class="w-full h-36 sm:h-40 lg:h-48 flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+        class="w-full h-36 sm:h-40 lg:h-44 object-cover" />
+      <div v-else class="w-full h-36 sm:h-40 lg:h-44 flex items-center justify-center bg-gray-50">
         <div class="text-center">
           <div
-            class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 mx-auto rounded-full flex items-center justify-center mb-2 shadow-lg"
-            :style="{ backgroundColor: '#466478' }">
-            <svg class="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" fill="none" stroke="currentColor"
-              viewBox="0 0 24 24">
+            class="w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-primary-100 rounded-full flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 sm:w-7 sm:h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>

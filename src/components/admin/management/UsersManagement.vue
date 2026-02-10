@@ -7,68 +7,20 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-              </div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ allUsers.length }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Users</p>
+        <p class="mt-1 text-2xl font-semibold text-gray-900">{{ allUsers.length }}</p>
       </div>
 
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">Pending Verification</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ unverifiedUsers.length }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
+      <div class="bg-white rounded-lg border border-yellow-200 p-4">
+        <p class="text-xs font-medium text-yellow-600 uppercase tracking-wide">Pending Verification</p>
+        <p class="mt-1 text-2xl font-semibold text-yellow-700">{{ unverifiedUsers.length }}</p>
       </div>
 
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">Verified Users</dt>
-                <dd class="text-lg font-medium text-gray-900">{{ verifiedUsers.length }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
+      <div class="bg-white rounded-lg border border-green-200 p-4 col-span-2 lg:col-span-1">
+        <p class="text-xs font-medium text-green-600 uppercase tracking-wide">Verified Users</p>
+        <p class="mt-1 text-2xl font-semibold text-green-700">{{ verifiedUsers.length }}</p>
       </div>
     </div>
 
@@ -174,7 +126,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex justify-end space-x-2">
                   <button
-                    class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                     @click="viewUserDetails(user)">
                     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -392,18 +344,16 @@
                   </div>
                   <div class="flex space-x-3">
                     <button v-if="!selectedUser.is_verified"
-                      class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors"
                       @click="confirmVerifyUser(selectedUser)">
-                      >
                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       Verify User
                     </button>
                     <button v-else
-                      class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                       @click="confirmUnverifyUser(selectedUser)">
-                      >
                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M6 18L18 6M6 6l12 12" />
@@ -419,9 +369,9 @@
           <!-- Modal Actions -->
           <div class="mt-6 flex justify-end border-t pt-4">
             <button
-              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               @click="closeModal">
-              > Close
+              Close
             </button>
           </div>
         </div>
@@ -462,9 +412,9 @@
           </div>
           <div class="flex justify-center space-x-3 mt-4">
             <button
-              class="px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
               @click="closeConfirmation">
-              > Cancel
+              Cancel
             </button>
             <button :class="[
               confirmationModal.type === 'verify'

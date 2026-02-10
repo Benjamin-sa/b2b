@@ -1,75 +1,107 @@
 # AI Coding Agent Instructions - B2B Platform
 
-## Big picture
+## Architecture overview
 
-- **Architecture**: Modular monolith on Cloudflare Workers. The **API Gateway** is the single entry point and does **direct D1 access** via `@b2b/db` (no internal HTTP for DB). External workers remain separate and are called via **service bindings**.
-- **Key packages**:
-  - `packages/db` = Drizzle ORM schema + operations (single source of DB logic).
-  - `workers/api-gateway` = Hono routes + business logic + orchestrates external services.
-  - `src` = Vue 3 SPA (Pinia stores, Vue Router, i18n).
+**Modular monolith** on Cloudflare Workers with Vue 3 SPA frontend.
 
-## Critical conventions (project-specific)
-
-- **DB access**: All CRUD must use `@b2b/db` from the gateway. Do not perform DB logic in external workers.
-- **Service bindings only for external services**: Stripe, Shopify sync, Telegram, Email Queue.
-- **Inventory source of truth**: Use `product_inventory` table only. Deprecated columns in `products` (`stock`, `in_stock`, `shopify_*`) must not be referenced.
-- **API naming**: Frontend uses **snake_case** for API payloads and filters.
-
-## Example patterns
-
-- Gateway routes live in `workers/api-gateway/src/routes/*` and should use:
-  - `createDb(c.env.DB)` from `@b2b/db`
-  - shared error shape: `{ error, code, message, statusCode }`
-- External service calls use bindings, e.g.:
-  - `c.env.TELEGRAM_SERVICE.fetch(new Request('https://dummy/...'))`
-
-## Testing
-
-### Frontend tests (Vue 3 + Vitest)
-
-```bash
-pnpm test              # Watch mode
-pnpm test:run          # Single run
-pnpm test:coverage     # With coverage report
-pnpm test:i18n         # i18n integrity only
+```
+┌─────────────────┐     ┌──────────────────────────────────────────┐
+│  Vue 3 SPA      │────▶│  API Gateway (Hono)                      │
+│  (Pinia, i18n)  │     │  - Direct D1 via @b2b/db                 │
+└─────────────────┘     │  - Service bindings for external workers │
+                        └──────────┬───────────────────────────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              ▼                    ▼                    ▼
+      ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+      │ Stripe Svc   │    │ Shopify Sync │    │ Telegram Svc │
+      │ (payments)   │    │ (webhooks)   │    │ (notifs)     │
+      └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
-- **Test location**: Component tests live alongside components (`*.test.ts`)
-- **i18n tests** (`src/tests/i18n.test.ts`): Validates all locales have matching keys, no empty translations, consistent placeholders
-- **Helpers** (`src/tests/helpers.ts`): `mountWithPlugins()` mounts components with i18n + Pinia
-- **Setup** (`src/tests/setup.ts`): Global mocks for localStorage, fetch, router stubs
+**Key packages**:
 
-### API Gateway integration tests
+- `packages/db` — Drizzle ORM schema + operations (single source of DB logic)
+- `workers/api-gateway` — Hono routes + business logic + orchestration
+- `src/` — Vue 3 SPA (Pinia stores, Vue Router, i18n with 4 locales)
+
+## Critical conventions
+
+| Rule                                                              | Why                                                                                                   |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| All DB access via `@b2b/db` from gateway                          | Eliminates HTTP overhead, single source of truth                                                      |
+| Service bindings only for: Stripe, Shopify, Telegram, Email Queue | External APIs or async processing                                                                     |
+| Use `product_inventory` table for stock                           | `products.stock`, `products.in_stock`, `products.shopify_*` are **DEPRECATED** (D1 can't DROP COLUMN) |
+| Frontend API payloads use **snake_case**                          | `category_id`, `in_stock`, not camelCase                                                              |
+
+## Code patterns
+
+### Gateway routes (`workers/api-gateway/src/routes/*.routes.ts`)
+
+```typescript
+import { createDb } from '@b2b/db';
+import { getProducts, getInventoryByProductId } from '@b2b/db/operations';
+
+products.get('/', async (c) => {
+  const db = createDb(c.env.DB);
+  const result = await getProducts(db, options);
+  // ...
+});
+```
+
+### Service binding calls (`src/utils/service-calls.ts`)
+
+```typescript
+import { callService } from '../utils/service-calls';
+
+await callService(c.env.TELEGRAM_SERVICE, c.env.SERVICE_SECRET, {
+  path: '/notify',
+  method: 'POST',
+  body: { message: '...' },
+});
+```
+
+### Frontend test mounting (`src/tests/helpers.ts`)
+
+```typescript
+import { mountWithPlugins } from '@/tests/helpers';
+const wrapper = mountWithPlugins(MyComponent, { locale: 'nl' });
+```
+
+## Commands
 
 ```bash
+# Frontend (root)
+pnpm dev                   # Vite dev server
+pnpm test                  # Vitest watch mode
+pnpm test:i18n             # Validate i18n keys across locales
+pnpm deploy:frontend       # Build + deploy to Cloudflare Pages
+
+# API Gateway
 cd workers/api-gateway
-pnpm deploy:dev           # Deploy dev worker first
-pnpm test:integration     # Hits deployed worker
+pnpm dev                   # Local worker dev
+pnpm deploy:dev            # Deploy to dev environment
+pnpm test                  # Integration tests (requires deploy:dev first)
+
+# Database migrations
+wrangler d1 execute b2b-dev --file=migrations/XXX.sql  # Dev
+wrangler d1 execute b2b-prod --file=migrations/XXX.sql # Prod
 ```
 
-- Configure `workers/api-gateway/tests/.env` with admin credentials.
+## Key files
 
-## Workflows (non-obvious)
+| Purpose                    | Location                              |
+| -------------------------- | ------------------------------------- |
+| Gateway entry + middleware | `workers/api-gateway/src/index.ts`    |
+| DB schema (Drizzle)        | `packages/db/src/schema.ts`           |
+| DB operations              | `packages/db/src/operations/*.ts`     |
+| Frontend stores            | `src/stores/*.ts`                     |
+| i18n locales               | `src/i18n/locales/{en,nl,fr,de}.json` |
+| D1 database IDs            | `migrations/D1_CONFIG.md`             |
+| Worker bindings config     | `workers/api-gateway/wrangler.toml`   |
 
-- **Migrations**: SQL files in `migrations/`. Use `wrangler d1 execute ...` (see `migrations/D1_CONFIG.md`).
-- **Workers dev/prod**: Each worker has `wrangler.toml` with env-specific bindings and secrets.
-- **Deploy frontend**: `pnpm deploy:frontend` (builds + deploys to Cloudflare Pages).
+## ⚠️ Important notes
 
-## Integration points
-
-- Shopify sync worker receives webhooks and updates `product_inventory.b2c_stock` (see `workers/shopify-sync-service`).
-- Telegram worker sends admin notifications via service binding (see `workers/telegram-service`).
-- Email worker handles SendGrid transactional emails (see `workers/email-service`).
-
-## Files to reference
-
-- Gateway entry + middleware: `workers/api-gateway/src/index.ts`
-- DB operations: `packages/db/src/operations/*`
-- Inventory schema: `migrations/003_product_inventory_system.sql`
-- API tests + validators: `workers/api-gateway/tests/helpers/`
-- Frontend test setup: `src/tests/setup.ts`, `src/tests/helpers.ts`
-- i18n locales: `src/i18n/locales/{en,nl,fr,de}.json`
-
-## Note on docs
-
-- Some README files still describe the **old microservices model**. Treat this file as the source of truth for the current architecture.
+1. **README files may be outdated** — `workers/api-gateway/README.md` describes old microservices architecture. This file is the source of truth.
+2. **Integration tests hit deployed worker** — Run `pnpm deploy:dev` before `pnpm test` in api-gateway.
+3. **i18n tests are strict** — All 4 locales must have matching keys; run `pnpm test:i18n` after adding translations.

@@ -646,7 +646,7 @@
       "restrict": "Restrict processing of your personal data",
       "portability": "Data portability",
       "object": "Object to processing of your personal data",
-      "contact": "To exercise these rights, please contact us at privacy@4Tparts.com"
+      "contact": "To exercise these rights, please contact us at privacy{'@'}4Tparts.com"
     },
     "cookies": {
       "title": "Cookies and Tracking",
@@ -663,7 +663,7 @@
     "contact": {
       "title": "Contact Us",
       "content": "If you have questions about this Privacy Policy, please contact us at:",
-      "email": "Email: privacy@4Tparts.com",
+      "email": "Email: privacy{'@'}4Tparts.com",
       "phone": "Phone: +32 (0) 47 21 2118"
     }
   },
@@ -734,7 +734,7 @@
       },
       "process": {
         "title": "Return Process",
-        "content": "To initiate a return, contact our support team at support@4Tparts.com. Return shipping costs are the responsibility of the customer unless the return is due to our error."
+        "content": "To initiate a return, contact our support team at support{'@'}4Tparts.com. Return shipping costs are the responsibility of the customer unless the return is due to our error."
       }
     },
     "warranty": {
@@ -771,7 +771,7 @@
     "contact": {
       "title": "Contact Information",
       "content": "For questions about these Terms, please contact us at:",
-      "email": "Email: support@4Tparts.com",
+      "email": "Email: support{'@'}4Tparts.com",
       "phone": "Phone: +32 (0) 47 21 2118"
     }
   },

@@ -1,10 +1,13 @@
 <template>
-  <div class="max-w-[1400px] mx-auto p-8">
+  <div class="space-y-5">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-      <h2 class="text-3xl font-semibold text-gray-900">Stock Management</h2>
+    <div class="flex justify-between items-center">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Stock Management</h2>
+        <p class="mt-1 text-sm text-gray-500">Monitor inventory levels and Shopify sync</p>
+      </div>
       <button
-        class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="loading" @click="refreshData">
         <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2">
@@ -17,32 +20,43 @@
     </div>
 
     <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 p-6 bg-gray-50 rounded-lg">
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">Search</label>
-        <input v-model="searchTerm" type="text" placeholder="Search products..."
-          class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100" />
-      </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input v-model="searchTerm" type="text" placeholder="Search products..."
+              class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500" />
+          </div>
+        </div>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">Stock Status</label>
-        <select v-model="stockFilter"
-          class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100">
-          <option value="all">All Products</option>
-          <option value="in-stock">In Stock</option>
-          <option value="low-stock">Low Stock</option>
-          <option value="out-of-stock">Out of Stock</option>
-        </select>
-      </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Stock Status</label>
+          <select v-model="stockFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
+            :style="{ backgroundImage: `url('data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 20 20&quot; fill=&quot;%236b7280&quot;><path fill-rule=&quot;evenodd&quot; d=&quot;M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z&quot; clip-rule=&quot;evenodd&quot;/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.6rem center', backgroundSize: '1rem', paddingRight: '2rem' }">
+            <option value="all">All Products</option>
+            <option value="in-stock">In Stock</option>
+            <option value="low-stock">Low Stock</option>
+            <option value="out-of-stock">Out of Stock</option>
+          </select>
+        </div>
 
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-600">Shopify Sync</label>
-        <select v-model="syncFilter"
-          class="px-2.5 py-2.5 border border-gray-300 rounded-md text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100">
-          <option value="all">All Products</option>
-          <option value="synced">Synced to Shopify</option>
-          <option value="not-synced">Not Synced</option>
-        </select>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Shopify Sync</label>
+          <select v-model="syncFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
+            :style="{ backgroundImage: `url('data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 20 20&quot; fill=&quot;%236b7280&quot;><path fill-rule=&quot;evenodd&quot; d=&quot;M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z&quot; clip-rule=&quot;evenodd&quot;/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.6rem center', backgroundSize: '1rem', paddingRight: '2rem' }">
+            <option value="all">All Products</option>
+            <option value="synced">Synced to Shopify</option>
+            <option value="not-synced">Not Synced</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -63,7 +77,7 @@
       </svg>
       <p>{{ error }}</p>
       <button
-        class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
         @click="refreshData">
         Try Again
       </button>
@@ -106,7 +120,7 @@
                   <span class="font-medium text-gray-900">{{ product.name }}</span>
                   <span v-if="product.part_number" class="text-xs text-gray-500">{{
                     product.part_number
-                    }}</span>
+                  }}</span>
                 </div>
               </div>
             </td>

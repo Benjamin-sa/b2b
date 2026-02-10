@@ -7,7 +7,7 @@
         <div
           class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4 sm:mb-6 shadow-lg">
         </div>
-        <p class="text-lg sm:text-xl text-gray-700 font-bold">{{ $t('common.loading') }}...</p>
+        <p class="text-lg sm:text-xl text-gray-700 font-bold">{{ $t('common.actions.loading') }}</p>
         <p class="text-xs sm:text-sm text-gray-500 mt-2">
           Please wait while we load product details
         </p>
@@ -118,7 +118,7 @@
                   class="bg-gradient-to-r from-danger-100 to-danger-200 text-danger-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-danger-300 shadow-sm animate-pulse w-full sm:w-auto text-center whitespace-nowrap">
                   {{ $t('productDetail.outOfStock') }}
                 </div>
-                <div v-else-if="product.stock && product.stock < 10"
+                <div v-else-if="product.stock && product.stock < 2"
                   class="bg-gradient-to-r from-warning-100 to-warning-200 text-warning-800 text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 border-warning-300 shadow-sm w-full sm:w-auto text-center whitespace-nowrap">
                   {{ $t('productDetail.lowStock', { count: product.stock }) }}
                 </div>

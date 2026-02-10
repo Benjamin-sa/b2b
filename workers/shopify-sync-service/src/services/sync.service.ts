@@ -59,14 +59,12 @@ export async function syncToShopify(
  * @param env - Environment bindings
  * @param variantId - Shopify variant ID (used if productId not provided)
  * @param newAvailable - New stock level from Shopify
- * @param webhookId - Webhook ID for logging
  * @param productId - Optional: specific product ID to update (for multi-product webhooks)
  */
 export async function handleShopifyInventoryUpdate(
   env: Env,
   variantId: string,
   newAvailable: number,
-  webhookId: string,
   productId?: string
 ): Promise<void> {
   console.log(

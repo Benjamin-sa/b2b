@@ -5,6 +5,7 @@
  */
 
 import type { Env } from '../types';
+import { shopifyGraphQL } from '../utils/shopify-client';
 
 export interface ShopifyProduct {
   id: string; // Shopify product ID (gid://shopify/Product/123)
@@ -79,39 +80,10 @@ export async function searchShopifyProducts(
     variables = { query: '', limit };
   }
 
-  // Execute Shopify GraphQL query
-  const response = await fetch(
-    `https://${env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-10/graphql.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': env.SHOPIFY_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({
-        query: graphqlQuery,
-        variables,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
-  }
-
-  const result = (await response.json()) as {
-    data: any;
-    errors?: Array<{ message: string }>;
-  };
-
-  if (result.errors) {
-    console.error('❌ Shopify GraphQL errors:', result.errors);
-    throw new Error(`Shopify GraphQL error: ${JSON.stringify(result.errors)}`);
-  }
+  const data = await shopifyGraphQL<any>(env, graphqlQuery, variables);
 
   // Parse response and extract variants
-  const variants = parseShopifyResponse(result.data, variantId, productId);
+  const variants = parseShopifyResponse(data, variantId, productId);
 
   console.log(`✅ Found ${variants.length} Shopify variants`);
 

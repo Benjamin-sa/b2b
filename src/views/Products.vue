@@ -39,15 +39,16 @@
       @toggle-filters="toggleAdvancedFilters" />
 
     <!-- Advanced Filters Panel -->
-    <div v-if="showAdvancedFilters" class="bg-gradient-to-br from-white to-gray-50 border-b border-gray-200 shadow-lg">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div v-if="showAdvancedFilters" class="bg-white border-b border-gray-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">{{
               $t('products.filters.category_id')
             }}</label>
             <select v-model="filters.category_id"
-              class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
+              class="w-full appearance-none rounded-md border border-gray-300 bg-white text-sm text-gray-700 px-3 py-2.5 pr-10 sm:px-4 sm:py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-no-repeat bg-[length:16px_16px] bg-[position:right_0.75rem_center]"
+              style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'%236b7280\'><path fill-rule=\'evenodd\' d=\'M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z\' clip-rule=\'evenodd\'/></svg>');">
               <option value="">{{ $t('products.filters.allCategories') }}</option>
               <option v-for="category in categoryStore.categories" :key="category.id" :value="category.name">
                 {{ category.name }}
@@ -59,7 +60,8 @@
               $t('products.filters.availability')
             }}</label>
             <select v-model="filters.in_stock"
-              class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white">
+              class="w-full appearance-none rounded-md border border-gray-300 bg-white text-sm text-gray-700 px-3 py-2.5 pr-10 sm:px-4 sm:py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-no-repeat bg-[length:16px_16px] bg-[position:right_0.75rem_center]"
+              style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'%236b7280\'><path fill-rule=\'evenodd\' d=\'M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z\' clip-rule=\'evenodd\'/></svg>');">
               <option :value="undefined">{{ $t('products.filters.allProducts') }}</option>
               <option :value="true">{{ $t('products.filters.in_stockOnly') }}</option>
             </select>
@@ -69,7 +71,8 @@
               $t('products.filters.priceRange')
             }}</label>
             <select v-model="priceRange"
-              class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
+              class="w-full appearance-none rounded-md border border-gray-300 bg-white text-sm text-gray-700 px-3 py-2.5 pr-10 sm:px-4 sm:py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-no-repeat bg-[length:16px_16px] bg-[position:right_0.75rem_center]"
+              style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'%236b7280\'><path fill-rule=\'evenodd\' d=\'M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z\' clip-rule=\'evenodd\'/></svg>');"
               @change="handlePriceRangeChange">
               <option value="">{{ $t('products.filters.anyPrice') }}</option>
               <option value="0-50">€0 - €50</option>
@@ -78,17 +81,15 @@
               <option value="500+">€500+</option>
             </select>
           </div>
-          <div class="flex flex-col space-y-3">
+          <div class="flex flex-col space-y-2">
             <button
-              class="w-full px-4 py-3 text-primary-600 hover:text-white bg-primary-50 hover:bg-primary-600 border border-primary-300 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              class="w-full px-4 py-2.5 sm:py-3 text-sm font-semibold text-primary-700 bg-primary-50 hover:bg-primary-600 hover:text-white border border-primary-200 rounded-md transition-colors"
               @click="clearFilters">
-              >
               {{ $t('products.filters.clear') }}
             </button>
             <button
-              class="w-full px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-300 rounded-lg font-semibold transition-all duration-200"
+              class="w-full px-4 py-2.5 sm:py-3 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-50 border border-gray-300 rounded-md transition-colors"
               @click="toggleAdvancedFilters">
-              >
               {{ $t('products.filters.hideFilters') }}
             </button>
           </div>
@@ -120,7 +121,6 @@
           <button
             class="mt-6 inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transform transition-all duration-200 hover:scale-105 shadow-md"
             @click="clearFilters">
-            >
             {{ $t('products.empty.clearFilters') }}
           </button>
         </div>
@@ -188,7 +188,7 @@ import { useCategoryStore } from '../stores/categories';
 import ProductCard from '../components/product/ProductCard.vue';
 import ProductsHeader from '../components/product/ProductsHeader.vue';
 import { truncateHtml } from '../utils/htmlUtils';
-import type { ProductFilter, ProductWithRelations } from '../types';
+import type { ProductFilter } from '../types';
 
 // Define component name for KeepAlive matching
 defineOptions({

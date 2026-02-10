@@ -646,7 +646,7 @@
       "restrict": "Verwerking van uw persoonlijke gegevens te beperken",
       "portability": "Gegevensoverdraagbaarheid",
       "object": "Bezwaar te maken tegen verwerking van uw persoonlijke gegevens",
-      "contact": "Om deze rechten uit te oefenen, neem contact met ons op via privacy@4Tparts.com"
+      "contact": "Om deze rechten uit te oefenen, neem contact met ons op via privacy{'@'}4Tparts.com"
     },
     "cookies": {
       "title": "Cookies en Tracking",
@@ -663,7 +663,7 @@
     "contact": {
       "title": "Contact",
       "content": "Als u vragen heeft over dit Privacybeleid, neem dan contact met ons op via:",
-      "email": "E-mail: privacy@4Tparts.com",
+      "email": "E-mail: privacy{'@'}4Tparts.com",
       "phone": "Telefoon: +32 (0) 47 21 2118"
     }
   },
@@ -734,7 +734,7 @@
       },
       "process": {
         "title": "Retourproces",
-        "content": "Om een retourzending te initiëren, neem contact op met ons ondersteuningsteam via support@4Tparts.com. Retourverzendkosten zijn de verantwoordelijkheid van de klant, tenzij de retourzending te wijten is aan onze fout."
+        "content": "Om een retourzending te initiëren, neem contact op met ons ondersteuningsteam via support{'@'}4Tparts.com. Retourverzendkosten zijn de verantwoordelijkheid van de klant, tenzij de retourzending te wijten is aan onze fout."
       }
     },
     "warranty": {
@@ -771,7 +771,7 @@
     "contact": {
       "title": "Contactinformatie",
       "content": "Voor vragen over deze Voorwaarden, neem contact met ons op via:",
-      "email": "E-mail: support@4Tparts.com",
+      "email": "E-mail: support{'@'}4Tparts.com",
       "phone": "Telefoon: +32 (0) 47 21 2118"
     }
   },

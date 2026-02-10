@@ -5,39 +5,7 @@
  */
 
 import type { Env, ShopifyVariant } from '../types';
-
-/**
- * Make a GraphQL request to Shopify Admin API
- */
-async function shopifyGraphQL(
-  env: Env,
-  query: string,
-  variables: Record<string, any> = {}
-): Promise<any> {
-  const url = `https://${env.SHOPIFY_STORE_DOMAIN}/admin/api/${env.SHOPIFY_API_VERSION}/graphql.json`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': env.SHOPIFY_ACCESS_TOKEN,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Shopify GraphQL error: ${response.status} - ${error}`);
-  }
-
-  const result = (await response.json()) as { data?: any; errors?: any };
-
-  if (result.errors) {
-    throw new Error(`Shopify GraphQL errors: ${JSON.stringify(result.errors)}`);
-  }
-
-  return result.data;
-}
+import { shopifyGraphQL } from './shopify-client';
 
 /**
  * Update inventory level for a specific item at a location
@@ -170,33 +138,33 @@ export async function adjustShopifyInventory(
 
 /**
  * Get current inventory level from Shopify
+ * Queries via inventoryItem → inventoryLevel at the configured location
  */
 export async function getShopifyInventory(env: Env, inventoryItemId: string): Promise<number> {
   const locationId = env.SHOPIFY_LOCATION_ID;
 
-  // Shopify inventoryLevel requires an ID in format: gid://shopify/InventoryLevel/?inventory_item_id=X&location_id=Y
-  const inventoryLevelId = `gid://shopify/InventoryLevel/${inventoryItemId}?location_id=${locationId}`;
-
   const query = `
-    query getInventoryLevel($id: ID!) {
-      inventoryLevel(id: $id) {
+    query getInventoryItem($id: ID!) {
+      inventoryItem(id: $id) {
         id
-        quantities(names: ["available"]) {
-          name
-          quantity
+        inventoryLevel(locationId: "gid://shopify/Location/${locationId}") {
+          id
+          quantities(names: ["available"]) {
+            name
+            quantity
+          }
         }
       }
     }
   `;
 
   const variables = {
-    id: inventoryLevelId,
+    id: `gid://shopify/InventoryItem/${inventoryItemId}`,
   };
 
   const data = await shopifyGraphQL(env, query, variables);
 
-  // Extract 'available' quantity from the quantities array
-  const availableQuantity = data.inventoryLevel?.quantities?.find(
+  const availableQuantity = data.inventoryItem?.inventoryLevel?.quantities?.find(
     (q: any) => q.name === 'available'
   );
 

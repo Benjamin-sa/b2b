@@ -31,7 +31,7 @@
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.firstName')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">
                         {{ authStore.userProfile?.first_name }}
                       </p>
@@ -39,7 +39,7 @@
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.lastName')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">{{ authStore.userProfile?.last_name }}</p>
                     </div>
                   </div>
@@ -54,7 +54,7 @@
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.companyName')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">
                         {{ authStore.userProfile?.company_name }}
                       </p>
@@ -62,7 +62,7 @@
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.btwNumber')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">
                         {{ authStore.userProfile?.btw_number }}
                       </p>
@@ -79,13 +79,13 @@
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.email')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">{{ authStore.userProfile?.email }}</p>
                     </div>
                     <div class="p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <label class="block text-sm font-semibold text-gray-600 mb-2">{{
                         $t('profile.fields.phone')
-                        }}</label>
+                      }}</label>
                       <p class="text-gray-900 font-medium">
                         {{ authStore.userProfile?.phone || $t('profile.fields.notProvided') }}
                       </p>
@@ -131,7 +131,7 @@
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <span class="text-sm font-semibold text-gray-700">{{
                   $t('profile.status.accountStatus')
-                  }}</span>
+                }}</span>
                 <span :class="[
                   authStore.isActiveUser
                     ? 'text-success-700 bg-success-100 border-success-200'
@@ -150,7 +150,7 @@
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <span class="text-sm font-semibold text-gray-700">{{
                   $t('profile.status.verificationStatus')
-                  }}</span>
+                }}</span>
                 <span :class="[
                   authStore.isVerified
                     ? 'text-success-700 bg-success-100 border-success-200'
@@ -173,7 +173,7 @@
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <span class="text-sm font-semibold text-gray-700">{{
                   $t('profile.status.accountType')
-                  }}</span>
+                }}</span>
                 <span
                   class="px-3 py-1.5 bg-primary-100 text-primary-700 border border-primary-200 rounded-full text-xs font-bold">
                   {{
@@ -188,7 +188,7 @@
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <span class="text-sm font-semibold text-gray-700">{{
                   $t('profile.status.memberSince')
-                  }}</span>
+                }}</span>
                 <span class="text-sm font-bold text-gray-900">
                   {{ formatDate(authStore.userProfile?.created_at ?? undefined) }}
                 </span>
@@ -245,7 +245,6 @@
               <button
                 class="flex items-center w-full p-4 text-gray-700 bg-gradient-to-r from-danger-50 to-danger-100 hover:from-danger-100 hover:to-danger-200 rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md border border-danger-200 group"
                 @click="authStore.logout">
-                >
                 <div class="p-2 bg-white rounded-lg shadow-sm">
                   <svg class="w-5 h-5 text-danger-600 group-hover:text-danger-700" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">

@@ -646,7 +646,7 @@
       "restrict": "Einschränkung der Verarbeitung Ihrer personenbezogenen Daten",
       "portability": "Datenübertragbarkeit",
       "object": "Widerspruch gegen die Verarbeitung Ihrer personenbezogenen Daten",
-      "contact": "Um diese Rechte auszuüben, kontaktieren Sie uns bitte unter privacy@4Tparts.com"
+      "contact": "Um diese Rechte auszuüben, kontaktieren Sie uns bitte unter privacy{'@'}4Tparts.com"
     },
     "cookies": {
       "title": "Cookies und Tracking",
@@ -663,7 +663,7 @@
     "contact": {
       "title": "Kontaktieren Sie uns",
       "content": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie haben, kontaktieren Sie uns bitte unter:",
-      "email": "E-Mail: privacy@4Tparts.com",
+      "email": "E-Mail: privacy{'@'}4Tparts.com",
       "phone": "Telefon: +32 (0) 47 21 2118"
     }
   },
@@ -734,7 +734,7 @@
       },
       "process": {
         "title": "Rückgabeprozess",
-        "content": "Um eine Rücksendung einzuleiten, kontaktieren Sie unser Support-Team unter support@4Tparts.com. Die Kosten für die Rücksendung trägt der Kunde, es sei denn, die Rücksendung erfolgt aufgrund unseres Fehlers."
+        "content": "Um eine Rücksendung einzuleiten, kontaktieren Sie unser Support-Team unter support{'@'}4Tparts.com. Die Kosten für die Rücksendung trägt der Kunde, es sei denn, die Rücksendung erfolgt aufgrund unseres Fehlers."
       }
     },
     "warranty": {
@@ -771,7 +771,7 @@
     "contact": {
       "title": "Kontaktinformationen",
       "content": "Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte unter:",
-      "email": "E-Mail: support@4Tparts.com",
+      "email": "E-Mail: support{'@'}4Tparts.com",
       "phone": "Telefon: +32 (0) 47 21 2118"
     }
   },

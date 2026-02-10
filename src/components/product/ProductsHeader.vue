@@ -14,7 +14,6 @@
         </div>
 
         <!-- Search and Quick Actions -->
-        <!-- Search and Quick Actions -->
         <div class="flex-1 max-w-2xl">
           <div class="relative">
             <div class="flex">
@@ -38,18 +37,18 @@
                 </button>
               </div>
               <button :class="[
-                'px-6 py-3 text-white border transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                'px-5 py-3 text-white border transition-colors duration-150 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                 hasUnsearchedText
-                  ? 'bg-orange-500 border-orange-500 hover:bg-orange-600 animate-pulse'
-                  : 'bg-blue-600 border-blue-600 hover:bg-blue-700',
+                  ? 'bg-orange-500 border-orange-500 hover:bg-orange-600'
+                  : 'bg-primary-600 border-primary-600 hover:bg-primary-700',
               ]" @click="onSearch">
                 {{ $t('common.actions.search') }}
               </button>
               <button :class="[
-                'px-4 py-3 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                'px-4 py-3 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-150',
                 hasAdvancedFilters
-                  ? 'text-blue-600 bg-blue-50 border-blue-300 hover:bg-blue-100'
-                  : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50',
+                  ? 'text-primary-600 bg-primary-50 border-primary-300 hover:bg-primary-100'
+                  : 'text-gray-500 hover:text-gray-700 border-gray-300 hover:bg-gray-50',
               ]" @click="toggleAdvancedFilters">
                 {{ $t('common.actions.filter') }}
                 <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
